@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 const Meeting = () => {
     return (
         <View>
-            <Text>Meeting</Text>
+            <Text>Meeting Details</Text>
         </View>
     );
 };

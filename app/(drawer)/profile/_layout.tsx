@@ -18,7 +18,7 @@ const Layout = () => {
                             <TouchableOpacity
                                 onPress={() =>
                                     router.push(
-                                        '/(drawer)/(meeting)/newMeeting'
+                                        '/(drawer)/profile/profile-edit'
                                     )
                                 }
                             >
@@ -31,9 +31,9 @@ const Layout = () => {
                 }}
             />
             <Stack.Screen
-                name='(meeting)/newMeeting'
+                name='profile-edit'
                 options={{
-                    title: 'New Meeting',
+                    title: 'EDIT',
                     headerBackTitle: 'Back',
                     headerTintColor: '#000',
                 }}
