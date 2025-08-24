@@ -1,14 +1,38 @@
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const Meeting = () => {
+const MeetingDetails = () => {
+    const router = useRouter();
     return (
-        <View>
+        <View style={styles.container}>
             <Text>Meeting Details</Text>
+            <TouchableOpacity
+                style={styles.link}
+                onPress={() => router.push('/(drawer)/(group)')}
+            >
+                <Text style={styles.linkText}>Go to Group</Text>
+            </TouchableOpacity>
         </View>
     );
 };
 
-export default Meeting;
+export default MeetingDetails;
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    link: {
+        marginTop: 24,
+        padding: 12,
+        backgroundColor: '#F2A310',
+        borderRadius: 8,
+    },
+    linkText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+});

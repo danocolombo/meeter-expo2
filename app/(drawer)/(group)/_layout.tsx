@@ -1,14 +1,42 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-
+import { DrawerToggleButton } from '@react-navigation/drawer';
+import { Stack, useRouter } from 'expo-router';
+import { Text, TouchableOpacity, View } from 'react-native';
 const Layout = () => {
+    const router = useRouter();
     return (
-        <View>
-            <Text>Layout</Text>
-        </View>
+        <Stack>
+            <Stack.Screen
+                name='index'
+                options={{
+                    headerLeft: () => (
+                        <View style={{ marginLeft: -16 }}>
+                            <DrawerToggleButton tintColor='#000' />
+                        </View>
+                    ),
+                    headerRight: () => (
+                        <View style={{ marginRight: 16 }}>
+                            <TouchableOpacity
+                                onPress={() =>
+                                    router.push('/(drawer)/(group)/group-edit')
+                                }
+                            >
+                                <View>
+                                    <Text>EDIT</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                    ),
+                }}
+            />
+            <Stack.Screen
+                name='profile-edit'
+                options={{
+                    title: 'EDIT',
+                    headerBackTitle: 'Back',
+                    headerTintColor: '#000',
+                }}
+            />
+        </Stack>
     );
 };
-
 export default Layout;
-
-const styles = StyleSheet.create({});
