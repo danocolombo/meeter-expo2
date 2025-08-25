@@ -1,14 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Slot } from 'expo-router';
 
-const Layout = () => {
-    return (
-        <View>
-            <Text>Layout</Text>
-        </View>
-    );
-};
-
-export default Layout;
-
-const styles = StyleSheet.create({});
+export default function MeetingsLayout() {
+    return <Slot />;
+}

@@ -9,7 +9,7 @@ const MeetingDetails = () => {
             <Text>Meeting Details</Text>
             <TouchableOpacity
                 style={styles.link}
-                onPress={() => router.push('/(drawer)/(group)')}
+                onPress={() => router.push('/(drawer)/(meeting)/(group)')}
             >
                 <Text style={styles.linkText}>Go to Group</Text>
             </TouchableOpacity>

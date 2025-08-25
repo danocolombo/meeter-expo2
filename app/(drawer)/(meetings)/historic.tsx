@@ -3,12 +3,23 @@ import { StyleSheet, Text, View } from 'react-native';
 
 const HistoricMeetings = () => {
     return (
-        <View>
-            <Text>HistoricMeetings</Text>
+        <View style={styles.container}>
+            <Text style={styles.text}>HistoricMeetings</Text>
         </View>
     );
 };
 
 export default HistoricMeetings;
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    text: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+});
