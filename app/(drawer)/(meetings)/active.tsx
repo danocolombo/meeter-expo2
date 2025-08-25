@@ -9,16 +9,26 @@ const ActiveMeetings = () => {
 
             <TouchableOpacity
                 style={styles.link}
-                onPress={() => router.push('/(drawer)/(meetings)/1')}
+                onPress={() =>
+                    router.push({
+                        pathname: '/(meeting)/[id]',
+                        params: { id: '100', from: 'active' },
+                    })
+                }
             >
-                <Text style={styles.linkText}>Meeting 1</Text>
+                <Text style={styles.linkText}>Meeting 100</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
                 style={styles.link}
-                onPress={() => router.push('/(drawer)/(meetings)/2')}
+                onPress={() =>
+                    router.push({
+                        pathname: '/(meeting)/[id]',
+                        params: { id: '101', from: 'active' },
+                    })
+                }
             >
-                <Text style={styles.linkText}>Meeting 2</Text>
+                <Text style={styles.linkText}>Meeting 101</Text>
             </TouchableOpacity>
         </View>
     );

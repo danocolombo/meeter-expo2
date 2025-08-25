@@ -189,16 +189,16 @@ const Layout = () => {
                         },
                     }}
                 />
-                <Drawer.Screen
+                {/* <Drawer.Screen
                     name='(meeting)'
                     options={{
                         title: 'Meeting',
                         headerShown: false,
-                        // drawerItemStyle: {
-                        //     display: 'none',
-                        // },
+                        drawerItemStyle: {
+                            display: 'none',
+                        },
                     }}
-                />
+                /> */}
                 <Drawer.Screen
                     name='(meetings)'
                     options={{
