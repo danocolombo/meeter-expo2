@@ -4,7 +4,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const MeetingDetails = () => {
     const router = useRouter();
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const { id } = useLocalSearchParams<{ id: string; from?: string }>();
     return (
         <View style={styles.container}>
             <Text>Meeting Details for {id}</Text>
