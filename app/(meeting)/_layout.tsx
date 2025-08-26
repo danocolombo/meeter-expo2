@@ -73,6 +73,7 @@ export default function MeetingStackLayout() {
                     const editId = params?.id;
                     const from = params?.from;
                     return {
+                        title: 'Edit Meeting',
                         headerLeft: () => (
                             <TouchableOpacity
                                 style={{ marginLeft: 16 }}
