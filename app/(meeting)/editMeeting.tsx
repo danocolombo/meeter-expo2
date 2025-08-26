@@ -5,6 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 const EditMeetingScreen = () => {
     const params = useLocalSearchParams();
     let id = params?.id;
+    const from = params?.from;
     if (Array.isArray(id)) {
         id = id[0];
     }
@@ -15,7 +16,7 @@ const EditMeetingScreen = () => {
         if (id) {
             router.push({
                 pathname: '/(meeting)/[id]',
-                params: { id: String(id) },
+                params: { id: String(id), from },
             });
         } else {
             router.push('/(meeting)/[id]');

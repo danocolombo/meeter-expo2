@@ -23,15 +23,17 @@ export default function MeetingStackLayout() {
                                 style={{ marginLeft: 16 }}
                                 onPress={() => {
                                     if (from === 'historic') {
-                                        router.push(
+                                        router.replace(
                                             '/(drawer)/(meetings)/historic'
                                         );
                                     } else if (from === 'active') {
-                                        router.push(
+                                        router.replace(
                                             '/(drawer)/(meetings)/active'
                                         );
                                     } else {
-                                        router.back();
+                                        router.replace(
+                                            '/(drawer)/(meetings)/active'
+                                        ); // fallback to active if no origin
                                     }
                                 }}
                             >
@@ -48,7 +50,7 @@ export default function MeetingStackLayout() {
                                 onPress={() => {
                                     router.push({
                                         pathname: '/(meeting)/editMeeting',
-                                        params: id ? { id } : undefined,
+                                        params: id ? { id, from } : undefined,
                                     });
                                 }}
                             >
@@ -66,9 +68,10 @@ export default function MeetingStackLayout() {
                 name='editMeeting'
                 options={({ route }) => {
                     const params = route?.params as
-                        | { id?: string | number }
+                        | { id?: string | number; from?: string }
                         | undefined;
                     const editId = params?.id;
+                    const from = params?.from;
                     return {
                         headerLeft: () => (
                             <TouchableOpacity
@@ -77,7 +80,7 @@ export default function MeetingStackLayout() {
                                     if (editId !== undefined) {
                                         router.push({
                                             pathname: '/(meeting)/[id]',
-                                            params: { id: editId },
+                                            params: { id: editId, from },
                                         });
                                     } else {
                                         router.push('/(meeting)/[id]');
