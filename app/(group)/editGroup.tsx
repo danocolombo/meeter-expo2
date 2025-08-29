@@ -10,7 +10,9 @@ const GroupEdit = () => {
     }>();
 
     const handleSave = () => {
-        console.log(`${id} updated`);
+        console.log(
+            `Group ID: ${id} updated. Meeting ID: ${fromMeetingId ?? 'none'}`
+        );
         if (fromMeetingId) {
             router.replace({
                 pathname: '/(meeting)/[id]',

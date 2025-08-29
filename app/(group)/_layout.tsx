@@ -41,8 +41,35 @@ const Layout = () => {
             />
             <Stack.Screen
                 name='editGroup'
-                options={{
-                    title: 'Edit Group',
+                options={({ route }) => {
+                    const params = route?.params as
+                        | { fromMeetingId?: string }
+                        | undefined;
+                    const fromMeetingId = params?.fromMeetingId;
+                    return {
+                        title: 'Edit Group',
+                        headerLeft: () => (
+                            <TouchableOpacity
+                                style={{ marginLeft: 16 }}
+                                onPress={() => {
+                                    if (fromMeetingId) {
+                                        router.replace({
+                                            pathname: '/(meeting)/[id]',
+                                            params: { id: fromMeetingId },
+                                        });
+                                    } else {
+                                        router.replace('/(meeting)/[id]');
+                                    }
+                                }}
+                            >
+                                <Text
+                                    style={{ color: '#007AFF', fontSize: 16 }}
+                                >
+                                    Cancel
+                                </Text>
+                            </TouchableOpacity>
+                        ),
+                    };
                 }}
             />
             <Stack.Screen

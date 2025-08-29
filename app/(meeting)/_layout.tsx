@@ -1,11 +1,24 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { Text, TouchableOpacity } from 'react-native';
+import { MeetingFromProvider, useMeetingFrom } from './MeetingFromContext';
 
-export default function MeetingStackLayout() {
+function MeetingStackLayoutInner() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    const { from } = params;
-    console.log('from param:', from, typeof from);
+    const { from: paramFrom } = params;
+    const { from, setFrom } = useMeetingFrom();
+
+    useEffect(() => {
+        if (paramFrom && paramFrom !== from) {
+            setFrom(paramFrom as string);
+        }
+    }, [paramFrom, from, setFrom]);
+
+    // Use context 'from' if param is missing
+    const getFrom = (routeParams: any) => {
+        return routeParams?.from || from;
+    };
 
     return (
         <Stack screenOptions={{ headerShown: true }}>
@@ -15,18 +28,18 @@ export default function MeetingStackLayout() {
                     const params = route?.params as
                         | { id?: string; from?: string }
                         | undefined;
-                    const from = params?.from;
+                    const fromValue = getFrom(params);
                     const id = params?.id;
                     return {
                         headerLeft: () => (
                             <TouchableOpacity
                                 style={{ marginLeft: 16 }}
                                 onPress={() => {
-                                    if (from === 'historic') {
+                                    if (fromValue === 'historic') {
                                         router.replace(
                                             '/(drawer)/(meetings)/historic'
                                         );
-                                    } else if (from === 'active') {
+                                    } else if (fromValue === 'active') {
                                         router.replace(
                                             '/(drawer)/(meetings)/active'
                                         );
@@ -50,7 +63,9 @@ export default function MeetingStackLayout() {
                                 onPress={() => {
                                     router.push({
                                         pathname: '/(meeting)/editMeeting',
-                                        params: id ? { id, from } : undefined,
+                                        params: id
+                                            ? { id, from: fromValue }
+                                            : undefined,
                                     });
                                 }}
                             >
@@ -71,7 +86,7 @@ export default function MeetingStackLayout() {
                         | { id?: string | number; from?: string }
                         | undefined;
                     const editId = params?.id;
-                    const from = params?.from;
+                    const fromValue = getFrom(params);
                     return {
                         title: 'Edit Meeting',
                         headerLeft: () => (
@@ -81,7 +96,10 @@ export default function MeetingStackLayout() {
                                     if (editId !== undefined) {
                                         router.push({
                                             pathname: '/(meeting)/[id]',
-                                            params: { id: editId, from },
+                                            params: {
+                                                id: editId,
+                                                from: fromValue,
+                                            },
                                         });
                                     } else {
                                         router.push('/(meeting)/[id]');
@@ -105,17 +123,17 @@ export default function MeetingStackLayout() {
                     const params = route?.params as
                         | { from?: string }
                         | undefined;
-                    const from = params?.from;
+                    const fromValue = getFrom(params);
                     return {
                         headerLeft: () => (
                             <TouchableOpacity
                                 style={{ marginLeft: 16 }}
                                 onPress={() => {
-                                    if (from === 'active') {
+                                    if (fromValue === 'active') {
                                         router.replace(
                                             '/(drawer)/(meetings)/active'
                                         );
-                                    } else if (from === 'historic') {
+                                    } else if (fromValue === 'historic') {
                                         router.replace(
                                             '/(drawer)/(meetings)/historic'
                                         );
@@ -135,5 +153,13 @@ export default function MeetingStackLayout() {
                 }}
             />
         </Stack>
+    );
+}
+
+export default function MeetingStackLayout() {
+    return (
+        <MeetingFromProvider>
+            <MeetingStackLayoutInner />
+        </MeetingFromProvider>
     );
 }
