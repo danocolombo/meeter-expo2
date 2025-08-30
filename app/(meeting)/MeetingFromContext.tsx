@@ -1,3 +1,5 @@
+// Default export to satisfy Expo Router
+export default MeetingFromProvider;
 // ===============================
 // TEMPORARY GLOBAL VARIABLE IMPLEMENTATION
 // ---------------------------------------

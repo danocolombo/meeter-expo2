@@ -48,3 +48,36 @@ export interface Meeting {
     youth_count: number;
     organization_id: string;
 }
+
+export interface Affiliation {
+    id: string;
+    created_at: string;
+    updated_at: string;
+    role: string;
+    status: string;
+    person_id: string;
+    organization_id: string;
+    aws_person_id: string;
+    aws_org_id: string;
+    aws_id: string;
+}
+
+export interface Person {
+    id: string;
+    created_at: string;
+    updated_at: string;
+    sub: string;
+    username: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    shirt: string;
+    birthday: string;
+    picture: string;
+    default_org_id: string;
+    location_id: string;
+    aws_id: string;
+    aws_def_org_id: string;
+    aws_location_id: string;
+}

@@ -5,6 +5,8 @@
     "source.sortMembers": "explicit"
   },
   "cSpell.words": [
-    "cofacilitator"
-  ]
+    "cofacilitator",
+    "uiils"
+  ],
+  "postman.settings.dotenv-detection-notification-visibility": false
 }
