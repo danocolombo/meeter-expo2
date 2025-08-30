@@ -1,35 +1,45 @@
-import { router } from 'expo-router';
+import { getActiveMeetings } from '@/uiils/api';
+import { useQuery } from '@tanstack/react-query';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
+
+const organizationId = process.env.EXPO_PUBLIC_ORGANIZATION_ID;
 
 const ActiveMeetings = () => {
+    const {
+        data: meetings,
+        isLoading,
+        error,
+    } = useQuery({
+        queryKey: ['activeMeetings', organizationId],
+        queryFn: () => getActiveMeetings(organizationId || ''),
+    });
+
+    if (isLoading)
+        return (
+            <View style={styles.container}>
+                <Text style={styles.text}>Loading...</Text>
+            </View>
+        );
+    if (error)
+        return (
+            <View style={styles.container}>
+                <Text style={styles.text}>Error loading meetings</Text>
+            </View>
+        );
+
     return (
         <View style={styles.container}>
-            <Text style={styles.text}>ActiveMeetings</Text>
-
-            <TouchableOpacity
-                style={styles.link}
-                onPress={() =>
-                    router.push({
-                        pathname: '/(meeting)/[id]',
-                        params: { id: '100', from: 'active' },
-                    })
-                }
-            >
-                <Text style={styles.linkText}>Meeting 100</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-                style={styles.link}
-                onPress={() =>
-                    router.push({
-                        pathname: '/(meeting)/[id]',
-                        params: { id: '101', from: 'active' },
-                    })
-                }
-            >
-                <Text style={styles.linkText}>Meeting 101</Text>
-            </TouchableOpacity>
+            <Text style={styles.text}>Active Meetings</Text>
+            <FlatList
+                data={meetings || []}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                    <Text style={{ marginBottom: 12 }}>
+                        {item.meeting_date}
+                    </Text>
+                )}
+            />
         </View>
     );
 };

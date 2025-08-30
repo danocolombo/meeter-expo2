@@ -1,34 +1,7 @@
-import { Affiliation, Person } from '@/types/interfaces';
+import { Affiliation, Meeting, Person } from '@/types/interfaces';
 const API_URL = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
 const API_TOKEN = process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
-export interface Product {
-    id: number;
-    title: string;
-    price: number;
-    description: string;
-    category: string;
-    image: string;
-    rating: Rating;
-}
 
-export interface Rating {
-    rate: number;
-    count: number;
-}
-
-export const getProducts = async (): Promise<Product[]> => {
-    const response = await fetch(`${API_URL}/products`);
-    const fake = {
-        title: 'Shiny product',
-        price: 109.95,
-        description: 'Looks like a regular product',
-        category: "men's clothing",
-        image: 'https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg',
-        rating: { rate: 3.9, count: 120 },
-    };
-    const json = await response.json();
-    return [...json, fake];
-};
 //      ########################################
 //      PERSON, JERICHO AUTHORIZATION
 //      ########################################
@@ -57,7 +30,23 @@ export const getPersonBySub = async (id: string): Promise<Person> => {
     if (json.status === 200 && json.data && Array.isArray(json.data.data)) {
         return json.data.data[0];
     }
-    return undefined;
+    return {
+        id: '',
+        first_name: '',
+        last_name: '',
+        email: '',
+        created_at: '',
+        updated_at: '',
+        sub: '',
+        username: '',
+        phone: '',
+        avatar: '',
+        bio: '',
+        organization_id: '',
+        role: '',
+        status: '',
+        // Add any other required fields from the Person interface with default values
+    };
 };
 
 //      ########################################
@@ -85,4 +74,63 @@ export const getOrganizationAffiliations = async (
 ): Promise<Product> => {
     const response = await fetch(`${API_URL}/affiliations/organization/${id}`);
     return response.json();
+};
+
+//      ########################################
+//      MEETINGS
+//      ########################################
+export const getActiveMeetings = async (id: string): Promise<Meeting[]> => {
+    const response = await fetch(
+        `${API_URL}/meetings/${id}?active=2025-08-30`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${API_TOKEN}`,
+            },
+        }
+    );
+
+    const json = await response.json();
+
+    if (json.status === 200 && json.data && Array.isArray(json.data.data)) {
+        return json.data.data;
+    }
+    // Return a default Meeting object with all required properties
+    return {
+        id: '',
+        meeting_date: '',
+        title: '',
+        meeting_type: '',
+        mtg_comp_key: '',
+        announcements_contact: '',
+        attendance_count: 0,
+        av_contact: '',
+        cafe_contact: '',
+        cafe_count: 0,
+        children_contact: '',
+        children_count: 0,
+        cleanup_contact: '',
+        closing_contact: '',
+        donations: 0,
+        facilitator_contact: '',
+        greeter_contact1: '',
+        greeter_contact2: '',
+        meal: '',
+        meal_contact: '',
+        meal_count: 0,
+        newcomers_count: '',
+        notes: '',
+        nursery_contact: '',
+        nursery_count: 0,
+        resource_contact: 0,
+        security_contact: '',
+        setup_contact: '',
+        support_contact: '',
+        transportation_contact: '',
+        transportation_count: 0,
+        worship: '',
+        youth_contact: '',
+        youth_count: 0,
+        organization_id: '',
+    };
 };
