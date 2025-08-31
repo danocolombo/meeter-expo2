@@ -1,11 +1,27 @@
+import MeetingListCard from '@/components/MeetingListCard';
 import { getActiveMeetings } from '@/uiils/api';
 import { useQuery } from '@tanstack/react-query';
-import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const organizationId = process.env.EXPO_PUBLIC_ORGANIZATION_ID;
 
 const ActiveMeetings = () => {
+    // const renderMeeting = useCallback(({ item }: { item: any }) => {
+    //     return <MeetingListCard meeting={item} />;
+    // }, []);
+
+    // const renderMeeting1 = useCallback(({ item }: { item: Meeting }) => {
+    //     return <MeetingListCard meeting={item} />;
+    // }, []);
+    const renderMeeting = useCallback(({ item }: { item: Meeting }) => {
+        return (
+            <View style={styles.itemContainer}>
+                <MeetingListCard meeting={item} />
+            </View>
+        );
+    }, []);
+
     const {
         data: meetings,
         isLoading,
@@ -31,15 +47,17 @@ const ActiveMeetings = () => {
     return (
         <View style={styles.container}>
             <Text style={styles.text}>Active Meetings</Text>
-            <FlatList
-                data={meetings || []}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <Text style={{ marginBottom: 12 }}>
-                        {item.meeting_date}
-                    </Text>
-                )}
-            />
+            <ScrollView
+                style={{ width: '100%' }}
+                contentContainerStyle={{ flexGrow: 1 }}
+            >
+                <FlatList
+                    data={meetings || []}
+                    renderItem={renderMeeting}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={{ alignItems: 'center' }}
+                />
+            </ScrollView>
         </View>
     );
 };
@@ -57,6 +75,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 16,
+    },
+    itemContainer: {
+        width: '100%',
+        paddingHorizontal: 15,
+        marginVertical: 8,
     },
     link: {
         marginTop: 24,
