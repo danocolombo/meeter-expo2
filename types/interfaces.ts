@@ -10,6 +10,14 @@ export interface Group {
     notes: string | null;
     meeting_id: string;
 }
+export interface FullGroup extends Group {
+    created_at: string | null;
+    updated_at: string | null;
+    aws_id: string | null;
+    aws_mtg_id: string | null;
+    aws_org_id: string | null;
+    organization_id: string | null;
+}
 
 export interface Meeting {
     id: string;
@@ -47,6 +55,14 @@ export interface Meeting {
     youth_contact: string;
     youth_count: number;
     organization_id: string;
+}
+export interface FullMeeting extends Meeting {
+    created_at: string | null;
+    updated_at: string | null;
+    aws_id: string | null;
+    aws_mtg_id: string | null;
+    aws_org_id: string | null;
+    groups: FullGroup[] | null;
 }
 
 export interface Affiliation {

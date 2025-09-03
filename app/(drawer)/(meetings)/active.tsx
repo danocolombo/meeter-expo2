@@ -2,7 +2,7 @@ import MeetingListCard from '@/components/MeetingListCard';
 import { getActiveMeetings } from '@/uiils/api';
 import { useQuery } from '@tanstack/react-query';
 import React, { useCallback } from 'react';
-import { FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 const organizationId = process.env.EXPO_PUBLIC_ORGANIZATION_ID;
 
@@ -47,17 +47,12 @@ const ActiveMeetings = () => {
     return (
         <View style={styles.container}>
             <Text style={styles.text}>Active Meetings</Text>
-            <ScrollView
-                style={{ width: '100%' }}
-                contentContainerStyle={{ flexGrow: 1 }}
-            >
-                <FlatList
-                    data={meetings || []}
-                    renderItem={renderMeeting}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ alignItems: 'center' }}
-                />
-            </ScrollView>
+            <FlatList
+                data={meetings || []}
+                renderItem={renderMeeting}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={{ alignItems: 'center' }}
+            />
         </View>
     );
 };

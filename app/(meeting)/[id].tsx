@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 const MeetingDetails = () => {
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const { id, org_id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const [groups, setGroups] = React.useState<Group[]>([]);
 
@@ -55,6 +55,7 @@ const MeetingDetails = () => {
     return (
         <View style={styles.container}>
             <Text>Meeting Details for {id}</Text>
+            <Text>Organization ID: {org_id}</Text>
             <View style={styles.linkRow}>
                 <Text>Groups:</Text>
             </View>
