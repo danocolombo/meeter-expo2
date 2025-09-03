@@ -11,11 +11,19 @@ const MeetingListCard = ({ meeting }: MeetingListCardProps) => {
     return (
         <Pressable
             style={styles.meetingCard}
-            onPress={() => router.push(`/(meeting)/${meeting.id}`)}
+            onPress={() =>
+                router.push(
+                    `/(meeting)/${meeting.id}?org_id=${encodeURIComponent(
+                        meeting.organization_id
+                    )}`
+                )
+            }
         >
             <View>
                 <Text>{meeting.meeting_date}</Text>
                 <Text>{meeting.title}</Text>
+                <Text>ID: {meeting.id}</Text>
+                <Text>Organization ID: {meeting.organization_id}</Text>
             </View>
         </Pressable>
     );

@@ -143,7 +143,16 @@ export const getAMeeting = async (
     org_id: string,
     meeting_id: string
 ): Promise<FullMeeting> => {
-    const response = await fetch(`${API_URL}/meeting/${org_id}/${meeting_id}`, {
+    // Debug: show arguments and constructed API path
+    console.log(
+        '[getAMeeting] Called with org_id:',
+        org_id,
+        'meeting_id:',
+        meeting_id
+    );
+    const apiPath = `${API_URL}/meeting/${org_id}/${meeting_id}`;
+    console.log('[getAMeeting] API path:', apiPath);
+    const response = await fetch(apiPath, {
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${API_TOKEN}`,
@@ -151,54 +160,53 @@ export const getAMeeting = async (
     });
 
     const json = await response.json();
-    //* ***********************************
-    //* THIS WILL RETURN A MEETING WITH
-    //* GROUPS ARRAY
-    //* ***********************************
-
+    console.log('[getAMeeting] API response JSON:', json);
     if (json.status === 200 && json.data) {
-        console.log('FullMeeting data:\n', json.data); // Debug log to inspect the data structure
+        console.log('[getAMeeting] FullMeeting data:', json.data);
         return json.data;
     }
-    // Return a default Meeting object with all required properties
-    return [
-        {
-            id: '',
-            meeting_date: '',
-            title: '',
-            meeting_type: '',
-            mtg_comp_key: '',
-            announcements_contact: '',
-            attendance_count: 0,
-            av_contact: '',
-            cafe_contact: '',
-            cafe_count: 0,
-            children_contact: '',
-            children_count: 0,
-            cleanup_contact: '',
-            closing_contact: '',
-            donations: 0,
-            facilitator_contact: '',
-            greeter_contact1: '',
-            greeter_contact2: '',
-            groups: [],
-            meal: '',
-            meal_contact: '',
-            meal_count: 0,
-            newcomers_count: '',
-            notes: '',
-            nursery_contact: '',
-            nursery_count: 0,
-            resource_contact: 0,
-            security_contact: '',
-            setup_contact: '',
-            support_contact: '',
-            transportation_contact: '',
-            transportation_count: 0,
-            worship: '',
-            youth_contact: '',
-            youth_count: 0,
-            organization_id: '',
-        },
-    ];
+    // Return a default FullMeeting object with all required properties
+    return {
+        id: '',
+        meeting_date: '',
+        title: '',
+        meeting_type: '',
+        mtg_comp_key: '',
+        announcements_contact: '',
+        attendance_count: 0,
+        av_contact: '',
+        cafe_contact: '',
+        cafe_count: 0,
+        children_contact: '',
+        children_count: 0,
+        cleanup_contact: '',
+        closing_contact: '',
+        donations: 0,
+        facilitator_contact: '',
+        greeter_contact1: '',
+        greeter_contact2: '',
+        meal: '',
+        meal_contact: '',
+        meal_count: 0,
+        newcomers_count: '',
+        notes: '',
+        nursery_contact: '',
+        nursery_count: 0,
+        resource_contact: 0,
+        security_contact: '',
+        setup_contact: '',
+        support_contact: '',
+        transportation_contact: '',
+        transportation_count: 0,
+        worship: '',
+        youth_contact: '',
+        youth_count: 0,
+        organization_id: '',
+        created_at: null,
+        updated_at: null,
+        aws_id: null,
+        aws_mtg_id: null,
+        aws_org_id: null,
+        groups: null,
+    };
 };

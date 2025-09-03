@@ -1,7 +1,10 @@
-import { Group } from '@/types/interfaces';
+import { FullMeeting, Group } from '@/types/interfaces';
+import { getAMeeting } from '@/uiils/api';
+import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {
+    ActivityIndicator,
     FlatList,
     StyleSheet,
     Text,
@@ -10,52 +13,59 @@ import {
 } from 'react-native';
 
 const MeetingDetails = () => {
-    const { id, org_id } = useLocalSearchParams<{ id: string }>();
+    const { id, org_id } = useLocalSearchParams<{
+        id: string;
+        org_id: string;
+    }>();
     const router = useRouter();
     const [groups, setGroups] = React.useState<Group[]>([]);
+    const [meeting, setMeeting] = React.useState<FullMeeting | null>(null);
+    const [isLoading, setIsLoading] = React.useState(false);
 
-    React.useEffect(() => {
-        function generateUUID() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
-                /[xy]/g,
-                function (c) {
-                    const r = (Math.random() * 16) | 0,
-                        v = c === 'x' ? r : (r & 0x3) | 0x8;
-                    return v.toString(16);
+    useFocusEffect(
+        React.useCallback(() => {
+            let isActive = true;
+            console.log('[id] id:', id);
+            console.log('[id] org_id:', org_id);
+            async function fetchMeeting() {
+                if (!id || !org_id) return;
+                setIsLoading(true);
+                try {
+                    const fetchedMeeting: FullMeeting = await getAMeeting(
+                        org_id,
+                        id
+                    );
+                    if (isActive) {
+                        setMeeting(fetchedMeeting);
+                        if (fetchedMeeting.groups)
+                            setGroups(fetchedMeeting.groups);
+                    }
+                } catch (error) {
+                    if (isActive)
+                        console.error('Error fetching meeting:', error);
+                } finally {
+                    if (isActive) setIsLoading(false);
                 }
-            );
-        }
-        const one: Group = {
-            id: generateUUID(),
-            grp_comp_key: '2025#08#25#ABC',
-            title: 'A test',
-            location: 'Left 1',
-            gender: 'M',
-            attendance: 5,
-            facilitator: 'Joe',
-            cofacilitator: 'Tom',
-            notes: 'A note',
-            meeting_id: id,
-        };
-        const two: Group = {
-            id: generateUUID(),
-            grp_comp_key: '2025#08#25#DEF',
-            title: 'B test',
-            location: 'Right 1',
-            gender: 'F',
-            attendance: 3,
-            facilitator: 'Alice',
-            cofacilitator: 'Mary',
-            notes: 'Another note',
-            meeting_id: id,
-        };
-        setGroups([one, two]);
-    }, [id]);
+            }
+            fetchMeeting();
+            return () => {
+                isActive = false;
+            };
+        }, [id, org_id])
+    );
     // Removed unused generateUUID
+    if (isLoading || !meeting) {
+        return (
+            <View style={styles.container}>
+                <Text>Loading meeting...</Text>
+                <ActivityIndicator size='large' color='#F2A310' />
+            </View>
+        );
+    }
     return (
         <View style={styles.container}>
-            <Text>Meeting Details for {id}</Text>
-            <Text>Organization ID: {org_id}</Text>
+            <Text>Meeting Details for {meeting.id}</Text>
+            <Text>Organization ID: {meeting.organization_id}</Text>
             <View style={styles.linkRow}>
                 <Text>Groups:</Text>
             </View>
