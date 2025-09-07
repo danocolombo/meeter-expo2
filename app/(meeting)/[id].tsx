@@ -1,3 +1,7 @@
+import theme from '@/assets/Colors';
+import GroupListCard from '@/components/GroupListCard';
+import MeetingMealInfo from '@/components/MeetingMealInfo';
+import DateStack from '@/components/ui/DateStack';
 import { FullMeeting, Group } from '@/types/interfaces';
 import { getAMeeting } from '@/uiils/api';
 import { useFocusEffect } from '@react-navigation/native';
@@ -11,6 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+const Colors = theme.colors;
 
 const MeetingDetails = () => {
     const { id, org_id } = useLocalSearchParams<{
@@ -25,8 +30,6 @@ const MeetingDetails = () => {
     useFocusEffect(
         React.useCallback(() => {
             let isActive = true;
-            console.log('[id] id:', id);
-            console.log('[id] org_id:', org_id);
             async function fetchMeeting() {
                 if (!id || !org_id) return;
                 setIsLoading(true);
@@ -56,37 +59,46 @@ const MeetingDetails = () => {
     // Removed unused generateUUID
     if (isLoading || !meeting) {
         return (
-            <View style={styles.container}>
+            <View style={localStyles.container}>
                 <Text>Loading meeting...</Text>
-                <ActivityIndicator size='large' color='#F2A310' />
+                <ActivityIndicator
+                    size='large'
+                    color={Colors.activityIndicator}
+                />
             </View>
         );
     }
+    const acknowledgePress = () => {
+        console.log('Acknowledging press');
+    };
+
     return (
-        <View style={styles.container}>
-            <Text>Meeting Details for {meeting.id}</Text>
-            <Text>Organization ID: {meeting.organization_id}</Text>
-            <View style={styles.linkRow}>
+        <View style={[localStyles.container, localStyles.infoContainer]}>
+            <View style={localStyles.meetingInfoRow}>
+                <View style={{ flexShrink: 0 }}>
+                    <DateStack date={meeting.meeting_date} />
+                </View>
+                <View style={localStyles.meetingTitleContainer}>
+                    <Text
+                        style={localStyles.meetingTitleText}
+                        numberOfLines={2}
+                        ellipsizeMode='tail'
+                    >
+                        {meeting?.title}
+                    </Text>
+                    <Text>{meeting?.support_contact}</Text>
+                </View>
+            </View>
+            <View style={localStyles.meetingInfoRow}>
+                <MeetingMealInfo meeting={meeting} />
+            </View>
+            <View style={localStyles.linkRow}>
                 <Text>Groups:</Text>
             </View>
             <FlatList
                 data={groups}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <TouchableOpacity
-                        style={styles.link}
-                        onPress={() => {
-                            router.push(
-                                `/(group)/${item.id}?title=${encodeURIComponent(
-                                    item.title
-                                )}&fromMeetingId=${encodeURIComponent(id)}`
-                            );
-                        }}
-                    >
-                        <Text style={styles.linkText}>{item.title}</Text>
-                        <Text style={styles.linkText}>ID: {item.id}</Text>
-                    </TouchableOpacity>
-                )}
+                renderItem={({ item }) => <GroupListCard group={item} />}
             />
             <TouchableOpacity
                 style={{
@@ -118,11 +130,31 @@ const MeetingDetails = () => {
 
 export default MeetingDetails;
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
+    meetingInfoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        marginVertical: 8,
+    },
+    meetingTitleContainer: {
+        flex: 1,
+        marginLeft: 8,
+        justifyContent: 'center',
+    },
+    meetingTitleText: {
+        flexWrap: 'wrap',
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#293462', // You can use Colors from theme if preferred
+    },
+    infoContainer: {
+        marginHorizontal: 10,
+    },
     container: {
         flex: 1,
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: 'stretch',
     },
     linkRow: {
         marginTop: 24,
