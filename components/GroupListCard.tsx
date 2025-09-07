@@ -1,7 +1,7 @@
 import theme from '@/assets/Colors';
 import { GenderStrings } from '@/constants/meeter';
 import type { FullGroup, Group } from '@/types/interfaces';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {
     Pressable,
@@ -12,8 +12,9 @@ import {
 } from 'react-native';
 type GroupListCardProps = {
     group: Group | FullGroup;
+    fromMeetingId?: string;
 };
-const GroupListCard = ({ group }: GroupListCardProps) => {
+const GroupListCard = ({ group, fromMeetingId }: GroupListCardProps) => {
     const router = useRouter();
     // Type guard for gender keys
     const genderKeys: (keyof typeof GenderStrings)[] = ['m', 'f', 'x'];
@@ -24,17 +25,26 @@ const GroupListCard = ({ group }: GroupListCardProps) => {
         throw new Error('Function not implemented.');
     }
 
+    // Get org_id from parent params if available
+    const parentParams = useLocalSearchParams();
     return (
         <>
             <Pressable
                 style={localStyle.groupCard}
                 onPress={() => {
-                    const params = new URLSearchParams({
+                    const paramsObj: Record<string, string> = {
                         title: group.title ?? '',
                         location: group.location ?? '',
                         facilitator: group.facilitator ?? '',
                         gender: group.gender ?? '',
-                    }).toString();
+                    };
+                    if (fromMeetingId) {
+                        paramsObj.fromMeetingId = fromMeetingId;
+                    }
+                    if (parentParams.org_id) {
+                        paramsObj.org_id = String(parentParams.org_id);
+                    }
+                    const params = new URLSearchParams(paramsObj).toString();
                     router.push(`/(group)/${group.id}?${params}`);
                 }}
             >

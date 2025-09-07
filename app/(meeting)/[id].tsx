@@ -30,9 +30,15 @@ const MeetingDetails = () => {
     useFocusEffect(
         React.useCallback(() => {
             let isActive = true;
+            // Reset state before fetching
+            setMeeting(null);
+            setGroups([]);
+            setIsLoading(true);
             async function fetchMeeting() {
-                if (!id || !org_id) return;
-                setIsLoading(true);
+                if (!id || !org_id) {
+                    setIsLoading(false);
+                    return;
+                }
                 try {
                     const fetchedMeeting: FullMeeting = await getAMeeting(
                         org_id,
@@ -98,7 +104,9 @@ const MeetingDetails = () => {
             <FlatList
                 data={groups}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => <GroupListCard group={item} />}
+                renderItem={({ item }) => (
+                    <GroupListCard group={item} fromMeetingId={id} />
+                )}
             />
             <TouchableOpacity
                 style={{

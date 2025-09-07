@@ -3,8 +3,7 @@ import theme from '@/assets/Colors';
 import CustomButton from '@/components/ui/CustomButton';
 import GenderSelectors from '@/components/ui/GenderSelectors';
 import Input from '@/components/ui/Input';
-import { FullGroup } from '@/types/interfaces';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     KeyboardAvoidingView,
@@ -14,21 +13,18 @@ import {
     Text,
     View,
 } from 'react-native';
-type GroupProps = {
-    group: FullGroup;
-};
-
-const Group: React.FC<GroupProps> = (props) => {
+const Group = () => {
     const router = useRouter();
-    const { group } = props;
+    const params = useLocalSearchParams();
+    // params: { id, title, location, facilitator, gender }
     const [values, setValues] = useState({
-        id: group?.id ? group.id : null,
-        gender: group?.gender ? group.gender : 'x',
-        title: group?.title ? group.title : '',
-        location: group?.location ? group.location : '',
-        facilitator: group?.facilitator ? group.facilitator : '',
+        id: params.id ?? null,
+        gender: params.gender ?? 'x',
+        title: params.title ?? '',
+        location: params.location ?? '',
+        facilitator: params.facilitator ?? '',
     });
-    function setGenderValue(enteredValue) {
+    function setGenderValue(enteredValue: string) {
         setValues((curInputValues) => {
             return {
                 ...curInputValues,
@@ -37,15 +33,18 @@ const Group: React.FC<GroupProps> = (props) => {
         });
     }
     const [isLocationValid, setIsLocationValid] = useState(
-        (group?.location?.length ?? 0) > 2 ? true : false
+        (params.location?.length ?? 0) > 2 ? true : false
     );
     const [isTitleValid, setIsTitleValid] = useState(
-        group?.title?.length > 2 ? true : false
+        params.title?.length > 2 ? true : false
     );
     const [isFacilitatorValid, setIsFacilitatorValid] = useState(
-        (group?.facilitator?.length ?? 0) > 1 ? true : false
+        (params.facilitator?.length ?? 0) > 1 ? true : false
     );
-    function inputChangedHandler(inputIdentifier, enteredValue) {
+    function inputChangedHandler(
+        inputIdentifier: string,
+        enteredValue: string
+    ) {
         setValues((curInputValues) => {
             if (inputIdentifier === 'title') {
                 if (enteredValue.length < 3) {
@@ -80,8 +79,20 @@ const Group: React.FC<GroupProps> = (props) => {
         console.log('Form submitted:', values);
     };
     const handleFormCancel = () => {
-        // handleCancel();
-        console.log('Form cancelled');
+        // Navigate back to meeting page with id and org_id if available
+        if (params.fromMeetingId && params.org_id) {
+            router.replace({
+                pathname: '/(meeting)/[id]',
+                params: { id: params.fromMeetingId, org_id: params.org_id },
+            });
+        } else if (params.fromMeetingId) {
+            router.replace({
+                pathname: '/(meeting)/[id]',
+                params: { id: params.fromMeetingId },
+            });
+        } else {
+            router.replace('/(meeting)/[id]');
+        }
     };
     return (
         <SafeAreaView>
@@ -93,7 +104,6 @@ const Group: React.FC<GroupProps> = (props) => {
                             pick={values.gender}
                         />
                     </View>
-
                     <View style={localStyles.row}>
                         <Input
                             label='Group Title'
@@ -110,7 +120,6 @@ const Group: React.FC<GroupProps> = (props) => {
                                 placeholder: 'title of group...',
                                 style: { color: theme.colors.darkText },
                                 fontWeight: '500',
-
                                 letterSpacing: 0,
                                 onChangeText: inputChangedHandler.bind(
                                     this,
@@ -142,7 +151,6 @@ const Group: React.FC<GroupProps> = (props) => {
                                 marginHorizontal: 0,
                                 placeholder: 'planned location...',
                                 style: { color: theme.colors.darkText },
-
                                 fontWeight: '500',
                                 letterSpacing: 0,
                                 onChangeText: inputChangedHandler.bind(
@@ -198,7 +206,7 @@ const Group: React.FC<GroupProps> = (props) => {
                                 <View>
                                     <CustomButton
                                         text='SAVE'
-                                        bgColor={theme.colors.mediumGreen}
+                                        bgColor={theme.colors.success}
                                         fgColor={theme.colors.lightText}
                                         type='STANDARD'
                                         enabled={

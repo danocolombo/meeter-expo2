@@ -76,16 +76,30 @@ const Layout = () => {
                 name='[id]'
                 options={({ route }) => {
                     const params = route?.params as
-                        | { id?: string; fromMeetingId?: string }
+                        | {
+                              id?: string;
+                              fromMeetingId?: string;
+                              org_id?: string;
+                          }
                         | undefined;
                     const id = params?.id;
                     const fromMeetingId = params?.fromMeetingId;
+                    const org_id = params?.org_id;
                     return {
-                        headerLeft: () => (
+                            title: 'Group',
+                            headerLeft: () => (
                             <TouchableOpacity
                                 style={{ marginLeft: 16 }}
                                 onPress={() => {
-                                    if (fromMeetingId) {
+                                    if (fromMeetingId && org_id) {
+                                        router.replace({
+                                            pathname: '/(meeting)/[id]',
+                                            params: {
+                                                id: fromMeetingId,
+                                                org_id,
+                                            },
+                                        });
+                                    } else if (fromMeetingId) {
                                         router.replace({
                                             pathname: '/(meeting)/[id]',
                                             params: { id: fromMeetingId },
