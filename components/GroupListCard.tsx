@@ -91,9 +91,10 @@ const localStyle = StyleSheet.create({
         minWidth: '100%',
         flex: 1,
         gap: 8,
-        padding: 12,
+        padding: 1,
+        marginBottom: 10,
         borderRadius: 12,
-        backgroundColor: '#fff',
+        backgroundColor: theme.colors.cardBackground,
         boxShadow: '0 0 10px 0 rgba(0, 0, 0, 0.1)',
     },
     pressed: {
@@ -102,7 +103,7 @@ const localStyle = StyleSheet.create({
     groupItem: {
         marginVertical: 5,
         paddingBottom: 5,
-        backgroundColor: 'darkgrey',
+        backgroundColor: theme.colors.cardBackground,
         flexDirection: 'row',
         //justifyContent: 'space-between',
         borderRadius: 10,
@@ -113,10 +114,10 @@ const localStyle = StyleSheet.create({
         shadowOpacity: 0.4,
     },
     meetingCardActivePrimary: {
-        backgroundColor: theme.colors.groupActiveCard,
+        backgroundColor: theme.colors.cardBackground,
     },
     meetingCardHistoricPrimary: {
-        backgroundColor: theme.colors.groupHistoricCard,
+        backgroundColor: theme.colors.cardBackground,
     },
     wrapper: {
         flexDirection: 'row',
@@ -140,15 +141,10 @@ const localStyle = StyleSheet.create({
         width: '85%',
     },
     titleText: {
-        fontFamily: 'Roboto-Regular',
-        fontSize: 24,
-        paddingLeft: 0,
+        textAlign: 'left',
         letterSpacing: 0.5,
     },
     locationText: {
-        fontFamily: 'Roboto-Regular',
-        fontSize: 24,
-        paddingLeft: 0,
         textAlign: 'left',
         letterSpacing: 0.5,
     },

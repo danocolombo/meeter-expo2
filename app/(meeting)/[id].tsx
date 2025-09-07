@@ -102,7 +102,7 @@ const MeetingDetails = () => {
             />
             <TouchableOpacity
                 style={{
-                    backgroundColor: 'green',
+                    backgroundColor: theme.colors.blue,
                     padding: 16,
                     borderRadius: 8,
                     alignItems: 'center',
@@ -116,7 +116,7 @@ const MeetingDetails = () => {
             >
                 <Text
                     style={{
-                        color: 'white',
+                        color: theme.colors.white,
                         fontWeight: 'bold',
                         fontSize: 16,
                     }}
@@ -146,7 +146,7 @@ const localStyles = StyleSheet.create({
         flexWrap: 'wrap',
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#293462', // You can use Colors from theme if preferred
+        color: theme.colors.darkText,
     },
     infoContainer: {
         marginHorizontal: 10,
@@ -165,13 +165,13 @@ const localStyles = StyleSheet.create({
     link: {
         marginTop: 24,
         padding: 12,
-        backgroundColor: '#F2A310',
+        backgroundColor: theme.colors.link,
         borderRadius: 8,
         minWidth: 120,
         alignItems: 'center',
     },
     linkText: {
-        color: '#fff',
+        color: theme.colors.lightText,
         fontWeight: 'bold',
     },
 });
