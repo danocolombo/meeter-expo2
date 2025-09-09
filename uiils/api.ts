@@ -1,4 +1,10 @@
-import { Affiliation, FullMeeting, Meeting, Person } from '@/types/interfaces';
+import {
+    Affiliation,
+    FullGroup,
+    FullMeeting,
+    Meeting,
+    Person,
+} from '@/types/interfaces';
 const API_URL = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
 const API_TOKEN = process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
 
@@ -209,4 +215,23 @@ export const getAMeeting = async (
         aws_org_id: null,
         groups: null,
     };
+};
+//      ########################################
+//      DEFAULT ORGANIZATION GROUPS
+//      ########################################
+export const getDefaultGroups = async (id: string): Promise<FullGroup[]> => {
+    const response = await fetch(`${API_URL}/defaultgroups/${id}`, {
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${API_TOKEN}`,
+        },
+    });
+
+    const json = await response.json();
+
+    if (json.status === 200 && json.data && Array.isArray(json.data)) {
+        return json.data;
+    }
+    // Return a default Meeting object with all required properties
+    return [];
 };

@@ -97,3 +97,8 @@ export interface Person {
     aws_def_org_id: string;
     aws_location_id: string;
 }
+export interface ApiError {
+    status: number;
+    message: string;
+    details: string;
+}

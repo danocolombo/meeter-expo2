@@ -86,8 +86,8 @@ const Layout = () => {
                     const fromMeetingId = params?.fromMeetingId;
                     const org_id = params?.org_id;
                     return {
-                            title: 'Group',
-                            headerLeft: () => (
+                        title: 'Group',
+                        headerLeft: () => (
                             <TouchableOpacity
                                 style={{ marginLeft: 16 }}
                                 onPress={() => {
