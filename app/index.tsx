@@ -1,4 +1,4 @@
-import { getPersonBySub } from '@/uiils/api';
+import { getPersonBySub } from '@/utils/api';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';

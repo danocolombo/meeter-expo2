@@ -1,5 +1,5 @@
 import MeetingListCard from '@/components/MeetingListCard';
-import { getActiveMeetings } from '@/uiils/api';
+import { getActiveMeetings } from '@/utils/api';
 import { useQuery } from '@tanstack/react-query';
 import React, { useCallback } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';

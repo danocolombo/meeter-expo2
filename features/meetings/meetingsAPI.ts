@@ -1,27 +1,27 @@
+import { ApiError, FullGroup, FullMeeting } from '@/types/interfaces';
+import { printObject } from '@/utils/helpers';
 import axios from 'axios';
 import { formatInTimeZone } from 'date-fns-tz';
-import { printObject } from '../../utils/helpers';
-import { ApiError, MeetingType, GroupType } from '../../gauchoTypes';
 
 type UpdateMeetingType = {
     status: number;
     message: string;
     data: {
-        meeting: MeetingType;
+        meeting: FullMeeting;
     };
 };
 type UpdateGroupType = {
     status: number;
     message: string;
     data: {
-        meeting: MeetingType;
+        meeting: FullMeeting;
     };
 };
 export async function fetchActiveMeetings(
     apiToken: any,
     org_id: string
 ): Promise<
-    { data: MeetingType[]; currentPage: any; lastPage: any } | ApiError
+    { data: FullMeeting[]; currentPage: any; lastPage: any } | ApiError
 > {
     return new Promise((resolve, reject) => {
         function getTodaysDate() {
@@ -101,7 +101,7 @@ export async function fetchHistoricMeetings(
     apiToken: any,
     org_id: string
 ): Promise<
-    { data: MeetingType[]; currentPage: any; lastPage: any } | ApiError
+    { data: FullMeeting[]; currentPage: any; lastPage: any } | ApiError
 > {
     return new Promise((resolve, reject) => {
         function getTodaysDate() {
@@ -168,7 +168,7 @@ export async function fetchMeetingDetails(
     api_token: any,
     organization_id: string,
     meeting_id: string
-): Promise<{ data: MeetingType } | ApiError> {
+): Promise<{ data: FullMeeting } | ApiError> {
     return new Promise((resolve, reject) => {
         const endPoint = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
         const api2use = endPoint + `/meeting/${organization_id}/${meeting_id}`;
@@ -203,7 +203,7 @@ export async function fetchMeetingDetailsOLD(
     apiToken: any,
     org_id: string,
     meeting_id: string
-): Promise<{ meeting: MeetingType; groups: GroupType[] } | ApiError> {
+): Promise<{ meeting: FullMeeting; groups: FullGroup[] } | ApiError> {
     return new Promise((resolve, reject) => {
         console.log('🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶');
         console.log('MAPI:93->apiToken:', apiToken);
@@ -249,7 +249,7 @@ export async function fetchMeetingDetailsOLD(
         }
     });
 }
-type CreateNewGroupType = {
+type CreateNewFullGroup = {
     meeting_id: string;
     title: string;
     location: string;
@@ -262,9 +262,9 @@ type CreateNewGroupType = {
 };
 export async function createNewGroup(
     apiToken: any,
-    meeting: MeetingType,
+    meeting: FullMeeting,
     new_group: CreateNewGroupType
-): Promise<{ status: number; data: GroupType } | ApiError> {
+): Promise<{ status: number; data: FullGroup } | ApiError> {
     return new Promise((resolve, reject) => {
         try {
             //********************************
@@ -320,7 +320,7 @@ export async function createNewGroup(
 export async function createNewMeeting(
     apiToken: any,
     meeting: any
-): Promise<{ status: number; data: MeetingType } | ApiError> {
+): Promise<{ status: number; data: FullMeeting } | ApiError> {
     return new Promise((resolve, reject) => {
         // printObject('MAPI:209->meeting:', meeting);
         function convertKeysToSnakeCase(obj) {
@@ -617,7 +617,7 @@ export async function getNextHistoricPage(
     apiToken: any,
     org_id: string
 ): Promise<
-    { data: MeetingType[]; currentPage: any; lastPage: any } | ApiError
+    { data: FullMeeting[]; currentPage: any; lastPage: any } | ApiError
 > {
     return new Promise((resolve, reject) => {
         function getTodaysDate() {
@@ -676,7 +676,7 @@ export async function fetchHistoricPage(
 ): Promise<
     | {
           status: number;
-          data: MeetingType[];
+          data: FullMeeting[];
           currentPage: number;
           lastPage: number;
       }

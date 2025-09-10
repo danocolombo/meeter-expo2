@@ -1,33 +1,23 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 // import axios from 'axios';
-import { API, graphqlOperation } from 'aws-amplify';
-import * as queries from '../../jerichoQL/queries';
-import * as gQueries from '../../graphql/queries';
-import * as mutations from '../../jerichoQL/mutations';
-import * as gMutations from '../../graphql/mutations';
-import { createAWSUniqueID, printObject } from '../../utils/helpers';
-import groupsSlice from '../groups/groupsSlice';
+// import { API } from 'aws-amplify';
+import { ApiError, FullMeeting } from '@/types/interfaces';
+import { createAWSUniqueID, printObject } from '@/utils/helpers';
 import {
+    createNewGroup,
+    createNewMeeting,
+    deleteAGroup,
+    deleteAMeeting,
     fetchActiveMeetings,
     fetchHistoricMeetings,
-    fetchMeetingDetails,
-    createNewMeeting,
-    deleteAMeeting,
-    updateTheMeeting,
-    createNewGroup,
-    deleteAGroup,
-    updateAGroup,
     fetchHistoricPage,
+    fetchMeetingDetails,
+    updateAGroup,
+    updateTheMeeting,
 } from './meetingsAPI';
-import {
-    MeetingType,
-    GroupType,
-    ApiError,
-    groupUpdateResponseType,
-} from '../../gauchoTypes';
 interface MeetingDetailsResponse {
     data: {
-        currentMeeting: MeetingType;
+        currentMeeting: FullMeeting;
     };
 }
 interface GroupUpdateType {
@@ -46,7 +36,7 @@ interface FetchMeetingDetailsByIdArgs {
 }
 type RequestedPageType = {
     status: number;
-    data: MeetingType[];
+    data: FullMeeting[];
     currentPage: number;
     lastPage: number;
 };
@@ -60,43 +50,42 @@ export const getAllMeetings = createAsyncThunk(
     'meetings/getAllMeetings',
     async (inputs: any, thunkAPI) => {
         try {
-            const oId = inputs.orgId;
             const code = inputs.code;
-            const meetingList = await API.graphql({
-                query: queries.listMeetings,
-                variables: {
-                    filter: {
-                        organizationMeetingsId: {
-                            eq: inputs.orgId,
-                        },
-                    },
-                },
-            });
+            // const meetingList = await API.graphql({
+            //     query: queries.listMeetings,
+            //     variables: {
+            //         filter: {
+            //             organizationMeetingsId: {
+            //                 eq: inputs.orgId,
+            //             },
+            //         },
+            //     },
+            // });
 
             // Sort meetings by multiple criteria
-            const sortedMeetings = meetingList?.data?.listMeetings?.items
-                ? meetingList.data.listMeetings.items.sort((a, b) => {
-                      // First, compare by meetingDate in descending order
-                      const dateComparison = b.meetingDate.localeCompare(
-                          a.meetingDate
-                      );
-                      if (dateComparison !== 0) {
-                          return dateComparison;
-                      }
+            // const sortedMeetings = meetingList?.data?.listMeetings?.items
+            //     ? meetingList.data.listMeetings.items.sort((a, b) => {
+            //           // First, compare by meetingDate in descending order
+            //           const dateComparison = b.meetingDate.localeCompare(
+            //               a.meetingDate
+            //           );
+            //           if (dateComparison !== 0) {
+            //               return dateComparison;
+            //           }
 
-                      // Then, compare by meetingType in ascending order
-                      const typeComparison = a.meetingType.localeCompare(
-                          b.meetingType
-                      );
-                      if (typeComparison !== 0) {
-                          return typeComparison;
-                      }
+            //           // Then, compare by meetingType in ascending order
+            //           const typeComparison = a.meetingType.localeCompare(
+            //               b.meetingType
+            //           );
+            //           if (typeComparison !== 0) {
+            //               return typeComparison;
+            //           }
 
-                      // Finally, compare by title in ascending order
-                      return a.title.localeCompare(b.title);
-                  })
-                : [];
-            const allTheMeetingsSorted = sortedMeetings;
+            //           // Finally, compare by title in ascending order
+            //           return a.title.localeCompare(b.title);
+            //       })
+            //     : [];
+            // const allTheMeetingsSorted = sortedMeetings;
 
             const today = new Date();
             today.setHours(0, 0, 0, 0); // Set time to midnight
@@ -109,14 +98,14 @@ export const getAllMeetings = createAsyncThunk(
                 active: [],
                 historic: [],
             };
-            allTheMeetingsSorted.forEach((meeting) => {
-                if (meeting.mtgCompKey >= target) {
-                    summary.active.push(meeting);
-                } else {
-                    summary.historic.push(meeting);
-                }
-                summary.all.push(meeting);
-            });
+            // allTheMeetingsSorted.forEach((meeting) => {
+            //     if (meeting.mtgCompKey >= target) {
+            //         summary.active.push(meeting);
+            //     } else {
+            //         summary.historic.push(meeting);
+            //     }
+            //     summary.all.push(meeting);
+            // });
             summary.active.sort((a, b) =>
                 a.mtgCompKey < b.mtgCompKey ? -1 : 1
             );
@@ -128,8 +117,9 @@ export const getAllMeetings = createAsyncThunk(
             };
             return returnValue;
         } catch (error) {
-            printObject('MT:29-->getAllMeetingsG', { status: 'fail' });
-            throw new Error('MT:30-->Failed to getAllMeetingsG');
+            printObject('MT:123-->getAllMeetingsG', { status: 'fail' });
+            printObject('MT:124-->error:\n', error);
+            throw new Error('MT:125-->Failed to getAllMeetingsG');
         }
     }
 );
@@ -182,7 +172,7 @@ export const getActiveMeetings = createAsyncThunk(
     'meetings/getActiveMeetings',
     async (input, { getState, rejectWithValue }) => {
         try {
-            var d = new Date();
+            let d = new Date();
             const today = d?.toISOString().slice(0, 10);
             const state = getState();
             const filteredMeetings = state.meetings.meetings.filter(
@@ -212,7 +202,7 @@ export const getHistoricMeetings = createAsyncThunk(
     'meetings/getHistoricMeetings',
     async (input, { getState, rejectWithValue }) => {
         try {
-            var d = new Date();
+            let d = new Date();
             const today = d?.toISOString().slice(0, 10);
             const state = getState();
             // printObject('MT:51-->sample:\n', state.allMeetings[0]);
@@ -402,10 +392,10 @@ export const addDefaultGroups = createAsyncThunk(
                 delete inputInfo.createdAt;
                 delete inputInfo.updatedAt;
                 delete inputInfo.organizationDefaultGroupsId;
-                const results = await API.graphql({
-                    query: mutations.createGroup,
-                    variables: { input: inputInfo },
-                });
+                // const results = await API.graphql({
+                //     query: mutations.createGroup,
+                //     variables: { input: inputInfo },
+                // });
 
                 return inputInfo;
             });
@@ -666,7 +656,7 @@ export const updateMeeting = createAsyncThunk(
                 status: number;
                 message: string;
                 data: {
-                    meeting: MeetingType;
+                    meeting: FullMeeting;
                 };
             };
 
@@ -806,9 +796,6 @@ export const updateGroup = createAsyncThunk(
                 );
                 throw new Error('Failed to update group');
             }
-            printObject('MT:780-->groupUpdateResponse:\n', groupUpdateResponse);
-            console.log('meeting_id:', inputs?.meeting_id);
-            console.log('group_id:', inputs?.group_id);
 
             // let inputInfo = {
             //     ...inputs.group,

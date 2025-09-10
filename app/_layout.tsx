@@ -1,4 +1,4 @@
-import { store } from '@/app/store';
+import { store } from '@/utils/store';
 import { useReactQueryDevTools } from '@dev-plugins/react-query';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';

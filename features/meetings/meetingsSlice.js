@@ -1,39 +1,26 @@
+import { createSlice } from '@reduxjs/toolkit';
+import { isDateDashBeforeToday, printObject } from '../../utils/helpers';
 import {
-    createAction,
-    createSlice,
-    createAsyncThunk,
-    bindActionCreators,
-} from '@reduxjs/toolkit';
-import axios from 'axios';
-import { startOfDay, isBefore } from 'date-fns';
-import {
-    printObject,
-    getToday,
-    getPateDate,
-    getDateMinusDays,
-    isDateDashBeforeToday,
-} from '../../utils/helpers';
-import {
-    getSpecificMeeting,
-    getAllMeetings,
-    fetchAllMeetings,
-    refreshActiveMeetings,
-    updateMeeting,
     addDefaultGroups,
-    deleteGroupFromMeeting,
-    addMeeting as addMeetingLegacy,
     addGroup,
-    updateGroup,
+    addMeeting as addMeetingLegacy,
+    deleteGroupFromMeeting,
     deleteMeeting,
+    fetchAllMeetings,
     fetchMeetingDetailsById,
+    getAllMeetings,
+    getSpecificMeeting,
     loadHistoricPage,
+    refreshActiveMeetings,
     saveCurrentMeetingAndGroups,
     saveNewMeeting,
-    subscriptionUpdateMeeting,
-    subscriptionDeleteMeeting,
     subscriptionCreateGroup,
-    subscriptionUpdateGroup,
     subscriptionDeleteGroup,
+    subscriptionDeleteMeeting,
+    subscriptionUpdateGroup,
+    subscriptionUpdateMeeting,
+    updateGroup,
+    updateMeeting,
 } from './meetingsThunks';
 // helper function to append historic meetings for
 // pagination.
@@ -181,8 +168,6 @@ export const meetingsSlice = createSlice({
         },
         clearMeetingsSlice: (state) => {
             state.meetings = [];
-            // state.activeMeetings = [];
-            // state.historicMeetings = [];
             state.specificMeeting = {};
             state.groups = [];
             state.tmpMeeting = {};
@@ -419,26 +404,6 @@ export const meetingsSlice = createSlice({
                 state.isLoading = false;
                 return state;
 
-                //      THIS IS SKIPPED....
-                state.activeMeetings.forEach((meeting) => {
-                    const groupIndex = meeting.groups.findIndex(
-                        (group) => group.id === action.payload.group_id
-                    );
-                    if (groupIndex !== -1) {
-                        meeting.groups.splice(groupIndex, 1);
-                    }
-                });
-
-                state.historicMeetings.forEach((meeting) => {
-                    const groupIndex = meeting.groups.findIndex(
-                        (group) => group.id === action.payload.group_id
-                    );
-                    if (groupIndex !== -1) {
-                        meeting?.groups?.splice(groupIndex, 1);
-                    }
-                });
-                state.isLoading = false;
-                return state;
                 //* * * * * * * * * * * * * * * * * * * * *
                 //*  remove the group from the meeting
                 //* * * * * * * * * * * * * * * * * * * * *

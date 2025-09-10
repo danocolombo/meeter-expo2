@@ -3,7 +3,7 @@ import GroupListCard from '@/components/GroupListCard';
 import MeetingMealInfo from '@/components/MeetingMealInfo';
 import DateStack from '@/components/ui/DateStack';
 import { FullMeeting, Group } from '@/types/interfaces';
-import { getAMeeting } from '@/uiils/api';
+import { getAMeeting } from '@/utils/api';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
