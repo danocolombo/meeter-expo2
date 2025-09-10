@@ -9,6 +9,9 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Native iOS
+ios/
+
 # Native
 .kotlin/
 *.orig.*
@@ -17,6 +20,22 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Build artifacts
+build/
+
+# Coverage
+coverage/
+
+# Test snapshots
+__snapshots__/
+
+# Logs
+*.log
 
 # Metro
 .metro-health-check*
@@ -31,7 +50,7 @@ yarn-error.*
 *.pem
 
 # local env files
-.env*.local
+.env*
 
 # typescript
 *.tsbuildinfo
