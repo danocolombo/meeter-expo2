@@ -1,5 +1,5 @@
-import theme from '@/assets/Colors';
-import { MONTH_STRINGS } from '@/constants/meeter';
+import theme from '@assets/Colors';
+import { MONTH_STRINGS } from '@constants/meeter';
 import { Text, View } from 'react-native';
 
 const Colors = theme.colors;

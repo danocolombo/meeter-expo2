@@ -1,4 +1,4 @@
-import Selectors from '@/components/ui/Selectors';
+import Selectors from '@components/ui/Selectors';
 const GenderSelectors = ({ pick, setPick }) => {
     return (
         <>

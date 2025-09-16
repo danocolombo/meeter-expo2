@@ -1,6 +1,6 @@
-import { store } from '@/utils/store';
 import { useReactQueryDevTools } from '@dev-plugins/react-query';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { store } from '@utils/store';
 import { Slot } from 'expo-router';
 import { Provider } from 'react-redux';
 const queryClient = new QueryClient({

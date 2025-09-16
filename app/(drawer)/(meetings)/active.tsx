@@ -1,10 +1,10 @@
-import MeetingListCard from '@/components/MeetingListCard';
-import { getActiveMeetings } from '@/utils/api';
+import MeetingListCard from '@components/MeetingListCard';
 import { useQuery } from '@tanstack/react-query';
+import { getActiveMeetings } from '@utils/api';
 import React, { useCallback } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
-const organizationId = process.env.EXPO_PUBLIC_ORGANIZATION_ID;
+const organizationId = process.env.EXPO_PUBLIC_TEST_ORGANIZATION_ID;
 
 const ActiveMeetings = () => {
     // const renderMeeting = useCallback(({ item }: { item: any }) => {

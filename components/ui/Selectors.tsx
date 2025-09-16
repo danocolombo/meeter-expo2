@@ -1,4 +1,4 @@
-import theme from '@/assets/Colors';
+import theme from '@assets/Colors';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 const Selectors = ({
     label,

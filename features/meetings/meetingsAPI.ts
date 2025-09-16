@@ -1,7 +1,9 @@
-import { ApiError, FullGroup, FullMeeting } from '@/types/interfaces';
-import { printObject } from '@/utils/helpers';
-import axios from 'axios';
+import { printObject } from '@utils/helpers';
+import axios, { isAxiosError } from 'axios';
 import { formatInTimeZone } from 'date-fns-tz';
+import { ApiError, FullGroup, FullMeeting } from '../../types/interfaces';
+const API_URL = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
+const API_TOKEN = process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
 
 type UpdateMeetingType = {
     status: number;
@@ -24,36 +26,24 @@ export async function fetchActiveMeetings(
     { data: FullMeeting[]; currentPage: any; lastPage: any } | ApiError
 > {
     return new Promise((resolve, reject) => {
-        function getTodaysDate() {
-            const today = new Date();
-            //todo ==> get the timezone from currentUser prefs (profile)
-            const myLocalDate = formatInTimeZone(
-                today,
+        function getTodaysDateNY() {
+            // Use date-fns-tz to get current date in America/New_York timezone
+            return formatInTimeZone(
+                new Date(),
                 'America/New_York',
                 'yyyy-MM-dd'
-            ).toString();
-            // const myLocalDate = formatInTimeZone(
-            //     today,
-            //     'America/New_York',
-            //     'yyyy-MM-dd HH:mm:ssXXX'
-            // ).toString();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
-            const day = String(today.getDate()).padStart(2, '0');
-            return myLocalDate;
-            // return `${year}-${month}-${day}`;
+            );
         }
-        const target_date = getTodaysDate();
-        const endPoint = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
+        const target_date = getTodaysDateNY();
 
         const api2use =
-            endPoint +
-            `/meetings/${org_id}?active=${target_date}&direction=asc`;
+            API_URL + `/meetings/${org_id}?active=${target_date}&direction=asc`;
+
         axios
             .get(api2use, {
                 headers: {
                     'Content-type': 'application/json; charset=UTF-8',
-                    Authorization: `Bearer ${apiToken.plainTextToken}`,
+                    Authorization: `Bearer ${API_TOKEN}`,
                 },
                 validateStatus: function (status) {
                     return status === 200 || status === 404; // Accept both 200 and 404 as valid
@@ -61,6 +51,7 @@ export async function fetchActiveMeetings(
             })
             .then((response) => {
                 if (response?.data?.status === 404) {
+                    console.info('No Active Meetings');
                     const ourResults = {
                         data: [],
                         currentPage: 1,
@@ -84,11 +75,20 @@ export async function fetchActiveMeetings(
                 resolve(ourResults);
             })
             .catch((error) => {
-                console.error('🔴 75_API call failed:', error);
+                if (isAxiosError(error)) {
+                    console.error('🔴 82_API call failed:', {
+                        message: error.message,
+                        code: error.code,
+                        response: error.response?.data,
+                        status: error.response?.status,
+                        headers: error.response?.headers,
+                    });
+                } else {
+                    console.error('🔴 90_API call failed:', error);
+                }
                 const customError: ApiError = {
                     message: 'Failure getting active meetings.',
                     details: {
-                        // More specific error details based on the actual error response
                         ...(error.response && error.response.data),
                     },
                     status: 500,
@@ -113,16 +113,14 @@ export async function fetchHistoricMeetings(
             return `${year}-${month}-${day}`;
         }
         const target_date = getTodaysDate();
-        const endPoint = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
-
         const api2use =
-            endPoint +
+            API_URL +
             `/meetings/${org_id}?historic=${target_date}&direction=desc`;
         // printObject('@@@ MAPI:93->api2use:\n', api2use);
         axios
             .get(api2use, {
                 headers: {
-                    Authorization: `Bearer ${apiToken.plainTextToken}`,
+                    Authorization: `Bearer ${API_TOKEN}`,
                 },
             })
             .then((response) => {
@@ -170,13 +168,12 @@ export async function fetchMeetingDetails(
     meeting_id: string
 ): Promise<{ data: FullMeeting } | ApiError> {
     return new Promise((resolve, reject) => {
-        const endPoint = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
-        const api2use = endPoint + `/meeting/${organization_id}/${meeting_id}`;
+        const api2use = API_URL + `/meeting/${organization_id}/${meeting_id}`;
 
         axios
             .get(api2use, {
                 headers: {
-                    Authorization: `Bearer ${api_token.plainTextToken}`,
+                    Authorization: `Bearer ${API_TOKEN}`,
                 },
             })
             .then((response) => {
@@ -270,15 +267,14 @@ export async function createNewGroup(
             //********************************
             //* POST database call
             //********************************
-            const endPoint = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
             const config = {
                 headers: {
                     'Content-type': 'application/json; charset=UTF-8',
-                    Authorization: `Bearer ${apiToken.plainTextToken}`,
+                    Authorization: `Bearer ${API_TOKEN}`,
                 },
             };
             const body = new_group;
-            const api2use = endPoint + '/group';
+            const api2use = API_URL + '/group';
             axios
                 .post(api2use, body, config)
                 .then((response) => {
@@ -338,16 +334,15 @@ export async function createNewMeeting(
             //********************************
             //* POST database call
             //********************************
-            const endPoint = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
             const config = {
                 headers: {
                     'Content-type': 'application/json; charset=UTF-8',
-                    Authorization: `Bearer ${apiToken.plainTextToken}`,
+                    Authorization: `Bearer ${API_TOKEN}`,
                 },
             };
             const orgId = meeting.organization_id;
             const body = JSON.stringify(snake_meeting);
-            const api2use = endPoint + '/meeting';
+            const api2use = API_URL + '/meeting';
             axios
                 .post(api2use, body, config)
                 .then((response) => {
@@ -392,14 +387,12 @@ export async function deleteAMeeting(
 ): Promise<{ status: number; message: string; data: any } | ApiError> {
     return new Promise((resolve, reject) => {
         try {
-            const endPoint = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
-
             const api2use =
-                endPoint + `/meeting/${organization_id}/${meeting_id}`;
+                API_URL + `/meeting/${organization_id}/${meeting_id}`;
             axios
                 .delete(api2use, {
                     headers: {
-                        Authorization: `Bearer ${api_token.plainTextToken}`,
+                        Authorization: `Bearer ${API_TOKEN}`,
                     },
                 })
                 .then((response) => {
@@ -446,12 +439,11 @@ export async function deleteAGroup(
 ): Promise<{ status: number; message: string } | ApiError> {
     return new Promise((resolve, reject) => {
         try {
-            const endPoint = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
-            const api2use = endPoint + `/group/${group_id}`;
+            const api2use = API_URL + `/group/${group_id}`;
             axios
                 .delete(api2use, {
                     headers: {
-                        Authorization: `Bearer ${api_token.plainTextToken}`,
+                        Authorization: `Bearer ${API_TOKEN}`,
                     },
                 })
                 .then((response) => {
@@ -505,14 +497,12 @@ export async function updateTheMeeting(
         }
         const snake_meeting = convertKeysToSnakeCase(meeting);
         try {
-            const endPoint = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
-
             const api2use =
-                endPoint + `/meeting/${meeting.organization_id}/${meeting.id}`;
+                API_URL + `/meeting/${meeting.organization_id}/${meeting.id}`;
             axios
                 .put<UpdateMeetingType>(api2use, meeting, {
                     headers: {
-                        Authorization: `Bearer ${api_token.plainTextToken}`,
+                        Authorization: `Bearer ${API_TOKEN}`,
                     },
                 })
                 .then((response) => {
@@ -562,14 +552,12 @@ export async function updateAGroup(
             const group_id = inputs?.group_id;
             const group = inputs?.group;
 
-            const endPoint = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
-
-            const api2use = `${endPoint}/group/${group_id}`;
+            const api2use = `${API_URL}/group/${group_id}`;
             // endPoint + `/meeting/${meeting.organization_id}/${meeting.id}`;
             axios
                 .put<UpdateGroupType>(api2use, group, {
                     headers: {
-                        Authorization: `Bearer ${api_token.plainTextToken}`,
+                        Authorization: `Bearer ${API_TOKEN}`,
                     },
                 })
                 .then((response) => {
@@ -629,16 +617,14 @@ export async function getNextHistoricPage(
             return `${year}-${month}-${day}`;
         }
         const target_date = getTodaysDate();
-        const endPoint = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
-
         const api2use =
-            endPoint +
+            API_URL +
             `/meetings/${org_id}?historic=${target_date}&direction=desc`;
         // printObject('@@@ MAPI:93->api2use:\n', api2use);
         axios
             .get(api2use, {
                 headers: {
-                    Authorization: `Bearer ${apiToken.plainTextToken}`,
+                    Authorization: `Bearer ${API_TOKEN}`,
                 },
             })
             .then((response) => {
@@ -692,16 +678,14 @@ export async function fetchHistoricPage(
             return `${year}-${month}-${day}`;
         }
         const target_date = getTodaysDate();
-        const endPoint = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
-
         const api2use =
-            endPoint +
+            API_URL +
             `/meetings/${org_id}?historic=${target_date}&direction=desc&page=${page}`;
         // printObject('@@@ MAPI:93->api2use:\n', api2use);
         axios
             .get(api2use, {
                 headers: {
-                    Authorization: `Bearer ${apiToken.plainTextToken}`,
+                    Authorization: `Bearer ${API_TOKEN}`,
                 },
             })
             .then((response) => {

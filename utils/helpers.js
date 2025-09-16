@@ -1,5 +1,5 @@
+import { PHONE_REGX } from '@constants/meeter';
 import * as Crypto from 'expo-crypto';
-import { PHONE_REGX } from '../constants/meeter';
 ////import { format } from 'date-fns';
 
 const SHORT_MONTH = {

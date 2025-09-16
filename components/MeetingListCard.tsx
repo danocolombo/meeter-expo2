@@ -1,7 +1,7 @@
-import { Meeting } from '@/types/interfaces';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Meeting } from '../types/interfaces';
 
 interface MeetingListCardProps {
     meeting: Meeting;

@@ -1,4 +1,4 @@
-import theme from '@/assets/Colors';
+import theme from '@assets/Colors';
 import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 type CustomButtonProps = {

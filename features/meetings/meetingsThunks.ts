@@ -1,8 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 // import axios from 'axios';
 // import { API } from 'aws-amplify';
-import { ApiError, FullMeeting } from '@/types/interfaces';
-import { createAWSUniqueID, printObject } from '@/utils/helpers';
+import { ApiError, FullMeeting } from '../../types/interfaces';
+import { createAWSUniqueID, printObject } from '../../utils/helpers';
 import {
     createNewGroup,
     createNewMeeting,
@@ -160,7 +160,7 @@ export const fetchAllMeetings = createAsyncThunk(
             };
             return returnValue;
         } catch (error) {
-            printObject('🔴 MT:129-->fetchAllMeetings', {
+            printObject('🔴 MT:163-->fetchAllMeetings', {
                 status: 'fail',
                 error: error,
             });
@@ -747,9 +747,9 @@ export const addGroup = createAsyncThunk(
                 throw new Error('MT:216-->Failed to create group');
             }
         } catch (error) {
-            printObject('MT:235-->addGroup', inputs.group);
+            printObject('MT:741-->addGroup', inputs.group);
             // Rethrow the error to let createAsyncThunk handle it
-            throw new Error('MT:236-->Failed to add group');
+            throw new Error('MT:742-->Failed to add group');
         }
     }
 );
@@ -871,213 +871,7 @@ export const deleteMeeting = createAsyncThunk(
         }
     }
 );
-export const subscriptionCreateMeeting = createAsyncThunk(
-    'meetings/subscriptionCreateMeeting',
-    async (input, thunkAPI) => {
-        try {
-            //*===========================================
-            //* subscription input will be json object
-            //* required field is "__typename": "Meeting"
-            //*===========================================
-            const meeting = input.meeting;
-            const activeOrgId = input.activeOrgId;
-            if (meeting?.__typename === 'Meeting') {
-                const mtg = meeting;
-                delete mtg.__typename;
-                delete mtg.groups;
-                delete mtg.updatedAt;
-                delete mtg.createdAt;
-                // printObject('MT:530-->newSubscription', mtg);
-                return {
-                    meeting: mtg,
-                    activeOrgId: activeOrgId,
-                };
-            } else {
-                throw new Error('MT:515-->Failed to create meeting');
-            }
-        } catch (error) {
-            printObject(
-                'MT:519-->subscriptionCreateMeeting thunk try failure.\n',
-                error
-            );
-            throw new Error('MT:522-->Failed to createMeeting');
-        }
-    }
-);
-export const subscriptionDeleteMeeting = createAsyncThunk(
-    'meetings/subscriptionDeleteMeeting',
-    async (input, thunkAPI) => {
-        try {
-            //*===========================================
-            //* subscription input will be json object
-            //* required field is "__typename": "Meeting"
-            //*===========================================
-            printObject('MT:533-->input:\n', input);
-            return { id: input.id };
-            // const meeting = input.meeting;
-            // const activeOrgId = input.activeOrgId;
-            // if (meeting?.__typename === 'Meeting') {
-            //     const mtg = meeting;
-            //     delete mtg.__typename;
-            //     delete mtg.groups;
-            //     delete mtg.updatedAt;
-            //     delete mtg.createdAt;
-            //     // printObject('MT:530-->newSubscription', mtg);
-            //     return {
-            //         meeting: mtg,
-            //         activeOrgId: activeOrgId,
-            //     };
-            // } else {
-            //     throw new Error('MT:515-->Failed to delete meeting');
-            // }
-        } catch (error) {
-            printObject(
-                'MT:553-->subscriptionDeleteMeeting thunk try failure.\n',
-                error
-            );
-            throw new Error('MT:556-->Failed to deleteMeeting');
-        }
-    }
-);
-export const subscriptionUpdateMeeting = createAsyncThunk(
-    'meetings/subscriptionUpdateMeeting',
-    async (input, thunkAPI) => {
-        try {
-            //*===========================================
-            //* subscription input will be json object
-            //* required field is "__typename": "Meeting"
-            //*===========================================
-            const theMeeting = input;
-            delete theMeeting.organization.name;
-            return theMeeting;
-        } catch (error) {
-            printObject(
-                'MT:574-->subscriptionUpdateMeeting thunk try failure.\n',
-                error
-            );
-            throw new Error('MT:577-->Failed to subscriptionUpdateMeeting');
-        }
-    }
-);
-export const subscriptionCreateGroup = createAsyncThunk(
-    'meetings/subscriptionCreateGroup',
-    async (input, thunkAPI) => {
-        try {
-            //*===========================================
-            //* NOTE: only add group if id does not exist
-            //* in meeting.groups.index array
-            //*===========================================
-            const theGroup = input;
-            //* remove the meeting and organization items
-            const theGroupWithoutMeetingAndOrganization = {
-                ...theGroup,
-                meeting: undefined,
-                organization: undefined,
-            };
-            return theGroupWithoutMeetingAndOrganization;
-        } catch (error) {
-            printObject(
-                'MT:594-->subscriptionCreateGroup thunk try failure.\n',
-                error
-            );
-            throw new Error('MT:597-->Failed to subscriptionCreateGroup');
-        }
-    }
-);
-export const subscriptionUpdateGroup = createAsyncThunk(
-    'meetings/subscriptionUpdateGroup',
-    async (input, thunkAPI) => {
-        try {
-            //*===========================================
-            //* NOTE: subscriptions do not update GQL
-            //* only update the REDUX state
-            //*===========================================
-            const theGroup = input;
-            //* clean up group object
-            delete theGroup?.meeting;
-            delete theGroup?.organization;
-            delete theGroup?.createdAt;
-            delete theGroup?.updatedAt;
-            delete theGroup?.__typename;
 
-            const updatedGroup = {
-                ...theGroup,
-            };
-
-            return updatedGroup;
-        } catch (error) {
-            printObject(
-                'MT:614-->subscriptionUpdateGroup thunk try failure.\n',
-                error
-            );
-            throw new Error('MT:617-->Failed to subscriptionUpdateGroup');
-        }
-    }
-);
-export const subscriptionDeleteGroup1 = createAsyncThunk(
-    'meetings/subscriptionDeleteGroup',
-    async (input, thunkAPI) => {
-        try {
-            //*===========================================
-            //* NOTE: subscriptions do not update GQL
-            //* only update the REDUX state.
-            //* GRAPHQL delete subscriptions only provide
-            //* the id. So will need to check if the id
-            //* is even used in this affiliation.
-            //*===========================================
-            const state = thunkAPI.getState();
-            //get all the current meetings
-            const meetings = state.meetings.meetings;
-            let meetingIdFound = null;
-            console.log('input.groupId:', input.groupId);
-            const doesExist = meetings.some((meeting) => {
-                if (meeting.groups.items) {
-                    // Use Array.prototype.some() to check if an item with the specified id exists
-                    return meeting.groups.items.some(
-                        (item) => item.id === input.groupId
-                    );
-                }
-                return false;
-            });
-            console.log('group exists: ', doesExist);
-            if (doesExist) {
-                console.log('true if');
-                return { groupId: input.groupId };
-            } else {
-                console.log('false if');
-                throw new Error('MT:661-->subscriptionDeleteGroup ignored');
-            }
-        } catch (error) {
-            printObject(
-                'MT:682-->subscriptionDeleteGroup thunk try failure.\n',
-                error
-            );
-            throw new Error('MT:670-->Failed to subscriptionDeleteGroup');
-        }
-    }
-);
-export const subscriptionDeleteGroup = createAsyncThunk(
-    'meetings/subscriptionDeleteGroup',
-    async (input, thunkAPI) => {
-        const state = thunkAPI.getState();
-        const meetings = state.meetings.meetings;
-
-        const doesExist = meetings.some((meeting) => {
-            if (meeting.groups.items) {
-                return meeting.groups.items.some(
-                    (item) => item.id === input.groupId
-                );
-            }
-            return false;
-        });
-
-        if (doesExist) {
-            return { groupId: input.groupId };
-        } else {
-            throw new Error('MT:661-->subscriptionDeleteGroup ignored');
-        }
-    }
-);
 export const fetchNextHistoricPage = createAsyncThunk(
     'meetings/nextHistoricPage',
     async ({ api_token }, thunkAPI) => {

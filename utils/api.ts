@@ -4,7 +4,7 @@ import {
     FullMeeting,
     Meeting,
     Person,
-} from '@/types/interfaces';
+} from '../types/interfaces';
 const API_URL = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
 const API_TOKEN = process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
 

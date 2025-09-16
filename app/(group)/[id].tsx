@@ -1,8 +1,8 @@
 // ...existing code...
-import theme from '@/assets/Colors';
-import CustomButton from '@/components/ui/CustomButton';
-import GenderSelectors from '@/components/ui/GenderSelectors';
-import Input from '@/components/ui/Input';
+import theme from '@assets/Colors';
+import CustomButton from '@components/ui/CustomButton';
+import GenderSelectors from '@components/ui/GenderSelectors';
+import Input from '@components/ui/Input';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {

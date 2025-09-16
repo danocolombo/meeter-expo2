@@ -1,6 +1,6 @@
-import theme from '@/assets/Colors';
-import { GenderStrings } from '@/constants/meeter';
-import type { FullGroup, Group } from '@/types/interfaces';
+import theme from '@assets/Colors';
+import { GenderStrings } from '@constants/meeter';
+import type { FullGroup, Group } from '@types/interfaces';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {

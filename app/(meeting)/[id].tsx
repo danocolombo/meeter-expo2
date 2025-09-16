@@ -1,10 +1,10 @@
-import theme from '@/assets/Colors';
-import GroupListCard from '@/components/GroupListCard';
-import MeetingMealInfo from '@/components/MeetingMealInfo';
-import DateStack from '@/components/ui/DateStack';
-import { FullMeeting, Group } from '@/types/interfaces';
-import { getAMeeting } from '@/utils/api';
+import theme from '@assets/Colors';
+import GroupListCard from '@components/GroupListCard';
+import MeetingMealInfo from '@components/MeetingMealInfo';
+import DateStack from '@components/ui/DateStack';
 import { useFocusEffect } from '@react-navigation/native';
+import { FullMeeting, Group } from '@types/interfaces';
+import { getAMeeting } from '@utils/api';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {

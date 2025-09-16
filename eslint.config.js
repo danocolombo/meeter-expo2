@@ -11,6 +11,7 @@ module.exports = defineConfig([
                 typescript: {
                     project: './tsconfig.json',
                 },
+                'babel-module': {},
             },
         },
     },
