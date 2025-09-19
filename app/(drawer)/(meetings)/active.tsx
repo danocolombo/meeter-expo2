@@ -1,10 +1,8 @@
 import MeetingListCard from '@components/MeetingListCard';
-import { useQuery } from '@tanstack/react-query';
-import { getActiveMeetings } from '@utils/api';
+import { useAppSelector } from '@utils/hooks';
 import React, { useCallback } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
-
-const organizationId = process.env.EXPO_PUBLIC_TEST_ORGANIZATION_ID;
+import type { Meeting } from '../../../types/interfaces';
 
 const ActiveMeetings = () => {
     // const renderMeeting = useCallback(({ item }: { item: any }) => {
@@ -22,14 +20,12 @@ const ActiveMeetings = () => {
         );
     }, []);
 
-    const {
-        data: meetings,
-        isLoading,
-        error,
-    } = useQuery({
-        queryKey: ['activeMeetings', organizationId],
-        queryFn: () => getActiveMeetings(organizationId || ''),
-    });
+    const meetings = useAppSelector(
+        (state: any) => state.meetings.activeMeetings
+    );
+    const isLoading = useAppSelector((state: any) => state.meetings.isLoading);
+    // Optionally, handle error state if you have one in your slice
+    // const error = useAppSelector((state) => state.meetings.error);
 
     if (isLoading)
         return (
@@ -37,12 +33,13 @@ const ActiveMeetings = () => {
                 <Text style={styles.text}>Loading...</Text>
             </View>
         );
-    if (error)
-        return (
-            <View style={styles.container}>
-                <Text style={styles.text}>Error loading meetings</Text>
-            </View>
-        );
+    // Optionally, handle error state if you add it to your slice
+    // if (error)
+    //     return (
+    //         <View style={styles.container}>
+    //             <Text style={styles.text}>Error loading meetings</Text>
+    //         </View>
+    //     );
 
     return (
         <View style={styles.container}>
