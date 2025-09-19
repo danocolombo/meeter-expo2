@@ -1,17 +1,27 @@
 import { useQuery } from '@tanstack/react-query';
 import { getAffiliations } from '@utils/api';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Button, StyleSheet, Text, View } from 'react-native';
+import { useSelector } from 'react-redux';
 
 const Landing = () => {
     const { data: affiliations } = useQuery({
         queryKey: ['affiliations'],
         queryFn: getAffiliations,
     });
-    // console.log('AFFILIATIONS:\n', affiliations);
+    // Access activeMeetings from Redux store
+    const activeMeetings = useSelector(
+        (state: any) => state.meetings.activeMeetings
+    );
     return (
         <View style={styles.container}>
             <Text>Landing</Text>
+            <Button
+                title='Log Active Meetings'
+                onPress={() => {
+                    console.log('Active Meetings:', activeMeetings);
+                }}
+            />
         </View>
     );
 };

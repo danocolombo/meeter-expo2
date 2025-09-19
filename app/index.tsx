@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { getPersonBySub } from '@utils/api';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { Text } from 'react-native';
-import { useDispatch } from 'react-redux';
+import { Button, Text, View } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 
 const sub = process.env.EXPO_PUBLIC_USER_COGNITO_SUB;
 
@@ -16,6 +16,10 @@ export default function Index() {
         queryFn: () => getPersonBySub(sub || ''),
         enabled: !!sub && sub.trim() !== '',
     });
+    // Access activeMeetings from Redux store
+    const activeMeetings = useSelector(
+        (state: any) => state.meetings.activeMeetings
+    );
 
     useEffect(() => {
         // Fetch all meetings when the file runs
@@ -66,6 +70,18 @@ export default function Index() {
         return <Text>Loading...</Text>;
     }
 
-    // No UI needed, redirect handled in useEffect
-    return null;
+    // Add a button to log activeMeetings
+    return (
+        <View
+            style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+            <Button
+                title='Log Active Meetings'
+                onPress={() => {
+                    // Log the activeMeetings array
+                    console.log('Active Meetings:', activeMeetings);
+                }}
+            />
+        </View>
+    );
 }
