@@ -1,3 +1,4 @@
+import theme from '@assets/Colors';
 import {
     DrawerContentScrollView,
     useDrawerStatus,
@@ -5,7 +6,13 @@ import {
 import { usePathname, useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import React, { useEffect } from 'react';
-import { ImageBackground, Text, TouchableOpacity, View } from 'react-native';
+import {
+    Image,
+    ImageBackground,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -23,33 +30,40 @@ const CustomDrawerContent = (props: any) => {
 
     return (
         <ImageBackground
-            source={require('../../assets/images/menu-bg.jpeg')}
-            style={{ flex: 1 }}
+            source={require('@assets/images/menu-bg.jpeg')}
+            style={{ flex: 1, width: '100%', height: '100%' }}
             resizeMode='cover'
         >
-            <View
-                style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.85)' }}
-            >
+            <View style={{ flex: 1 }}>
                 <DrawerContentScrollView>
-                    <View>
+                    <View style={{ alignItems: 'center', marginVertical: 12 }}>
                         <TouchableOpacity
                             onPress={() => router.navigate('/(drawer)')}
                         >
-                            <Text
+                            <Image
+                                source={require('@assets/images/icon.png')}
                                 style={{
-                                    fontWeight: 'bold',
-                                    fontSize: 20,
-                                    color: '#F2A310',
-                                    textAlign: 'center',
-                                    marginVertical: 12,
+                                    width: 50,
+                                    height: 50,
+                                    resizeMode: 'cover',
+                                    borderRadius: 25,
+                                    borderWidth: 2,
+                                    borderColor: '#fff',
                                 }}
-                            >
-                                LOGO
-                            </Text>
+                                accessibilityLabel='Meeter Logo'
+                            />
                         </TouchableOpacity>
                     </View>
                     <View style={styles.menuSectionHeader}>
-                        <Text>Meetings</Text>
+                        <Text
+                            style={{
+                                color: '#fff',
+                                fontWeight: 'bold',
+                                fontSize: 16,
+                            }}
+                        >
+                            Meetings
+                        </Text>
                     </View>
                     <View style={styles.menuIndentedItem}>
                         <TouchableOpacity
@@ -73,7 +87,7 @@ const CustomDrawerContent = (props: any) => {
                                         pathName ===
                                         `/(drawer)/(meetings)/active`
                                             ? '#F2A310'
-                                            : '#000',
+                                            : '#fff',
                                     fontWeight:
                                         pathName ===
                                         `/(drawer)/(meetings)/active`
@@ -105,7 +119,7 @@ const CustomDrawerContent = (props: any) => {
                                         pathName ===
                                         `/(drawer)/(meetings)/historic`
                                             ? '#F2A310'
-                                            : '#000',
+                                            : '#fff',
                                     fontWeight:
                                         pathName ===
                                         `/(drawer)/(meetings)/historic`
@@ -130,7 +144,9 @@ const CustomDrawerContent = (props: any) => {
                         padding: 16,
                     }}
                 >
-                    <Text>Copyright Fortson Guru 2025</Text>
+                    <Text style={{ color: theme.colors.menuText }}>
+                        Copyright Fortson Guru 2025
+                    </Text>
                 </View>
             </View>
         </ImageBackground>

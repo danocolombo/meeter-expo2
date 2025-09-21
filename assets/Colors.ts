@@ -21,6 +21,7 @@ const Colors = {
     red: '#D61C4E',
     green: '#00ff00',
     white: '#ffffff',
+    menuText: '#ffffff',
     unselectedBackground: '#1D5D9B',
     unselectedText: '#ffffff',
     selectedBackground: '#CAEBF2',
@@ -34,6 +35,7 @@ const theme = {
     // Specify custom property in nested object
     colors: {
         ...Colors,
+        menuText: Colors.menuText,
         surface: Colors.primaryBackground,
         text: Colors.white,
         disabled: '#cccccc',
