@@ -1,35 +1,39 @@
-import { router } from 'expo-router';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import MeetingListCard from '@components/MeetingListCard';
+import { useAppSelector } from '@utils/hooks';
+import React, { useCallback } from 'react';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
+import type { Meeting } from '../../../types/interfaces';
 
 const HistoricMeetings = () => {
+    const renderMeeting = useCallback(({ item }: { item: Meeting }) => {
+        return (
+            <View style={styles.itemContainer}>
+                <MeetingListCard meeting={item} />
+            </View>
+        );
+    }, []);
+
+    const meetings = useAppSelector(
+        (state: any) => state.meetings.historicMeetings
+    );
+    const isLoading = useAppSelector((state: any) => state.meetings.isLoading);
+
+    if (isLoading)
+        return (
+            <View style={styles.container}>
+                <Text style={styles.text}>Loading...</Text>
+            </View>
+        );
+
     return (
         <View style={styles.container}>
             <Text style={styles.text}>Historic Meetings</Text>
-
-            <TouchableOpacity
-                style={styles.link}
-                onPress={() =>
-                    router.push({
-                        pathname: '/(meeting)/[id]',
-                        params: { id: '80', from: 'historic' },
-                    })
-                }
-            >
-                <Text style={styles.linkText}>Meeting 80</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-                style={styles.link}
-                onPress={() =>
-                    router.push({
-                        pathname: '/(meeting)/[id]',
-                        params: { id: '81', from: 'historic' },
-                    })
-                }
-            >
-                <Text style={styles.linkText}>Meeting 81</Text>
-            </TouchableOpacity>
+            <FlatList
+                data={meetings || []}
+                renderItem={renderMeeting}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={{ alignItems: 'center' }}
+            />
         </View>
     );
 };
@@ -47,6 +51,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 16,
+    },
+    itemContainer: {
+        width: '100%',
+        paddingHorizontal: 15,
+        marginVertical: 8,
     },
     link: {
         marginTop: 24,
