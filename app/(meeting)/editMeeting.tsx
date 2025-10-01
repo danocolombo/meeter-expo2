@@ -25,9 +25,8 @@ const EditMeetingScreen = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>
-                Edit Meeting {id ? `for ${id}` : ''}
-            </Text>
+            <Text>OLD /app/(meeting)/editMeeting.tsx </Text>
+            <Text>{id ? `for ${id}` : ''}</Text>
             <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                 <Text style={styles.saveText}>Save</Text>
             </TouchableOpacity>

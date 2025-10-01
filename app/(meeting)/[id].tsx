@@ -1,7 +1,5 @@
 import theme from '@assets/Colors';
 import GroupListCard from '@components/GroupListCard';
-import MeetingMealInfo from '@components/MeetingMealInfo';
-import DateStack from '@components/ui/DateStack';
 import { useFocusEffect } from '@react-navigation/native';
 import { FullMeeting, Group } from '@types/interfaces';
 import { getAMeeting } from '@utils/api';
@@ -18,14 +16,18 @@ import {
 const Colors = theme.colors;
 
 const MeetingDetails = () => {
-    const { id, org_id } = useLocalSearchParams<{
+    const { id, org_id, origin } = useLocalSearchParams<{
         id: string;
         org_id: string;
+        origin?: string;
     }>();
     const router = useRouter();
     const [groups, setGroups] = React.useState<Group[]>([]);
     const [meeting, setMeeting] = React.useState<FullMeeting | null>(null);
     const [isLoading, setIsLoading] = React.useState(false);
+
+    // Add Edit button to header (Expo Router v2+ pattern)
+    // Use a custom header if needed, or add edit button in the screen for now
 
     useFocusEffect(
         React.useCallback(() => {
@@ -74,30 +76,42 @@ const MeetingDetails = () => {
             </View>
         );
     }
-    const acknowledgePress = () => {
-        console.log('Acknowledging press');
-    };
 
+    // Basic Meeting info form (read-only)
     return (
         <View style={[localStyles.container, localStyles.infoContainer]}>
-            <View style={localStyles.meetingInfoRow}>
-                <View style={{ flexShrink: 0 }}>
-                    <DateStack date={meeting.meeting_date} />
-                </View>
-                <View style={localStyles.meetingTitleContainer}>
-                    <Text
-                        style={localStyles.meetingTitleText}
-                        numberOfLines={2}
-                        ellipsizeMode='tail'
-                    >
-                        {meeting?.title}
-                    </Text>
-                    <Text>{meeting?.support_contact}</Text>
-                </View>
+            <TouchableOpacity
+                style={{ position: 'absolute', top: 40, left: 16, zIndex: 10 }}
+                onPress={() => {
+                    if (origin === 'active') {
+                        router.replace('/(drawer)/(meetings)/active');
+                    } else if (origin === 'historic') {
+                        router.replace('/(drawer)/(meetings)/historic');
+                    } else {
+                        router.back();
+                    }
+                }}
+            >
+                <Text
+                    style={{
+                        color: theme.colors.link,
+                        fontWeight: 'bold',
+                        fontSize: 16,
+                    }}
+                >
+                    Back
+                </Text>
+            </TouchableOpacity>
+            {/* Edit button now handled by navigation header in _layout.tsx */}
+            <View>
+                <Text>OLD /app/(meeting)/[id].tsx</Text>
             </View>
-            <View style={localStyles.meetingInfoRow}>
-                <MeetingMealInfo meeting={meeting} />
-            </View>
+            <Text style={localStyles.meetingTitleText}>{meeting.title}</Text>
+            <Text>Date: {meeting.meeting_date}</Text>
+            <Text>Support Contact: {meeting.support_contact}</Text>
+            <Text>Organization ID: {meeting.organization_id}</Text>
+            {/* Add more fields as needed */}
+            {/* Existing group list and add group button below */}
             <View style={localStyles.linkRow}>
                 <Text>Groups:</Text>
             </View>

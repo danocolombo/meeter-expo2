@@ -61,12 +61,12 @@ function MeetingStackLayoutInner() {
                             <TouchableOpacity
                                 style={{ marginRight: 16 }}
                                 onPress={() => {
-                                    router.push({
-                                        pathname: '/(meeting)/editMeeting',
-                                        params: id
-                                            ? { id, from: fromValue }
-                                            : undefined,
-                                    });
+                                    if (id) {
+                                        router.push({
+                                            pathname: '/(meeting)/(edit)/[id]',
+                                            params: { id, from: fromValue },
+                                        });
+                                    }
                                 }}
                             >
                                 <Text
@@ -80,40 +80,9 @@ function MeetingStackLayoutInner() {
                 }}
             />
             <Stack.Screen
-                name='editMeeting'
-                options={({ route }) => {
-                    const params = route?.params as
-                        | { id?: string | number; from?: string }
-                        | undefined;
-                    const editId = params?.id;
-                    const fromValue = getFrom(params);
-                    return {
-                        title: 'Edit Meeting',
-                        headerLeft: () => (
-                            <TouchableOpacity
-                                style={{ marginLeft: 16 }}
-                                onPress={() => {
-                                    if (editId !== undefined) {
-                                        router.push({
-                                            pathname: '/(meeting)/[id]',
-                                            params: {
-                                                id: editId,
-                                                from: fromValue,
-                                            },
-                                        });
-                                    } else {
-                                        router.push('/(meeting)/[id]');
-                                    }
-                                }}
-                            >
-                                <Text
-                                    style={{ color: '#007AFF', fontSize: 16 }}
-                                >
-                                    Cancel
-                                </Text>
-                            </TouchableOpacity>
-                        ),
-                    };
+                name='(edit)/[id]'
+                options={{
+                    title: 'Edit Meeting',
                 }}
             />
             <Stack.Screen

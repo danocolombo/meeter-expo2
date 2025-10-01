@@ -8,7 +8,7 @@ const HistoricMeetings = () => {
     const renderMeeting = useCallback(({ item }: { item: Meeting }) => {
         return (
             <View style={styles.itemContainer}>
-                <MeetingListCard meeting={item} />
+                <MeetingListCard meeting={item} origin='historic' />
             </View>
         );
     }, []);

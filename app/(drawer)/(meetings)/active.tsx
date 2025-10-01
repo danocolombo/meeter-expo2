@@ -15,7 +15,7 @@ const ActiveMeetings = () => {
     const renderMeeting = useCallback(({ item }: { item: Meeting }) => {
         return (
             <View style={styles.itemContainer}>
-                <MeetingListCard meeting={item} />
+                <MeetingListCard meeting={item} origin='active' />
             </View>
         );
     }, []);

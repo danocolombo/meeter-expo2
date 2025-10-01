@@ -213,6 +213,14 @@ export const meetingsSlice = createSlice({
                 );
                 state.isLoading = false;
             })
+            // Add reducer for getMeetingById
+            .addCase(
+                require('./meetingsThunks').getMeetingById.fulfilled,
+                (state, action) => {
+                    state.specificMeeting = action.payload;
+                    state.isLoading = false;
+                }
+            )
             .addCase(getSpecificMeeting.pending, (state) => {
                 state.isLoading = true;
             })

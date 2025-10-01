@@ -230,22 +230,24 @@ export const getHistoricMeetings = createAsyncThunk(
         }
     }
 );
-export const getMeetingById = createAsyncThunk(
+export const getMeetingById = createAsyncThunk<
+    any, // Return type (meeting object)
+    string, // Argument type (meeting id)
+    { state: any }
+>(
     'meetings/getMeetingById',
-    async (input, { getState, rejectWithValue }) => {
+    async (meetingId, { getState, rejectWithValue }) => {
         try {
-            // console.log('MT:100-->getMeetingById...input:', input);
             const state = getState();
-
-            const mtg = state.meetings.meetings.filter((m) => m.id === input);
-            // Return the filtered meetings
+            const mtg = state.meetings.meetings.filter(
+                (m: any) => m.id === meetingId
+            );
             if (mtg.length === 1) {
                 return mtg[0];
             } else {
-                return [];
+                return {};
             }
         } catch (error) {
-            // Handle errors and optionally return a rejected promise with an error message
             return rejectWithValue('Failed to fetch active meetings');
         }
     }

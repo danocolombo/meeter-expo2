@@ -5,18 +5,22 @@ import { Meeting } from '../types/interfaces';
 
 interface MeetingListCardProps {
     meeting: Meeting;
+    origin?: 'active' | 'historic';
 }
-const MeetingListCard = ({ meeting }: MeetingListCardProps) => {
+const MeetingListCard = ({ meeting, origin }: MeetingListCardProps) => {
     const router = useRouter();
     return (
         <Pressable
             style={styles.meetingCard}
             onPress={() =>
-                router.push(
-                    `/(meeting)/${meeting.id}?org_id=${encodeURIComponent(
-                        meeting.organization_id
-                    )}`
-                )
+                router.push({
+                    pathname: '/(meeting)/[id]',
+                    params: {
+                        id: meeting.id,
+                        org_id: meeting.organization_id,
+                        origin: origin || '',
+                    },
+                })
             }
         >
             <View>

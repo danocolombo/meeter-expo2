@@ -20,7 +20,13 @@ export default function Index() {
     const activeMeetings = useSelector(
         (state: any) => state.meetings.activeMeetings
     );
-
+    function getJsEngine() {
+        // Use type assertion to avoid TypeScript error
+        if ((global as any).HermesInternal) {
+            return 'Hermes';
+        }
+        return 'JSC';
+    }
     useEffect(() => {
         // Fetch all meetings when the file runs
         const apiToken = process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
@@ -30,6 +36,8 @@ export default function Index() {
         if (apiToken && org_id) {
             dispatch<any>(fetchAllMeetings({ apiToken, org_id }));
         }
+        // Log JS engine info
+        console.log('JS Engine:', getJsEngine());
     }, [dispatch]);
 
     useEffect(() => {
