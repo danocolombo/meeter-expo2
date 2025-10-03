@@ -1,0 +1,38 @@
+{
+  "staging": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-jericho-staging-170250-authRole",
+      "UnauthRoleArn": "arn:aws:iam::226036691416:role/amplify-jericho-staging-170250-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::226036691416:role/amplify-jericho-staging-170250-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-jericho-staging-170250-deployment",
+      "UnauthRoleName": "amplify-jericho-staging-170250-unauthRole",
+      "StackName": "amplify-jericho-staging-170250",
+      "StackId": "arn:aws:cloudformation:us-east-1:226036691416:stack/amplify-jericho-staging-170250/cfd865e0-7a3e-11ed-b7bf-0a5f0ae7951f",
+      "AmplifyAppId": "d1l38x9dtu9zib"
+    },
+    "categories": {
+      "auth": {
+        "jericho": {
+          "allowUnauthenticatedIdentities": true,
+          "authRoleArn": "arn:aws:iam::226036691416:role/Cognito_MeeterAuth_Role",
+          "authRoleName": "Cognito_MeeterAuth_Role",
+          "identityPoolId": "us-east-1:5568f877-2766-4ea3-a9a6-442df0d29980",
+          "identityPoolName": "Meeter",
+          "nativeClientId": "6fe26lh1hpvpvs73uk5qt50g57",
+          "unauthRoleArn": "arn:aws:iam::226036691416:role/Cognito_MeeterUnauth_Role",
+          "unauthRoleName": "Cognito_MeeterUnauth_Role",
+          "userPoolId": "us-east-1_XM4WXQ6lj",
+          "userPoolName": "Meeter2",
+          "webClientId": "6fe26lh1hpvpvs73uk5qt50g57"
+        }
+      },
+      "storage": {
+        "jerichoe5de6882": {
+          "bucketName": "jerichosystems3files170250-staging",
+          "region": "us-east-1"
+        }
+      }
+    }
+  }
+}

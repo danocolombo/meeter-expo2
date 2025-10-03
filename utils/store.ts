@@ -4,7 +4,7 @@ import { configureStore } from '@reduxjs/toolkit';
 // import groupsReducer from '@features/groups/groupsSlice';
 // import profilesReducer from '@features/profilesSlice';
 // import systemReducer from '@features/system/systemSlice';
-// import userReducer from '@features/user/userSlice';
+import userReducer from '@features/user/userSlice';
 export type RootState = ReturnType<typeof configureStore>;
 
 export const store = configureStore({
@@ -13,7 +13,7 @@ export const store = configureStore({
         // profiles: profilesReducer,
         // system: systemReducer,
         // team: teamReducer,
-        // user: userReducer,
+        user: userReducer,
         // groups: groupsReducer,
     },
     devTools: true,
