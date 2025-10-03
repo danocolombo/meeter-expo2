@@ -4,17 +4,19 @@ import { printObject } from '@utils/helpers';
 import { fetchPerson, getAPIToken, updateHeroMessage } from './userAPI';
 export const loginUser = createAsyncThunk(
     'user/loginUser',
-    async ({ inputs, apiToken }, thunkAPI) => {
+    async (args: { inputs: any; apiToken: string }, thunkAPI) => {
         try {
-            let updatedProfile = null;
+            const { inputs } = args;
             //-------------------------------------------
             // check for apiToken, refresh if necessary
             //-------------------------------------------
+
             const userData = inputs.signInUserSession.accessToken.payload;
+
             const username = userData.username;
             const sub = userData.sub; // Sub is already available in accessToken.payload
 
-            // console.log('🟨  ➡️  userThunks.ts:17  ➡️  sub:\n', sub);
+            // console.log('🟨  ➡️  userThunks.ts:19  ➡️  sub:\n', sub);
 
             const email = inputs.signInUserSession.idToken.payload.email;
             // printObject(
@@ -96,7 +98,7 @@ export const loginUser = createAsyncThunk(
             }
 
             // console.log(
-            //     '🟨  ➡️  userThunks.ts:99  ➡️  fetchResponse:\n',
+            //     '🟨  ➡️  userThunks.ts:101  ➡️  fetchResponse:\n',
             //     fetchResponse
             // );
 
