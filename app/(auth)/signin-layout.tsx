@@ -5,7 +5,7 @@ type Props = {
     children: React.ReactNode;
 };
 
-export default function LoginLayout({ children }: Props) {
+export default function SigninLayout({ children }: Props) {
     return <View style={styles.container}>{children}</View>;
 }
 

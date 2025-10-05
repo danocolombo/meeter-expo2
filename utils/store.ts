@@ -5,7 +5,6 @@ import { configureStore } from '@reduxjs/toolkit';
 // import profilesReducer from '@features/profilesSlice';
 // import systemReducer from '@features/system/systemSlice';
 import userReducer from '@features/user/userSlice';
-export type RootState = ReturnType<typeof configureStore>;
 
 export const store = configureStore({
     reducer: {
@@ -18,3 +17,6 @@ export const store = configureStore({
     },
     devTools: true,
 });
+export type AppDispatch = typeof store.dispatch;
+// export type RootState = ReturnType<typeof configureStore>;
+export type RootState = ReturnType<typeof store.getState>;

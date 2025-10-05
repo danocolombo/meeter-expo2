@@ -13,6 +13,7 @@ import {
 const initialState = {
     profile: {},
     apiToken: '',
+    isAuthenticated: false,
     isLoading: false,
     isLimitedUser: false,
 };
@@ -54,6 +55,8 @@ export const userSlice = createSlice({
         logout: (state) => {
             state.profile = {};
             state.isLimitedUser = false;
+            state.isAuthenticated = false;
+            state.apiToken = '';
             return state;
         },
         updateProfile: (state, action) => {
@@ -64,6 +67,7 @@ export const userSlice = createSlice({
                     ...state.profile,
                     ...action.payload.profile,
                 };
+                state.isAuthenticated = true;
             } else {
                 // Standard profile update
                 state.profile = action.payload.profile;
@@ -102,6 +106,7 @@ export const userSlice = createSlice({
                     ...state.profile, // Keep existing profile data
                     ...action.payload.userProfile, // Overlay with updated data
                 };
+                state.isAuthenticated = true; // Assume user is authenticated after profile save
                 state.apiToken = action.payload.apiToken || state.apiToken; // Preserve existing token if none provided
                 state.isLoading = false;
             })
@@ -123,6 +128,7 @@ export const userSlice = createSlice({
                         ...state,
                         profile: action.payload.profile,
                         apiToken: action.payload.apiToken,
+                        isAuthenticated: !!action.payload.profile.id,
                         isLimitedUser: action.payload.isLimitedUser || false,
                         isLoading: false,
                     };

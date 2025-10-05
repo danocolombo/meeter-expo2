@@ -19,10 +19,10 @@ export const loginUser = createAsyncThunk(
             // console.log('🟨  ➡️  userThunks.ts:19  ➡️  sub:\n', sub);
 
             const email = inputs.signInUserSession.idToken.payload.email;
-            // printObject(
-            //     '🟨 🟨 🟨=> file: userThunks.js:24=>userData:\n',
-            //     userData
-            // );
+            printObject(
+                '🟨 🟨 🟨=> file: userThunks.js:24=>userData:\n',
+                userData
+            );
             // printObject(
             //     '🟨 🟨 🟨=> file: userThunks.js:25=>username:\n',
             //     username

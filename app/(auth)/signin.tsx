@@ -1,3 +1,6 @@
+import { printObject } from '@utils/helpers';
+import { RootState } from '@utils/store';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Button,
@@ -7,23 +10,37 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import LoginLayout from './login-layout';
+import { useSelector } from 'react-redux';
+import useAuth from '../(hooks)/useAuth';
+import SigninLayout from './signin-layout';
 
-export default function Login() {
+export default function Signin() {
+    const { handleLoginUser } = useAuth();
     const [login, setLogin] = useState('');
+    const user = useSelector((state: RootState) => state.user);
     const [password, setPassword] = useState('');
+    const router = useRouter();
 
-    const handleLogin = () => {
-        console.log('Login:', login);
-        console.log('Password:', password);
+    React.useEffect(() => {
+        if (user && user.isAuthenticated) {
+            router.replace('/(drawer)');
+        }
+    }, [user, router]);
+
+    const handleLoginPress = async () => {
+        await handleLoginUser(login, password);
     };
+
+    React.useEffect(() => {
+        printObject('signin.tsx:33 user after login:\n', user);
+    }, [user]);
 
     const handleRegister = () => {
         console.log('please register me');
     };
-
+    printObject('signin.tsx:39 user:\n', user);
     return (
-        <LoginLayout>
+        <SigninLayout>
             <View style={styles.form}>
                 <Text style={styles.title}>Login</Text>
                 <TextInput
@@ -40,7 +57,7 @@ export default function Login() {
                     onChangeText={setPassword}
                     secureTextEntry
                 />
-                <Button title='Login' onPress={handleLogin} />
+                <Button title='Login' onPress={handleLoginPress} />
                 <TouchableOpacity
                     onPress={handleRegister}
                     style={styles.registerLink}
@@ -48,7 +65,7 @@ export default function Login() {
                     <Text style={styles.registerText}>Register</Text>
                 </TouchableOpacity>
             </View>
-        </LoginLayout>
+        </SigninLayout>
     );
 }
 

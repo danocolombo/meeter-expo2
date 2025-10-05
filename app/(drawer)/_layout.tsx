@@ -15,12 +15,20 @@ import {
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
 
 const CustomDrawerContent = (props: any) => {
     const router = useRouter();
+    const user = useSelector((state: any) => state.user);
     const { bottom } = useSafeAreaInsets();
     const isDrawerOpen = useDrawerStatus() === 'open';
     const pathName = usePathname();
+
+    useEffect(() => {
+        if (!user?.isAuthenticated) {
+            router.replace('/(auth)/signin');
+        }
+    }, [user, router]);
 
     useEffect(() => {
         // if (isDrawerOpen) {

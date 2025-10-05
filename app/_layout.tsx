@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { store } from '@utils/store';
 import { Slot } from 'expo-router';
 import { Provider } from 'react-redux';
+import { AuthProvider } from './(hooks)/AuthProvider';
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
@@ -15,7 +16,9 @@ export default function RootLayout() {
     return (
         <Provider store={store}>
             <QueryClientProvider client={queryClient}>
-                <Slot />
+                <AuthProvider>
+                    <Slot />
+                </AuthProvider>
             </QueryClientProvider>
         </Provider>
     );
