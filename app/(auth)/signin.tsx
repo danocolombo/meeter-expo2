@@ -1,4 +1,3 @@
-import { printObject } from '@utils/helpers';
 import { RootState } from '@utils/store';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -17,7 +16,7 @@ import SigninLayout from './signin-layout';
 export default function Signin() {
     const { handleLoginUser } = useAuth();
     const [login, setLogin] = useState('');
-    const user = useSelector((state: RootState) => state.user);
+    const user: any = useSelector((state: RootState) => state.user);
     const [password, setPassword] = useState('');
     const router = useRouter();
 
@@ -31,14 +30,9 @@ export default function Signin() {
         await handleLoginUser(login, password);
     };
 
-    React.useEffect(() => {
-        printObject('signin.tsx:33 user after login:\n', user);
-    }, [user]);
-
     const handleRegister = () => {
         console.log('please register me');
     };
-    printObject('signin.tsx:39 user:\n', user);
     return (
         <SigninLayout>
             <View style={styles.form}>

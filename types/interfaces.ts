@@ -102,3 +102,77 @@ export interface ApiError {
     message: string;
     details: string;
 }
+
+export interface UserProfile {
+    id: string;
+    sub: string;
+    username: string;
+    email: string;
+    phone: string;
+    shirt: string;
+    birthday: string;
+    picture: string | null;
+    affiliations: UserAffiliation[];
+    location: UserLocation;
+    organizationDefaultUsersId: string;
+    defaultOrg: UserOrg;
+    locationUsersId: string;
+    createdAt: string;
+    updatedAt: string;
+    firstName: string;
+    lastName: string;
+    awsId: string;
+    awsDefOrgId: string;
+    awsLocationId: string | null;
+    forgotPasswordToken: string | null;
+    verifyToken: string | null;
+    forgotPasswordTokenExpiry: string;
+    verifyTokenExpiry: string;
+    activeOrg: ActiveOrg;
+    permissions: string[];
+}
+
+export interface UserAffiliation {
+    id: string;
+    role: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string | null;
+    personId: string;
+    organizationId: string;
+    awsPersonId: string;
+    awsOrgId: string;
+    awsId: string;
+}
+
+export interface UserLocation {
+    id: string;
+    street: string;
+    city: string;
+    createdAt: string;
+    updatedAt: string;
+    stateProv: string;
+    postalCode: string;
+    awsId: string | null;
+}
+
+export interface UserOrg {
+    id: string;
+    name: string;
+    code: string;
+    createdAt: string;
+    updatedAt: string | null;
+    heroMessage: string;
+    locationId: string;
+    awsId: string;
+    awsLocationId: string;
+}
+
+export interface ActiveOrg {
+    id: string;
+    code: string;
+    name: string;
+    heroMessage: string;
+    role: string;
+    status: string;
+}

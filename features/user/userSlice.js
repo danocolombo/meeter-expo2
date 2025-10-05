@@ -7,6 +7,7 @@ import {
     loginUser,
     saveHeroMessage,
     saveUserProfile,
+    updateActiveOrgPermissions,
     updatePermissions,
 } from './userThunks';
 
@@ -229,6 +230,11 @@ export const userSlice = createSlice({
             })
             .addCase(saveHeroMessage.rejected, (state, action) => {
                 state.isLoading = false;
+            })
+            .addCase(updateActiveOrgPermissions.fulfilled, (state, action) => {
+                if (state.profile) {
+                    state.profile.permissions = action.payload;
+                }
             });
     },
 });

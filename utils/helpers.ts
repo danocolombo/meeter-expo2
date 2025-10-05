@@ -1,5 +1,8 @@
 import { PHONE_REGX } from '@constants/meeter';
+import { UserProfile } from '@types/interfaces';
+import { format } from 'date-fns';
 import * as Crypto from 'expo-crypto';
+
 ////import { format } from 'date-fns';
 
 const SHORT_MONTH = {
@@ -26,7 +29,7 @@ export function dateIsBeforeToday(testDate) {
     let tMonth = parseInt(target[1]);
     let tDay = parseInt(target[2]);
 
-    var todayDate = new Date()?.toISOString().slice(0, 10);
+    let todayDate = new Date()?.toISOString().slice(0, 10);
     let standard = todayDate.toString().split('-');
     let sYear = parseInt(standard[0]);
     let sMonth = parseInt(standard[1]);
@@ -102,7 +105,7 @@ export async function getUniqueId() {
     return digest;
 }
 export function getToday() {
-    var d = new Date();
+    let d = new Date();
     //- this was in the function originally, but it does not give today
     // d.setDate(d.getDate() - 1); // date - one
     const dminusone = d.toLocaleString(); //  M/DD/YYYY, H:MM:SS PM
@@ -574,4 +577,21 @@ export function getCurrentLocalDateString(date = null) {
     const month = String(localDate.getMonth() + 1).padStart(2, '0');
     const day = String(localDate.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+}
+
+/**
+ * Gets the user profile passed in and evaluates the affiliations for
+ * the activeOrg, returning an array of permissions/roles in the
+ * userProfile passed in
+ */
+
+export function getPermissionsForActiveOrg(profile: UserProfile): string[] {
+    if (!profile?.affiliations || !profile?.activeOrg?.id) return [];
+    const orgId = profile.activeOrg.id;
+    return profile.affiliations
+        .filter(
+            (aff) => aff.organizationId === orgId && aff.status === 'active'
+        )
+        .map((aff) => aff.role)
+        .sort((a, b) => a.localeCompare(b));
 }

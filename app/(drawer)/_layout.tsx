@@ -1,8 +1,10 @@
 import theme from '@assets/Colors';
+import { updateActiveOrgPermissions } from '@features/user/userThunks';
 import {
     DrawerContentScrollView,
     useDrawerStatus,
 } from '@react-navigation/drawer';
+import { AppDispatch } from '@utils/store';
 import { usePathname, useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import React, { useEffect } from 'react';
@@ -15,10 +17,11 @@ import {
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 const CustomDrawerContent = (props: any) => {
     const router = useRouter();
+    const dispatch = useDispatch<AppDispatch>();
     const user = useSelector((state: any) => state.user);
     const { bottom } = useSafeAreaInsets();
     const isDrawerOpen = useDrawerStatus() === 'open';
@@ -27,8 +30,20 @@ const CustomDrawerContent = (props: any) => {
     useEffect(() => {
         if (!user?.isAuthenticated) {
             router.replace('/(auth)/signin');
+        } else if (
+            user?.profile?.activeOrg?.id &&
+            Array.isArray(user?.profile?.affiliations) &&
+            user?.profile?.affiliations.length > 0
+        ) {
+            dispatch(updateActiveOrgPermissions());
         }
-    }, [user, router]);
+    }, [
+        user?.isAuthenticated,
+        user?.profile?.activeOrg?.id,
+        user?.profile?.affiliations,
+        router,
+        dispatch,
+    ]);
 
     useEffect(() => {
         // if (isDrawerOpen) {

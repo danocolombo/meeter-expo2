@@ -10,7 +10,7 @@ export default function useAuth() {
     // const user = useSelector((state: RootState) => state.user);
     const [isLoading, setIsLoading] = useState(false);
     const [userError, setUserError] = useState(null);
-    const handleLoginUser = (login: string, password: string) => {
+    const handleLoginUser = async (login: string, password: string) => {
         setIsLoading(true);
         const mockData: any = {
             signInUserSession: {
@@ -65,6 +65,7 @@ export default function useAuth() {
         // e.g. isAuthenticated, isLoading, error, etc.
         // then
         mockData.isAuthenticated = true;
+
         mockData.isLoading = false;
         mockData.error = null;
         const apiToken =

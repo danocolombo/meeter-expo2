@@ -19,10 +19,7 @@ export const loginUser = createAsyncThunk(
             // console.log('🟨  ➡️  userThunks.ts:19  ➡️  sub:\n', sub);
 
             const email = inputs.signInUserSession.idToken.payload.email;
-            printObject(
-                '🟨 🟨 🟨=> file: userThunks.js:24=>userData:\n',
-                userData
-            );
+
             // printObject(
             //     '🟨 🟨 🟨=> file: userThunks.js:25=>username:\n',
             //     username
@@ -98,7 +95,7 @@ export const loginUser = createAsyncThunk(
             }
 
             // console.log(
-            //     '🟨  ➡️  userThunks.ts:101  ➡️  fetchResponse:\n',
+            //     '🟨  ➡️  userThunks.ts:98  ➡️  fetchResponse:\n',
             //     fetchResponse
             // );
 
@@ -404,6 +401,27 @@ export const errorTest = createAsyncThunk(
         } else {
             return { results: 'PASS' };
         }
+    }
+);
+/**
+ * Thunk to update permissions for the active organization in the user profile.
+ * It reads the current profile from state, computes permissions, and updates the profile.
+ */
+export const updateActiveOrgPermissions = createAsyncThunk(
+    'user/updateActiveOrgPermissions',
+    async (_, { getState }) => {
+        const { profile } = getState().user;
+        if (!profile?.affiliations || !profile?.activeOrg?.id) return [];
+
+        const orgId = profile.activeOrg.id;
+        const permissions = profile.affiliations
+            .filter(
+                (aff) => aff.organizationId === orgId && aff.status === 'active'
+            )
+            .map((aff) => aff.role)
+            .sort((a, b) => a.localeCompare(b));
+
+        return permissions;
     }
 );
 export const saveUserProfile = createAsyncThunk(
