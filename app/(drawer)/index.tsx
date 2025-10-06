@@ -2,8 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { getAffiliations } from '@utils/api';
 import { printObject } from '@utils/helpers';
 import React from 'react';
-import { Button, StyleSheet, Text, View } from 'react-native';
+import {
+    ActivityIndicator,
+    Button,
+    StyleSheet,
+    Text,
+    View,
+} from 'react-native';
 import { useSelector } from 'react-redux';
+import HeroMessage from '../../components/ui/heroMessage';
 
 const Landing = () => {
     const { data: affiliations } = useQuery({
@@ -15,8 +22,21 @@ const Landing = () => {
         (state: any) => state.meetings.activeMeetings
     );
     const userData = useSelector((state: any) => state.user);
+
+    // Show loading indicator if userData is not loaded yet
+    if (!userData || !userData.profile) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size='large' />
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
+            {userData.profile.activeOrg?.heroMessage ? (
+                <HeroMessage message={userData.profile.activeOrg.heroMessage} />
+            ) : null}
             <Text>Landing</Text>
             <Button
                 title='Log Active Meetings'
@@ -38,6 +58,12 @@ export default Landing;
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%', // Add this line
+    },
+    loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
