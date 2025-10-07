@@ -1,3 +1,4 @@
+import { fetchAllMeetings } from '@features/meetings/meetingsThunks';
 import { loginUser } from '@features/user/userThunks';
 import { useNavigation } from '@react-navigation/native';
 import type { AppDispatch } from '@utils/store';
@@ -70,7 +71,11 @@ export default function useAuth() {
         mockData.error = null;
         const apiToken =
             process.env.EXPO_PUBLIC_JERICHO_API_TOKEN || 'test-token';
-        dispatch(loginUser({ inputs: mockData, apiToken }));
+        const loginResults = await dispatch(
+            loginUser({ inputs: mockData, apiToken })
+        ).unwrap();
+        const orgId = loginResults.profile.activeOrg.id;
+        await dispatch(fetchAllMeetings({ apiToken, org_id: orgId }));
         setIsLoading(false);
         setUserError(null);
     };

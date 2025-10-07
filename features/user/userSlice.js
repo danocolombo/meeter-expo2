@@ -118,20 +118,10 @@ export const userSlice = createSlice({
                 state.isLoading = true;
             })
             .addCase(loginUser.fulfilled, (state, action) => {
-                // Set a default state update for testing
-                // printObject('🟨 🟨 🟨 US:95->loginUser::action:\n', action);
-                // printObject('🔄 🔄 apiToken: ', action?.payload?.apiToken);
-                if (
-                    action?.payload?.profile?.id ||
-                    action?.payload?.isLimitedUser
-                ) {
+                if (action?.payload?.profile) {
                     return {
                         ...state,
-                        profile: action.payload.profile,
-                        apiToken: action.payload.apiToken,
-                        isAuthenticated: !!action.payload.profile.id,
-                        isLimitedUser: action.payload.isLimitedUser || false,
-                        isLoading: false,
+                        ...action.payload, // This will set profile, apiToken, isAuthenticated, isLoading, isLimitedUser
                     };
                 }
             })

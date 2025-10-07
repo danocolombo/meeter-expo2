@@ -361,8 +361,9 @@ export const loginUser = createAsyncThunk(
             //  printObject('🟨 🟨 🟨 UT:188->permissions:\n', permissions);
             const results = {
                 profile: person,
-                perms: permissions,
                 apiToken: token,
+                isAuthenticated: !!person?.id, // or whatever logic you use
+                isLoading: false,
                 isLimitedUser: isLimitedUser,
             };
             // console.log('VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
