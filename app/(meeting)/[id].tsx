@@ -1,6 +1,7 @@
 import theme from '@assets/Colors';
 import GroupListCard from '@components/GroupListCard';
 import MeetingDate from '@components/meeting/MeetingDate';
+import MeetingIds from '@components/meeting/MeetingIds';
 import { useFocusEffect } from '@react-navigation/native';
 import { FullMeeting, Group } from '@types/interfaces';
 import { getAMeeting } from '@utils/api';
@@ -14,6 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { Surface } from 'react-native-paper';
 const Colors = theme.colors;
 
 const MeetingDetails = () => {
@@ -23,6 +25,7 @@ const MeetingDetails = () => {
         origin?: string;
     }>();
     const router = useRouter();
+    const [historic, setHistoric] = React.useState(false);
     const [groups, setGroups] = React.useState<Group[]>([]);
     const [meeting, setMeeting] = React.useState<FullMeeting | null>(null);
     const [isLoading, setIsLoading] = React.useState(false);
@@ -80,23 +83,19 @@ const MeetingDetails = () => {
 
     // Basic Meeting info form (read-only)
     return (
-        <View style={[localStyles.container, localStyles.infoContainer]}>
-            <TouchableOpacity
-                style={{ position: 'absolute', top: 40, left: 16, zIndex: 10 }}
-                onPress={() => {
-                    if (origin === 'active') {
-                        router.replace('/(drawer)/(meetings)/active');
-                    } else if (origin === 'historic') {
-                        router.replace('/(drawer)/(meetings)/historic');
-                    } else {
-                        router.back();
-                    }
-                }}
-            ></TouchableOpacity>
-            {/* Edit button now handled by navigation header in _layout.tsx */}
+        <Surface style={localStyles.surface}>
+            <View style={localStyles.screenTitleContainer}>
+                <Text style={localStyles.screenTitleText}>
+                    {meeting?.meeting_type}
+                </Text>
+            </View>
+            <View style={localStyles.firstRow}>
+                <MeetingDate date={meeting.meeting_date} />
+                <View style={{ flex: 1 }}>
+                    <MeetingIds meeting={meeting} historic={historic} />
+                </View>
+            </View>
 
-            <Text style={localStyles.meetingTitleText}>{meeting.title}</Text>
-            <MeetingDate date={meeting.meeting_date} />
             <Text>Support Contact: {meeting.support_contact}</Text>
             <Text>Organization ID: {meeting.organization_id}</Text>
             {/* Add more fields as needed */}
@@ -135,13 +134,41 @@ const MeetingDetails = () => {
                     Add New Group
                 </Text>
             </TouchableOpacity>
-        </View>
+        </Surface>
     );
 };
 
 export default MeetingDetails;
 
 const localStyles = StyleSheet.create({
+    surface: {
+        flex: 1,
+        flexDirection: 'column',
+        backgroundColor: theme.colors.primaryBackground,
+    },
+    screenTitleContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    screenTitleText: {
+        fontSize: 30,
+        fontFamily: 'Roboto-Bold',
+        color: theme.colors.lightText,
+    },
+    firstRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 0,
+        marginHorizontal: 10,
+    },
+    row1col2: {
+        flexDirection: 'column',
+        marginLeft: 5,
+        marginRight: 10,
+    },
+    textColumn: {
+        alignContent: 'flex-start',
+    },
     meetingInfoRow: {
         flexDirection: 'row',
         alignItems: 'center',
