@@ -1,5 +1,6 @@
 import theme from '@assets/Colors';
 import GroupListCard from '@components/GroupListCard';
+import MeetingDate from '@components/meeting/MeetingDate';
 import { useFocusEffect } from '@react-navigation/native';
 import { FullMeeting, Group } from '@types/interfaces';
 import { getAMeeting } from '@utils/api';
@@ -91,23 +92,11 @@ const MeetingDetails = () => {
                         router.back();
                     }
                 }}
-            >
-                <Text
-                    style={{
-                        color: theme.colors.link,
-                        fontWeight: 'bold',
-                        fontSize: 16,
-                    }}
-                >
-                    Back
-                </Text>
-            </TouchableOpacity>
+            ></TouchableOpacity>
             {/* Edit button now handled by navigation header in _layout.tsx */}
-            <View>
-                <Text>OLD /app/(meeting)/[id].tsx</Text>
-            </View>
+
             <Text style={localStyles.meetingTitleText}>{meeting.title}</Text>
-            <Text>Date: {meeting.meeting_date}</Text>
+            <MeetingDate date={meeting.meeting_date} />
             <Text>Support Contact: {meeting.support_contact}</Text>
             <Text>Organization ID: {meeting.organization_id}</Text>
             {/* Add more fields as needed */}
