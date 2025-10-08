@@ -1,5 +1,6 @@
 import theme from '@assets/Colors';
 import GroupListCard from '@components/GroupListCard';
+import MealDetails from '@components/meeting/MealDetails';
 import MeetingAttendance from '@components/meeting/MeetingAttendance';
 import MeetingDate from '@components/meeting/MeetingDate';
 import MeetingIds from '@components/meeting/MeetingIds';
@@ -112,12 +113,12 @@ const MeetingDetails = () => {
             {meeting.attendance_count > 0 && (
                 <MeetingAttendance attendanceCount={meeting.attendance_count} />
             )}
-            {/* <MealDetails
+            <MealDetails
                 meal={meeting.meal}
                 mealContact={meeting.meal_contact}
                 historic={historic}
                 mealCount={meeting.meal_count}
-            /> */}
+            />
 
             <Text>Support Contact: {meeting.support_contact}</Text>
             <Text>Organization ID: {meeting.organization_id}</Text>

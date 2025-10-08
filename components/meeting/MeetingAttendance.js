@@ -22,8 +22,8 @@ const localStyles = StyleSheet.create({
     row: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderColor: theme.colors.white,
-        borderWidth: 1,
+        // borderColor: theme.colors.white,
+        // borderWidth: 1,
         padding: 5,
     },
     detailsRowLabel: {
