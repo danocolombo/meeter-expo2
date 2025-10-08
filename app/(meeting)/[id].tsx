@@ -1,5 +1,6 @@
 import theme from '@assets/Colors';
 import GroupListCard from '@components/GroupListCard';
+import MeetingAttendance from '@components/meeting/MeetingAttendance';
 import MeetingDate from '@components/meeting/MeetingDate';
 import MeetingIds from '@components/meeting/MeetingIds';
 import { useFocusEffect } from '@react-navigation/native';
@@ -54,6 +55,19 @@ const MeetingDetails = () => {
                         setMeeting(fetchedMeeting);
                         if (fetchedMeeting.groups)
                             setGroups(fetchedMeeting.groups);
+
+                        // Check if meeting_date is before today
+                        const meetingDate = new Date(
+                            fetchedMeeting.meeting_date
+                        );
+                        const today = new Date();
+                        // Zero out time for today for accurate comparison
+                        today.setHours(0, 0, 0, 0);
+                        if (meetingDate < today) {
+                            setHistoric(true);
+                        } else {
+                            setHistoric(false);
+                        }
                     }
                 } catch (error) {
                     if (isActive)
@@ -95,6 +109,15 @@ const MeetingDetails = () => {
                     <MeetingIds meeting={meeting} historic={historic} />
                 </View>
             </View>
+            {meeting.attendance_count > 0 && (
+                <MeetingAttendance attendanceCount={meeting.attendance_count} />
+            )}
+            {/* <MealDetails
+                meal={meeting.meal}
+                mealContact={meeting.meal_contact}
+                historic={historic}
+                mealCount={meeting.meal_count}
+            /> */}
 
             <Text>Support Contact: {meeting.support_contact}</Text>
             <Text>Organization ID: {meeting.organization_id}</Text>
