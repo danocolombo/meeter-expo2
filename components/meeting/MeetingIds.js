@@ -1,43 +1,45 @@
-import React from 'react';
-import { View, Text } from 'react-native';
-import { Badge, useTheme } from 'react-native-paper';
+import theme from '@assets/Colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 const MeetingIds = ({ meeting, historic }) => {
-    const mtrTheme = useTheme();
     return (
-        <View style={mtrTheme.row1col2}>
+        <View style={localStyles.row1col2}>
             {meeting?.meeting_type !== 'Testimony' && (
-                <View style={mtrTheme.textColumn}>
-                    <Text style={mtrTheme.detailsTitle}>{meeting.title}</Text>
+                <View style={localStyles.textColumn}>
+                    <Text style={localStyles.detailsTitle}>
+                        {meeting.title}
+                    </Text>
                 </View>
             )}
             <View
                 style={[
-                    mtrTheme.row && {
+                    localStyles.row && {
                         borderColor: 'white',
                     },
                 ]}
             >
-                <Text style={mtrTheme.subTitle}>
+                <Text style={localStyles.subTitle}>
                     {meeting?.meeting_type !== 'Testimony'
                         ? meeting.support_contact
                         : meeting.title}
                 </Text>
                 {/* {!historic && (
-                    <Badge size={40} style={mtrTheme.detailsBadge}>
+                    <Badge size={40} style={localStyles.detailsBadge}>
                         {meeting.attendance_count || 0}
                     </Badge>
                 )} */}
             </View>
             {meeting?.worship && (
-                <View style={mtrTheme.worshipContainer}>
+                <View style={localStyles.worshipContainer}>
                     <MaterialCommunityIcons
                         name='music'
                         size={20}
                         color='white'
                     />
-                    <Text style={mtrTheme.worshipText}>{meeting?.worship}</Text>
+                    <Text style={localStyles.worshipText}>
+                        {meeting?.worship}
+                    </Text>
                 </View>
             )}
         </View>
@@ -45,3 +47,43 @@ const MeetingIds = ({ meeting, historic }) => {
 };
 
 export default MeetingIds;
+const localStyles = StyleSheet.create({
+    row1col2: {
+        flexDirection: 'column',
+        backgroundColor: theme.colors.primaryBackground,
+        padding: 10,
+    },
+    textColumn: {
+        marginBottom: 8,
+    },
+    detailsTitle: {
+        color: theme.colors.primary,
+        fontWeight: 'bold',
+        fontSize: 18,
+    },
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderColor: theme.colors.white,
+        borderWidth: 1,
+        padding: 5,
+    },
+    subTitle: {
+        color: theme.colors.text,
+        fontSize: 16,
+    },
+    detailsBadge: {
+        backgroundColor: theme.colors.primary,
+        color: theme.colors.primaryBackground,
+        marginLeft: 8,
+    },
+    worshipContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    worshipText: {
+        color: theme.colors.secondary,
+        marginLeft: 4,
+    },
+});
