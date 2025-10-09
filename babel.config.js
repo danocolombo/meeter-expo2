@@ -4,6 +4,7 @@ module.exports = {
         [
             'module-resolver',
             {
+                // Keep these in sync with tsconfig.json "paths"
                 alias: {
                     '@': './app',
                     '@assets': './assets',
@@ -13,6 +14,7 @@ module.exports = {
                     '@types': './types',
                     '@utils': './utils',
                 },
+                extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
             },
         ],
     ],

@@ -24,11 +24,6 @@ const MeetingIds = ({ meeting, historic }) => {
                         ? meeting.support_contact
                         : meeting.title}
                 </Text>
-                {/* {!historic && (
-                    <Badge size={40} style={localStyles.detailsBadge}>
-                        {meeting.attendance_count || 0}
-                    </Badge>
-                )} */}
             </View>
             {meeting?.worship && (
                 <View style={localStyles.worshipContainer}>
@@ -57,9 +52,9 @@ const localStyles = StyleSheet.create({
         marginBottom: 8,
     },
     detailsTitle: {
-        color: theme.colors.primary,
-        fontWeight: 'bold',
-        fontSize: 18,
+        color: theme.colors.accent,
+        fontFamily: 'Roboto-Bold',
+        fontSize: 30,
     },
     row: {
         flexDirection: 'row',
@@ -69,8 +64,9 @@ const localStyles = StyleSheet.create({
         padding: 5,
     },
     subTitle: {
-        color: theme.colors.text,
-        fontSize: 16,
+        color: theme.colors.accent,
+        fontFamily: 'Roboto-Bold',
+        fontSize: 30,
     },
     detailsBadge: {
         backgroundColor: theme.colors.primary,

@@ -9,14 +9,20 @@ import {
     Text,
     View,
 } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import HeroMessage from '../../components/ui/heroMessage';
+import { updateProfile } from '../../features/user/userSlice';
 
 const Landing = () => {
+    const dispatch = useDispatch();
     const { data: affiliations } = useQuery({
         queryKey: ['affiliations'],
         queryFn: getAffiliations,
     });
+    // On mount, set isLoading to false to hide activity indicator after navigation
+    React.useEffect(() => {
+        dispatch(updateProfile({ isLoading: false }));
+    }, [dispatch]);
     // Access activeMeetings from Redux store
     const activeMeetings = useSelector(
         (state: any) => state.meetings.activeMeetings

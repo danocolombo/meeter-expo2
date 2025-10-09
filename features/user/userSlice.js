@@ -61,7 +61,10 @@ export const userSlice = createSlice({
             return state;
         },
         updateProfile: (state, action) => {
-            // Update profile while preserving authentication state
+            // Allow setting isLoading directly if provided
+            if (typeof action.payload.isLoading === 'boolean') {
+                state.isLoading = action.payload.isLoading;
+            }
             if (action.payload.preserveAuth) {
                 // Only update the profile, preserve apiToken and perms
                 state.profile = {
@@ -69,7 +72,7 @@ export const userSlice = createSlice({
                     ...action.payload.profile,
                 };
                 state.isAuthenticated = true;
-            } else {
+            } else if (action.payload.profile) {
                 // Standard profile update
                 state.profile = action.payload.profile;
             }

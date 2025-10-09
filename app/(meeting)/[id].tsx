@@ -4,7 +4,9 @@ import MealDetails from '@components/meeting/MealDetails';
 import MeetingAttendance from '@components/meeting/MeetingAttendance';
 import MeetingDate from '@components/meeting/MeetingDate';
 import MeetingIds from '@components/meeting/MeetingIds';
-import { useFocusEffect } from '@react-navigation/native';
+import BadgeNumber from '@components/ui/BadgeNumber';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { FullMeeting, Group } from '@types/interfaces';
 import { getAMeeting } from '@utils/api';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -18,6 +20,7 @@ import {
     View,
 } from 'react-native';
 import { Surface } from 'react-native-paper';
+import { useSelector } from 'react-redux';
 const Colors = theme.colors;
 
 const MeetingDetails = () => {
@@ -29,8 +32,12 @@ const MeetingDetails = () => {
     const router = useRouter();
     const [historic, setHistoric] = React.useState(false);
     const [groups, setGroups] = React.useState<Group[]>([]);
+    const user = useSelector((state: any) => state.user);
+    // const defaultGroups = useSelector((state) => state.groups.defaultGroups);
+    //const newPerms = useSelector((state) => state.user.perms);
     const [meeting, setMeeting] = React.useState<FullMeeting | null>(null);
     const [isLoading, setIsLoading] = React.useState(false);
+    const navigation = useNavigation();
 
     // Add Edit button to header (Expo Router v2+ pattern)
     // Use a custom header if needed, or add edit button in the screen for now
@@ -83,6 +90,31 @@ const MeetingDetails = () => {
             };
         }, [id, org_id])
     );
+
+    // Map meeting_type to display string
+    const meetingTypeDisplay: Record<string, string> = {
+        regular: 'Regular Meeting',
+        special: 'Special Meeting',
+        board: 'Board Meeting',
+        // Add more mappings as needed
+    };
+    const meetingTypeString =
+        meeting &&
+        (meetingTypeDisplay[meeting.meeting_type] ||
+            meeting.meeting_type ||
+            '');
+
+    // Set header title dynamically after meeting is loaded
+    React.useLayoutEffect(() => {
+        if (
+            meetingTypeString &&
+            navigation &&
+            typeof navigation.setOptions === 'function'
+        ) {
+            navigation.setOptions({ title: meetingTypeString });
+        }
+    }, [meetingTypeString, navigation]);
+
     // Removed unused generateUUID
     if (isLoading || !meeting) {
         return (
@@ -99,11 +131,6 @@ const MeetingDetails = () => {
     // Basic Meeting info form (read-only)
     return (
         <Surface style={localStyles.surface}>
-            <View style={localStyles.screenTitleContainer}>
-                <Text style={localStyles.screenTitleText}>
-                    {meeting?.meeting_type}
-                </Text>
-            </View>
             <View style={localStyles.firstRow}>
                 <MeetingDate date={meeting.meeting_date} />
                 <View style={{ flex: 1 }}>
@@ -119,13 +146,67 @@ const MeetingDetails = () => {
                 historic={historic}
                 mealCount={meeting.meal_count}
             />
+            {Number(meeting.newcomers_count) > 0 && (
+                <View style={localStyles.row}>
+                    <View style={localStyles.detailsContainer}>
+                        <Text style={localStyles.detailsRowLabel}>
+                            Newcomers:
+                        </Text>
+                    </View>
 
-            <Text>Support Contact: {meeting.support_contact}</Text>
-            <Text>Organization ID: {meeting.organization_id}</Text>
-            {/* Add more fields as needed */}
-            {/* Existing group list and add group button below */}
-            <View style={localStyles.linkRow}>
-                <Text>Groups:</Text>
+                    <View style={localStyles.detailsBadgeContainer}>
+                        <BadgeNumber value={Number(meeting.newcomers_count)} />
+                    </View>
+                </View>
+            )}
+            {meeting.notes && (
+                <View style={localStyles.notesContainer}>
+                    <Text style={localStyles.notesText}>{meeting.notes}</Text>
+                </View>
+            )}
+            <View style={localStyles.openShareSection}>
+                <View style={localStyles.openShareContainer}>
+                    <Text style={localStyles.openShareGroupsText}>
+                        Open-Share Groups
+                    </Text>
+                    {(user.profile.permissions.includes('manage') ||
+                        user.profile.perms.includes('groups')) && (
+                        <View style={localStyles.openShareButtonContainer}>
+                            <TouchableOpacity
+                                key={0}
+                                onPress={() =>
+                                    router.push(
+                                        `/(group)/newGroup?meetingId=${encodeURIComponent(
+                                            id
+                                        )}`
+                                    )
+                                }
+                                style={localStyles.openShareButtonContainer}
+                            >
+                                <FontAwesome5
+                                    name='plus-circle'
+                                    size={20}
+                                    color={theme.colors.lightText}
+                                />
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                    {/* {defaultGroups?.length > 0 && (
+                        <View style={localStyles.openShareGroupsButtonWrapper}>
+                            <View
+                                style={
+                                    localStyles.openShareGroupsButtonContainer
+                                }
+                            >
+                                <FontAwesome5
+                                    name='layer-group'
+                                    size={20}
+                                    color={theme.colors.lightText}
+                                />
+                            </View>
+                        </View>
+                    )} */}
+                </View>
             </View>
             <FlatList
                 data={groups}
@@ -169,6 +250,7 @@ const localStyles = StyleSheet.create({
         flex: 1,
         flexDirection: 'column',
         backgroundColor: theme.colors.primaryBackground,
+        paddingVertical: 16,
     },
     screenTitleContainer: {
         justifyContent: 'center',
@@ -178,6 +260,11 @@ const localStyles = StyleSheet.create({
         fontSize: 30,
         fontFamily: 'Roboto-Bold',
         color: theme.colors.lightText,
+    },
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 5,
     },
     firstRow: {
         flexDirection: 'row',
@@ -193,11 +280,35 @@ const localStyles = StyleSheet.create({
     textColumn: {
         alignContent: 'flex-start',
     },
+    detailsContainer: { marginLeft: 20 },
+    detailsBadgeContainer: {
+        marginLeft: 'auto',
+        paddingVertical: 0,
+        paddingHorizontal: 10,
+    },
     meetingInfoRow: {
         flexDirection: 'row',
         alignItems: 'center',
         width: '100%',
         marginVertical: 8,
+    },
+    notesContainer: {
+        marginHorizontal: 10,
+        marginBottom: 15,
+        borderRadius: 5,
+        paddingHorizontal: 15,
+        backgroundColor: theme.colors.lightGraphic,
+    },
+    notesText: {
+        color: theme.colors.darkText,
+        fontFamily: 'Roboto-Regular',
+        fontSize: 24,
+    },
+    detailsRowLabel: {
+        fontFamily: 'Roboto-Regular',
+        color: theme.colors.lightText,
+        fontSize: 24,
+        fontWeight: '400',
     },
     meetingTitleContainer: {
         flex: 1,
@@ -218,6 +329,10 @@ const localStyles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'stretch',
     },
+    groupsContainer: {
+        flexDirection: 'row',
+    },
+
     linkRow: {
         marginTop: 24,
         flexDirection: 'row',
@@ -235,5 +350,54 @@ const localStyles = StyleSheet.create({
     linkText: {
         color: theme.colors.lightText,
         fontWeight: 'bold',
+    },
+    openShareSection: {
+        borderTopColor: theme.colors.accent,
+        borderBottomColor: theme.colors.accent,
+        marginHorizontal: 10,
+        marginBottom: 5,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderTopWidth: StyleSheet.hairlineWidth,
+    },
+    openShareContainer: {
+        flexDirection: 'row',
+        textAlign: 'center',
+        justifyContent: 'center',
+    },
+    openShareButtonContainer: {
+        justifyContent: 'center',
+        marginLeft: 10,
+    },
+    openShareGroupsButtonWrapper: {
+        paddingLeft: 20,
+        justifyContent: 'center',
+    },
+    openShareGroupsButtonContainer: {
+        justifyContent: 'center',
+        verticalAlign: 'middle',
+        borderWidth: 1,
+        borderColor: theme.colors.accent,
+    },
+    openShareGroupsListHeaderContainer: {
+        alignItems: 'center',
+    },
+    openShareGroupsListHeaderText: {
+        color: theme.colors.accent,
+        fontFamily: 'Roboto-Regular',
+    },
+    openShareGroupsListFooterContainer: {
+        alignItems: 'center',
+    },
+    openShareGroupsListFooterText: {
+        color: theme.colors.accent,
+        fontFamily: 'Roboto-Regular',
+    },
+    openShareGroupsText: {
+        color: theme.colors.lightText,
+        fontSize: 20,
+        fontWeight: '400',
+        fontFamily: 'Roboto-Regular',
+        textAlign: 'center',
+        paddingVertical: 5,
     },
 });

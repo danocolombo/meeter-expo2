@@ -2,6 +2,7 @@ import { RootState } from '@utils/store';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    ActivityIndicator,
     Button,
     StyleSheet,
     Text,
@@ -43,6 +44,7 @@ export default function Signin() {
                     value={login}
                     onChangeText={setLogin}
                     autoCapitalize='none'
+                    editable={!user.isLoading}
                 />
                 <TextInput
                     style={styles.input}
@@ -50,11 +52,25 @@ export default function Signin() {
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
+                    editable={!user.isLoading}
                 />
-                <Button title='Login' onPress={handleLoginPress} />
+                {user.isLoading ? (
+                    <ActivityIndicator
+                        size='large'
+                        color='#007AFF'
+                        style={{ marginVertical: 12 }}
+                    />
+                ) : (
+                    <Button
+                        title='Login'
+                        onPress={handleLoginPress}
+                        disabled={user.isLoading}
+                    />
+                )}
                 <TouchableOpacity
                     onPress={handleRegister}
                     style={styles.registerLink}
+                    disabled={user.isLoading}
                 >
                     <Text style={styles.registerText}>Register</Text>
                 </TouchableOpacity>
