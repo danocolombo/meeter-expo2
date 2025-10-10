@@ -14,6 +14,8 @@ import React from 'react';
 import {
     ActivityIndicator,
     FlatList,
+    KeyboardAvoidingView,
+    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -24,15 +26,15 @@ import { useSelector } from 'react-redux';
 const Colors = theme.colors;
 
 const MeetingDetails = () => {
-    const { id, org_id, origin } = useLocalSearchParams<{
+    const { id, origin } = useLocalSearchParams<{
         id: string;
-        org_id: string;
         origin?: string;
     }>();
     const router = useRouter();
     const [historic, setHistoric] = React.useState(false);
     const [groups, setGroups] = React.useState<Group[]>([]);
     const user = useSelector((state: any) => state.user);
+    const org_id = user?.profile?.activeOrg?.id;
     // const defaultGroups = useSelector((state) => state.groups.defaultGroups);
     //const newPerms = useSelector((state) => state.user.perms);
     const [meeting, setMeeting] = React.useState<FullMeeting | null>(null);
@@ -45,7 +47,6 @@ const MeetingDetails = () => {
     useFocusEffect(
         React.useCallback(() => {
             let isActive = true;
-            // Reset state before fetching
             setMeeting(null);
             setGroups([]);
             setIsLoading(true);
@@ -63,13 +64,10 @@ const MeetingDetails = () => {
                         setMeeting(fetchedMeeting);
                         if (fetchedMeeting.groups)
                             setGroups(fetchedMeeting.groups);
-
-                        // Check if meeting_date is before today
                         const meetingDate = new Date(
                             fetchedMeeting.meeting_date
                         );
                         const today = new Date();
-                        // Zero out time for today for accurate comparison
                         today.setHours(0, 0, 0, 0);
                         if (meetingDate < today) {
                             setHistoric(true);
@@ -130,116 +128,130 @@ const MeetingDetails = () => {
 
     // Basic Meeting info form (read-only)
     return (
-        <Surface style={localStyles.surface}>
-            <View style={localStyles.firstRow}>
-                <MeetingDate date={meeting.meeting_date} />
-                <View style={{ flex: 1 }}>
-                    <MeetingIds meeting={meeting} historic={historic} />
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+        >
+            <Surface style={localStyles.surface}>
+                <View style={localStyles.firstRow}>
+                    <MeetingDate date={meeting.meeting_date} />
+                    <View style={{ flex: 1 }}>
+                        <MeetingIds meeting={meeting} historic={historic} />
+                    </View>
                 </View>
-            </View>
-            {meeting.attendance_count > 0 && (
-                <MeetingAttendance attendanceCount={meeting.attendance_count} />
-            )}
-            <MealDetails
-                meal={meeting.meal}
-                mealContact={meeting.meal_contact}
-                historic={historic}
-                mealCount={meeting.meal_count}
-            />
-            {Number(meeting.newcomers_count) > 0 && (
-                <View style={localStyles.row}>
-                    <View style={localStyles.detailsContainer}>
-                        <Text style={localStyles.detailsRowLabel}>
-                            Newcomers:
+                {meeting.attendance_count > 0 && (
+                    <MeetingAttendance
+                        attendanceCount={meeting.attendance_count}
+                    />
+                )}
+                <MealDetails
+                    meal={meeting.meal}
+                    mealContact={meeting.meal_contact}
+                    historic={historic}
+                    mealCount={meeting.meal_count}
+                />
+                {Number(meeting.newcomers_count) > 0 && (
+                    <View style={localStyles.row}>
+                        <View style={localStyles.detailsContainer}>
+                            <Text style={localStyles.detailsRowLabel}>
+                                Newcomers:
+                            </Text>
+                        </View>
+
+                        <View style={localStyles.detailsBadgeContainer}>
+                            <BadgeNumber
+                                value={Number(meeting.newcomers_count)}
+                            />
+                        </View>
+                    </View>
+                )}
+                {meeting.notes && (
+                    <View style={localStyles.notesContainer}>
+                        <Text style={localStyles.notesText}>
+                            {meeting.notes}
                         </Text>
                     </View>
-
-                    <View style={localStyles.detailsBadgeContainer}>
-                        <BadgeNumber value={Number(meeting.newcomers_count)} />
+                )}
+                <View style={localStyles.openShareSection}>
+                    <View style={localStyles.openShareContainer}>
+                        <Text style={localStyles.openShareGroupsText}>
+                            Open-Share Groups
+                        </Text>
+                        {(user.profile.permissions.includes('manage') ||
+                            user.profile.perms.includes('groups')) && (
+                            <View style={localStyles.openShareButtonContainer}>
+                                <TouchableOpacity
+                                    key={0}
+                                    onPress={() =>
+                                        router.push(
+                                            `/(group)/newGroup?meetingId=${encodeURIComponent(
+                                                id
+                                            )}`
+                                        )
+                                    }
+                                    style={localStyles.openShareButtonContainer}
+                                >
+                                    <FontAwesome5
+                                        name='plus-circle'
+                                        size={20}
+                                        color={theme.colors.lightText}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                        {/* {defaultGroups?.length > 0 && (
+                            <View style={localStyles.openShareGroupsButtonWrapper}>
+                                <View
+                                    style={
+                                        localStyles.openShareGroupsButtonContainer
+                                    }
+                                >
+                                    <FontAwesome5
+                                        name='layer-group'
+                                        size={20}
+                                        color={theme.colors.lightText}
+                                    />
+                                </View>
+                            </View>
+                        )} */}
                     </View>
                 </View>
-            )}
-            {meeting.notes && (
-                <View style={localStyles.notesContainer}>
-                    <Text style={localStyles.notesText}>{meeting.notes}</Text>
-                </View>
-            )}
-            <View style={localStyles.openShareSection}>
-                <View style={localStyles.openShareContainer}>
-                    <Text style={localStyles.openShareGroupsText}>
-                        Open-Share Groups
-                    </Text>
-                    {(user.profile.permissions.includes('manage') ||
-                        user.profile.perms.includes('groups')) && (
-                        <View style={localStyles.openShareButtonContainer}>
-                            <TouchableOpacity
-                                key={0}
-                                onPress={() =>
-                                    router.push(
-                                        `/(group)/newGroup?meetingId=${encodeURIComponent(
-                                            id
-                                        )}`
-                                    )
-                                }
-                                style={localStyles.openShareButtonContainer}
-                            >
-                                <FontAwesome5
-                                    name='plus-circle'
-                                    size={20}
-                                    color={theme.colors.lightText}
-                                />
-                            </TouchableOpacity>
-                        </View>
+                <FlatList
+                    data={groups}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                        <GroupListCard group={item} fromMeetingId={id} />
                     )}
-                    {/* {defaultGroups?.length > 0 && (
-                        <View style={localStyles.openShareGroupsButtonWrapper}>
-                            <View
-                                style={
-                                    localStyles.openShareGroupsButtonContainer
-                                }
-                            >
-                                <FontAwesome5
-                                    name='layer-group'
-                                    size={20}
-                                    color={theme.colors.lightText}
-                                />
-                            </View>
-                        </View>
-                    )} */}
-                </View>
-            </View>
-            <FlatList
-                data={groups}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <GroupListCard group={item} fromMeetingId={id} />
-                )}
-            />
-            <TouchableOpacity
-                style={{
-                    backgroundColor: theme.colors.blue,
-                    padding: 16,
-                    borderRadius: 8,
-                    alignItems: 'center',
-                    margin: 16,
-                }}
-                onPress={() =>
-                    router.push(
-                        `/(group)/newGroup?meetingId=${encodeURIComponent(id)}`
-                    )
-                }
-            >
-                <Text
+                />
+                <TouchableOpacity
                     style={{
-                        color: theme.colors.white,
-                        fontWeight: 'bold',
-                        fontSize: 16,
+                        backgroundColor: theme.colors.blue,
+                        padding: 16,
+                        borderRadius: 8,
+                        alignItems: 'center',
+                        margin: 16,
                     }}
+                    onPress={() =>
+                        router.push(
+                            `/(group)/newGroup?meetingId=${encodeURIComponent(
+                                id
+                            )}`
+                        )
+                    }
                 >
-                    Add New Group
-                </Text>
-            </TouchableOpacity>
-        </Surface>
+                    <Text
+                        style={{
+                            color: theme.colors.white,
+                            fontWeight: 'bold',
+                            fontSize: 16,
+                        }}
+                    >
+                        Add New Group
+                    </Text>
+                </TouchableOpacity>
+            </Surface>
+        </KeyboardAvoidingView>
     );
 };
 

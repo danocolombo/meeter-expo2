@@ -689,68 +689,29 @@ export const updateMeeting = createAsyncThunk(
 
 export const addGroup = createAsyncThunk(
     'meetings/addGroup',
-    async ({ api_token, group, meeting }, thunkAPI) => {
+    async ({ api_token, group, meetingId }, thunkAPI) => {
         try {
-            // printObject('MT:351-->inputs:\n', inputs);
-            if (group.id === '0') {
-                delete group.id;
-                const newId = createAWSUniqueID();
-                group.id = newId;
+            if (group.id === '0' || !group.id) {
+                group.id = createAWSUniqueID();
             }
-            let inputInfo = {
-                api_token: api_token,
-                meeting: meeting,
-                group: group,
-            };
-            //==========================================
-            // create the object to add
-            //==========================================
-            // {
-            //     "grp_comp_key": "",
-            //     "title": "Tarheels",
-            //     "location": "North Carolina",
-            //     "gender": "f",
-            //     "attendance": 4,
-            //     "facilitator": "unknown",
-            //     "cofacilitator": null,
-            //     "notes": null,
-            //     "meeting_id": "411561aa-54a3-422b-8de6-808a9cfba5f2"
-            // }
-            //*------------------------
-            // create grp_comp_key
-            //*------------------------
-            const gck = `${meeting.mtg_comp_key}#${meeting.id}`;
+            // Fetch meeting details to get mtg_comp_key if needed
+            // (Assume meetingId is enough for backend, else fetch meeting details here)
             const new_group = {
-                meeting_id: meeting.id,
-                grp_comp_key: gck,
-                title: group.title,
-                location: group.location,
-                gender: group.gender,
-                attendance: group.attendance,
-                facilitator: group.facilitator,
-                cofacilitator: group.cofacilitator,
-                notes: group.notes,
+                ...group,
+                meeting_id: meetingId,
             };
-
-            // call the API to insert into the database
-            //* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv...
-            //    ADD NEW GROUP API CALL HERE CALLED createNewGroup
-            //*  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             const createNewGroupResponse = await createNewGroup(
                 api_token,
-                meeting,
+                meetingId,
                 new_group
             );
-
             if (createNewGroupResponse.data.id) {
-                return inputInfo;
+                return { group: new_group, meetingId };
             } else {
-                // If data.createGroup.id is missing, handle the error
                 throw new Error('MT:216-->Failed to create group');
             }
         } catch (error) {
-            printObject('MT:741-->addGroup', inputs.group);
-            // Rethrow the error to let createAsyncThunk handle it
+            printObject('MT:741-->addGroup', group);
             throw new Error('MT:742-->Failed to add group');
         }
     }
