@@ -1,8 +1,14 @@
+import theme from '@assets/Colors';
 import { Stack, useRouter } from 'expo-router';
-import { Text, TouchableOpacity } from 'react-native';
-
+import { Text, TouchableOpacity, useColorScheme } from 'react-native';
 const Layout = () => {
     const router = useRouter();
+    const colorScheme = useColorScheme();
+    const cancelColor =
+        colorScheme === 'dark'
+            ? theme.colors.navigateTextLight
+            : theme.colors.navigateTextDark;
+
     return (
         <Stack>
             <Stack.Screen
@@ -30,7 +36,10 @@ const Layout = () => {
                                 }}
                             >
                                 <Text
-                                    style={{ color: '#007AFF', fontSize: 16 }}
+                                    style={{
+                                        color: cancelColor,
+                                    }}
+                                    selectable={false}
                                 >
                                     Cancel
                                 </Text>
@@ -63,7 +72,10 @@ const Layout = () => {
                                 }}
                             >
                                 <Text
-                                    style={{ color: '#007AFF', fontSize: 16 }}
+                                    style={{
+                                        color: theme.colors.navigateTextLight,
+                                        fontSize: 16,
+                                    }}
                                 >
                                     Cancel
                                 </Text>
@@ -110,7 +122,10 @@ const Layout = () => {
                                 }}
                             >
                                 <Text
-                                    style={{ color: '#007AFF', fontSize: 16 }}
+                                    style={{
+                                        color: theme.colors.navigateTextLight,
+                                        fontSize: 16,
+                                    }}
                                 >
                                     {'< Back'}
                                 </Text>
@@ -128,7 +143,7 @@ const Layout = () => {
                             >
                                 <Text
                                     style={{
-                                        color: '#007AFF',
+                                        color: theme.colors.navigateTextLight,
                                         fontSize: 16,
                                         fontWeight: 'bold',
                                     }}

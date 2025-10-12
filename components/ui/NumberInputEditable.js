@@ -1,6 +1,6 @@
+import theme from '@assets/Colors';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
-import { useTheme } from 'react-native-paper';
 import { RoundedButton } from './RoundedButton';
 
 function NumberInputEditable({
@@ -11,19 +11,11 @@ function NumberInputEditable({
     min = 0,
     max = 999,
 }) {
-    const mtrTheme = useTheme();
-    const [gsStyle, setGsStyle] = useState('black');
     const [inputValue, setInputValue] = useState(String(value));
 
     useEffect(() => {
         setInputValue(String(value));
     }, [value]);
-
-    useEffect(() => {
-        if (graphicStyle?.color) {
-            setGsStyle(graphicStyle.color);
-        }
-    }, [graphicStyle]);
 
     const increaseValue = () => {
         let numericValue = parseInt(inputValue) || 0;
@@ -55,22 +47,22 @@ function NumberInputEditable({
 
     return (
         <View>
-            <View style={styles.rootContainer}>
+            <View style={localStyles.rootContainer}>
                 <RoundedButton
                     title='-'
                     size={30}
                     textStyle={[
-                        { fontSize: 18, alignItems: 'center' },
+                        { fontSize: 18, alignItems: 'center', color: 'white' },
                         numberStyle,
                     ]}
-                    style={{ borderColor: gsStyle }}
+                    style={{ borderColor: 'white' }}
                     onPress={decreaseValue}
                 />
                 <TextInput
                     style={[
-                        styles.numberBox,
+                        localStyles.numberBox,
                         graphicStyle,
-                        styles.input,
+                        localStyles.input,
                         numberStyle,
                     ]}
                     keyboardType='numeric'
@@ -81,9 +73,9 @@ function NumberInputEditable({
                 <RoundedButton
                     title='+'
                     size={30}
-                    style={{ borderColor: gsStyle }}
+                    style={{ borderColor: 'white' }}
                     textStyle={[
-                        { fontSize: 18, alignItems: 'center' },
+                        { fontSize: 18, alignItems: 'center', color: 'white' },
                         numberStyle,
                     ]}
                     onPress={increaseValue}
@@ -94,7 +86,7 @@ function NumberInputEditable({
 }
 export default NumberInputEditable;
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
     rootContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -103,7 +95,7 @@ const styles = StyleSheet.create({
     numberBox: {
         paddingHorizontal: 10,
         borderWidth: 1,
-        borderColor: 'white',
+        borderColor: theme.colors.lightGraphic,
         marginLeft: 10,
         marginRight: 10,
         alignItems: 'center',
@@ -116,7 +108,7 @@ const styles = StyleSheet.create({
         fontSize: 24,
         textAlign: 'center',
         paddingVertical: 4,
-        backgroundColor: 'white',
+        backgroundColor: theme.colors.lightGraphic,
         borderRadius: 4,
     },
 });

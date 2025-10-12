@@ -1,9 +1,10 @@
 import theme from '@assets/Colors';
 import GenderSelectors from '@components/ui/GenderSelectors';
 import NumberInputEditable from '@components/ui/NumberInputEditable';
+import { addGroup } from '@features/meetings/meetingsThunks';
 import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -14,6 +15,7 @@ import {
     Text,
     TouchableOpacity,
     View,
+    useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
@@ -22,14 +24,13 @@ const NewGroup = () => {
     const router = useRouter();
     const navigation = useNavigation();
     const dispatch = useDispatch();
-    const { meetingId: meetingIdRaw, from } = useLocalSearchParams();
+    const { meetingId: meetingIdRaw } = useLocalSearchParams();
     // Ensure meetingId is always a string
     const meetingId = Array.isArray(meetingIdRaw)
         ? meetingIdRaw[0]
         : meetingIdRaw;
     // Always get org_id from Redux
-    const user = useSelector((state: any) => state.user);
-    const org_id = user?.profile?.activeOrg?.id;
+    // const user = useSelector((state: any) => state.user); // not used
     const api_token = useSelector((state: any) => state.user?.apiToken);
 
     // Form state
@@ -42,6 +43,13 @@ const NewGroup = () => {
     const [attendance, setAttendance] = useState(0);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+
+    // Color scheme for dynamic Cancel button color
+    const colorScheme = useColorScheme();
+    const cancelColor =
+        colorScheme === 'dark'
+            ? theme.colors.navigateTextLight
+            : theme.colors.navigateTextDark;
 
     // Ref for ScrollView to scroll Notes into view
     const scrollViewRef = useRef<RNScrollView>(null);
@@ -65,7 +73,7 @@ const NewGroup = () => {
         isNotesValid;
 
     // Top navigation cancel handler
-    const handleCancel = React.useCallback(() => {
+    const handleCancel = useCallback(() => {
         if (meetingId) {
             router.push({
                 pathname: '/(meeting)/[id]',
@@ -74,7 +82,7 @@ const NewGroup = () => {
         } else {
             router.push('/(meeting)/[id]');
         }
-    }, [meetingId, org_id, from, router]);
+    }, [meetingId, router]);
 
     const handleSubmit = async () => {
         setSubmitting(true);
@@ -110,7 +118,7 @@ const NewGroup = () => {
         }
     };
 
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         // Set headerLeft using navigation.setOptions to avoid non-serializable params
         navigation.setOptions &&
             navigation.setOptions({
@@ -120,14 +128,17 @@ const NewGroup = () => {
                         style={{ marginLeft: 16 }}
                     >
                         <Text
-                            style={{ color: theme.colors.accent, fontSize: 18 }}
+                            style={{
+                                color: cancelColor,
+                                fontSize: 18,
+                            }}
                         >
-                            {'< Cancel'}
+                            {'Cancel'}
                         </Text>
                     </TouchableOpacity>
                 ),
             });
-    }, [navigation, handleCancel]);
+    }, [handleCancel, cancelColor, navigation]);
 
     return (
         <SafeAreaView
