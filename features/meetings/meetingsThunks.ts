@@ -30,9 +30,9 @@ interface GroupUpdateType {
     notes: string;
 }
 interface FetchMeetingDetailsByIdArgs {
-    // Ensure no typos
     apiToken: string;
-    meeting_id: string;
+    organizationId: string;
+    meetingId: string;
 }
 type RequestedPageType = {
     status: number;
@@ -285,36 +285,21 @@ export const NEWfetchMeetingDetailsById = createAsyncThunk(
 );
 
 export const fetchMeetingDetailsById = createAsyncThunk<
-    // Correct usage
-    MeetingDetailsResponse, // Return type
-    FetchMeetingDetailsByIdArgs // Argument type
+    MeetingDetailsResponse,
+    FetchMeetingDetailsByIdArgs
 >('meetings/fetchMeetingDetailsById', async (inputs, thunkAPI) => {
     try {
-        const { api_token, organization_id, meeting_id } = inputs;
-        //* ************************************
-        //* get all fetchMeetingDetails
-        //* ************************************
-
+        const { apiToken, organizationId, meetingId } = inputs;
         const meetingDetails = await fetchMeetingDetails(
-            api_token,
-            organization_id,
-            meeting_id
+            apiToken,
+            organizationId,
+            meetingId
         );
-
         const meeting = meetingDetails.data.data;
-        // printObject('🟡🟡🟡🟡🟡 MT:282 ~ meeting:', meeting);
-        // const groups = [...meeting.groups] || [];
-        // delete meeting.groups;
-        // const summary = {
-        //     currentMeeting: meeting,
-        //     // currentGroups: [...groups],
-        // };
-
         const returnValue = {
             status: '200',
             data: meeting,
         };
-        // printObject('MT:128-🟡->returnValue (to Slice)\n', returnValue);
         return returnValue;
     } catch (error) {
         printObject('MT:255-->fetchMeetingDetailsById.ts', {

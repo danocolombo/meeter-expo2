@@ -8,7 +8,7 @@ import BadgeNumber from '@components/ui/BadgeNumber';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { FullMeeting, Group } from '@types/interfaces';
-import { getAMeeting } from '@utils/api';
+// import { getAMeeting } from '@utils/api';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {
@@ -22,7 +22,9 @@ import {
     View,
 } from 'react-native';
 import { Surface } from 'react-native-paper';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchMeetingDetailsById } from '../../features/meetings/meetingsThunks';
+import type { AppDispatch } from '../../utils/store';
 const Colors = theme.colors;
 
 const MeetingDetails = () => {
@@ -33,8 +35,11 @@ const MeetingDetails = () => {
     const router = useRouter();
     const [historic, setHistoric] = React.useState(false);
     const [groups, setGroups] = React.useState<Group[]>([]);
+    const [error, setError] = React.useState<string | null>(null);
     const user = useSelector((state: any) => state.user);
     const org_id = user?.profile?.activeOrg?.id;
+    const api_token = user?.apiToken || user?.token || user?.profile?.apiToken;
+    const dispatch: AppDispatch = useDispatch();
     // const defaultGroups = useSelector((state) => state.groups.defaultGroups);
     //const newPerms = useSelector((state) => state.user.perms);
     const [meeting, setMeeting] = React.useState<FullMeeting | null>(null);
@@ -44,49 +49,48 @@ const MeetingDetails = () => {
     // Add Edit button to header (Expo Router v2+ pattern)
     // Use a custom header if needed, or add edit button in the screen for now
 
-    useFocusEffect(
-        React.useCallback(() => {
-            let isActive = true;
+    // Helper to refresh meeting after group delete or on mount
+    const refreshMeeting = React.useCallback(async () => {
+        if (!api_token || !org_id || !id) return;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await dispatch(
+                fetchMeetingDetailsById({
+                    apiToken: api_token,
+                    organizationId: org_id,
+                    meetingId: id,
+                })
+            ).unwrap();
+            // Support both result.data.currentMeeting and result.data (for legacy)
+            let meetingData = result?.data?.currentMeeting || result?.data;
+            if (meetingData) {
+                setMeeting(meetingData);
+                setGroups(meetingData.groups || []);
+                // Set historic flag
+                const meetingDate = new Date(meetingData.meeting_date);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                setHistoric(meetingDate < today);
+            } else {
+                setMeeting(null);
+                setGroups([]);
+                setError('Meeting not found.');
+            }
+        } catch (err) {
             setMeeting(null);
             setGroups([]);
-            setIsLoading(true);
-            async function fetchMeeting() {
-                if (!id || !org_id) {
-                    setIsLoading(false);
-                    return;
-                }
-                try {
-                    const fetchedMeeting: FullMeeting = await getAMeeting(
-                        org_id,
-                        id
-                    );
-                    if (isActive) {
-                        setMeeting(fetchedMeeting);
-                        if (fetchedMeeting.groups)
-                            setGroups(fetchedMeeting.groups);
-                        const meetingDate = new Date(
-                            fetchedMeeting.meeting_date
-                        );
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        if (meetingDate < today) {
-                            setHistoric(true);
-                        } else {
-                            setHistoric(false);
-                        }
-                    }
-                } catch (error) {
-                    if (isActive)
-                        console.error('Error fetching meeting:', error);
-                } finally {
-                    if (isActive) setIsLoading(false);
-                }
-            }
-            fetchMeeting();
-            return () => {
-                isActive = false;
-            };
-        }, [id, org_id])
+            setError('Failed to load meeting. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [api_token, org_id, id, dispatch]);
+
+    // Always use Redux thunk for fetching meeting details
+    useFocusEffect(
+        React.useCallback(() => {
+            refreshMeeting();
+        }, [refreshMeeting])
     );
 
     // Map meeting_type to display string
@@ -114,7 +118,7 @@ const MeetingDetails = () => {
     }, [meetingTypeString, navigation]);
 
     // Removed unused generateUUID
-    if (isLoading || !meeting) {
+    if (isLoading) {
         return (
             <View style={localStyles.container}>
                 <Text>Loading meeting...</Text>
@@ -122,6 +126,34 @@ const MeetingDetails = () => {
                     size='large'
                     color={Colors.activityIndicator}
                 />
+            </View>
+        );
+    }
+    if (error) {
+        return (
+            <View style={localStyles.container}>
+                <Text style={{ color: Colors.critical, marginBottom: 12 }}>
+                    {error}
+                </Text>
+                <TouchableOpacity
+                    style={{
+                        backgroundColor: Colors.accent,
+                        padding: 12,
+                        borderRadius: 6,
+                    }}
+                    onPress={refreshMeeting}
+                >
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                        Retry
+                    </Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+    if (!meeting) {
+        return (
+            <View style={localStyles.container}>
+                <Text>No meeting data found.</Text>
             </View>
         );
     }
@@ -221,7 +253,11 @@ const MeetingDetails = () => {
                     data={groups}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item }) => (
-                        <GroupListCard group={item} fromMeetingId={id} />
+                        <GroupListCard
+                            group={item}
+                            fromMeetingId={id}
+                            onGroupDeleted={refreshMeeting}
+                        />
                     )}
                 />
                 <TouchableOpacity

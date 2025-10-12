@@ -1,5 +1,4 @@
 import theme from '@assets/Colors';
-import { GenderStrings } from '@constants/meeter';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { FullGroup, Group } from '@types/interfaces';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -12,27 +11,47 @@ import {
     View,
 } from 'react-native';
 import { Badge } from 'react-native-paper';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { deleteGroupFromMeeting } from '../features/meetings/meetingsThunks';
+import type { AppDispatch } from '../utils/store';
 type GroupListCardProps = {
     group: Group | FullGroup;
     fromMeetingId?: string;
+    onGroupDeleted?: () => void;
 };
-const GroupListCard = ({ group, fromMeetingId }: GroupListCardProps) => {
+const GroupListCard = ({
+    group,
+    fromMeetingId,
+    onGroupDeleted,
+}: GroupListCardProps) => {
     const router = useRouter();
-    // Type guard for gender keys
-    const genderKeys: (keyof typeof GenderStrings)[] = ['m', 'f', 'x'];
+    //
     const user = useSelector((state: any) => state.user);
-    const gender = genderKeys.includes(group.gender as any)
-        ? GenderStrings[group.gender as keyof typeof GenderStrings]
-        : 'Unknown';
-    function handleDeleteClick(): void {
-        throw new Error('Function not implemented.');
-    }
-    function handleDeleteGroupRequest(id: string): void {
-        throw new Error('Function not implemented.');
-    }
+    const dispatch: AppDispatch = useDispatch();
+    // const gender = genderKeys.includes(group.gender as any)
+    //     ? GenderStrings[group.gender as keyof typeof GenderStrings]
+    //     : 'Unknown';
     // Get org_id from parent params if available
     const parentParams = useLocalSearchParams();
+
+    const handleDeleteGroupRequest = async (id: string) => {
+        const api_token =
+            user?.apiToken || user?.token || user?.profile?.apiToken;
+        const meeting_id = fromMeetingId;
+        if (!api_token || !meeting_id) return;
+        try {
+            await dispatch(
+                deleteGroupFromMeeting({
+                    api_token,
+                    group_id: id,
+                    meeting_id,
+                })
+            ).unwrap();
+            if (onGroupDeleted) onGroupDeleted();
+        } catch {
+            // Optionally show error
+        }
+    };
     return (
         <Pressable
             style={({ pressed }) => pressed && localStyle.pressed}
