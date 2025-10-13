@@ -151,6 +151,36 @@ export const NavigationDrawerContent = (props: any) => {
                                 Historic
                             </Text>
                         </TouchableOpacity>
+                        <TouchableOpacity
+                            key={'newMeeting'}
+                            onPress={() =>
+                                router.navigate(`/(meeting)/newMeeting`)
+                            }
+                            style={{
+                                paddingVertical: 0,
+                                marginVertical: 0,
+                                minHeight: 0,
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    fontSize: 16,
+                                    padding: 0,
+                                    margin: 0,
+                                    color:
+                                        pathName === `/(meeting)/newMeeting`
+                                            ? '#F2A310'
+                                            : '#fff',
+                                    fontWeight:
+                                        pathName === `/(meeting)/newMeeting`
+                                            ? 'bold'
+                                            : 'normal',
+                                }}
+                            >
+                                New Meeting
+                            </Text>
+                        </TouchableOpacity>
                     </View>
                 </DrawerContentScrollView>
                 <View

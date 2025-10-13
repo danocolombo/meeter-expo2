@@ -5,6 +5,7 @@ import { useFonts } from 'expo-font';
 import { Slot } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Provider } from 'react-redux';
 import { AuthProvider } from './(hooks)/AuthProvider';
 const queryClient = new QueryClient({
@@ -44,12 +45,14 @@ export default function RootLayout() {
         return null;
     }
     return (
-        <Provider store={store}>
-            <QueryClientProvider client={queryClient}>
-                <AuthProvider>
-                    <Slot />
-                </AuthProvider>
-            </QueryClientProvider>
-        </Provider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <Provider store={store}>
+                <QueryClientProvider client={queryClient}>
+                    <AuthProvider>
+                        <Slot />
+                    </AuthProvider>
+                </QueryClientProvider>
+            </Provider>
+        </GestureHandlerRootView>
     );
 }

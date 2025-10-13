@@ -80,12 +80,6 @@ function MeetingStackLayoutInner() {
                 }}
             />
             <Stack.Screen
-                name='(edit)/[id]'
-                options={{
-                    title: 'Edit Meeting',
-                }}
-            />
-            <Stack.Screen
                 name='newMeeting'
                 options={({ route }) => {
                     // Get 'from' param from route or local search params

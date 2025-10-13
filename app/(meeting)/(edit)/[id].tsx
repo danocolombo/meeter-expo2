@@ -57,7 +57,10 @@ const MeetingEditScreen = () => {
                     return;
                 }
                 const { getAMeeting } = await import('../../../utils/api');
-                const fetchedMeeting = await getAMeeting(org_id, meetingId);
+                const fetchedMeeting: FullMeeting = await getAMeeting(
+                    org_id,
+                    meetingId
+                );
                 if (!cancelled && fetchedMeeting && fetchedMeeting.id) {
                     setMeeting(fetchedMeeting);
                 }
