@@ -1,6 +1,11 @@
+import themedStyles from '@assets/Styles';
+import TypeSelectors from '@components/meeting/TypeSelectors';
+import { Meeting } from '@types/interfaces';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
+    KeyboardAvoidingView,
+    SafeAreaView,
     StyleSheet,
     Text,
     TextInput,
@@ -8,7 +13,7 @@ import {
     View,
 } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import type { Meeting } from '../../types/interfaces';
+import { useSelector } from 'react-redux';
 
 function generateUUID() {
     // Simple UUID v4 generator
@@ -61,81 +66,119 @@ const initialMeeting: Omit<Meeting, 'id'> = {
 
 const NewMeeting = () => {
     const router = useRouter();
+    const user = useSelector((state: any) => state.user);
     const [newId] = React.useState(() => generateUUID());
     const [meeting, setMeeting] = React.useState<Meeting>({
         id: newId,
         ...initialMeeting,
     });
-
+    const [isSavable, setIsSavable] = useState(false);
     const handleChange = (field: keyof Meeting, value: string) => {
         setMeeting((prev) => ({
             ...prev,
             [field]: typeof prev[field] === 'number' ? Number(value) : value,
         }));
     };
-
+    const handleTypeChange = (value: string) => {
+        if (!user.profile.permissions.includes('manage')) {
+            return;
+        }
+        let titleVal = false;
+        let contactVal = false;
+        switch (meeting.meeting_type) {
+            case 'Testimony':
+                setIsSavable(titleVal);
+                break;
+            case 'Special':
+                if (titleVal && contactVal) {
+                    setIsSavable(true);
+                }
+                break;
+            case 'Lesson':
+                if (titleVal && contactVal) {
+                    setIsSavable(true);
+                }
+                break;
+            default:
+                break;
+        }
+        const newValues = {
+            ...meeting,
+            meeting_type: value,
+        };
+        setMeeting(newValues);
+    };
     const handleSave = () => {
         console.log('saved new meeting:', meeting);
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <Text style={styles.title}>New Meeting</Text>
-            <View style={styles.formSection}>
-                <Text style={styles.label}>Title</Text>
-                <TextInput
-                    style={styles.input}
-                    value={meeting.title}
-                    onChangeText={(v) => handleChange('title', v)}
-                    placeholder='Meeting Title'
-                />
-                <Text style={styles.label}>Date</Text>
-                <TextInput
-                    style={styles.input}
-                    value={meeting.meeting_date}
-                    onChangeText={(v) => handleChange('meeting_date', v)}
-                    placeholder='YYYY-MM-DD'
-                />
-                <Text style={styles.label}>Type</Text>
-                <TextInput
-                    style={styles.input}
-                    value={meeting.meeting_type}
-                    onChangeText={(v) => handleChange('meeting_type', v)}
-                    placeholder='Type'
-                />
-                <Text style={styles.label}>Attendance Count</Text>
-                <TextInput
-                    style={styles.input}
-                    value={meeting.attendance_count.toString()}
-                    onChangeText={(v) => handleChange('attendance_count', v)}
-                    placeholder='0'
-                    keyboardType='numeric'
-                />
-                <Text style={styles.label}>Notes</Text>
-                <TextInput
-                    style={[styles.input, { height: 60 }]}
-                    value={meeting.notes}
-                    onChangeText={(v) => handleChange('notes', v)}
-                    placeholder='Notes'
-                    multiline
-                />
-                {/* Add more fields as needed */}
-            </View>
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveText}>Save</Text>
-            </TouchableOpacity>
-        </ScrollView>
+        <SafeAreaView style={themedStyles.container}>
+            <KeyboardAvoidingView style={themedStyles.keyboardAvoiding}>
+                <ScrollView style={themedStyles.containerContents}>
+                    <View style={themedStyles.meetingSelectorWrapper}>
+                        <TypeSelectors
+                            pick={meeting?.meeting_type}
+                            setPick={handleTypeChange}
+                        />
+                    </View>
+                    <Text style={themedStyles.formLabels}>Title</Text>
+                    <TextInput
+                        style={localStyles.input}
+                        value={meeting.title}
+                        onChangeText={(v) => handleChange('title', v)}
+                        placeholder='Meeting Title'
+                    />
+                    <Text style={localStyles.label}>Date</Text>
+                    <TextInput
+                        style={localStyles.input}
+                        value={meeting.meeting_date}
+                        onChangeText={(v) => handleChange('meeting_date', v)}
+                        placeholder='YYYY-MM-DD'
+                    />
+                    <Text style={localStyles.label}>Type</Text>
+                    <TextInput
+                        style={localStyles.input}
+                        value={meeting.meeting_type}
+                        onChangeText={(v) => handleChange('meeting_type', v)}
+                        placeholder='Type'
+                    />
+                    <Text style={localStyles.label}>Attendance Count</Text>
+                    <TextInput
+                        style={localStyles.input}
+                        value={meeting.attendance_count.toString()}
+                        onChangeText={(v) =>
+                            handleChange('attendance_count', v)
+                        }
+                        placeholder='0'
+                        keyboardType='numeric'
+                    />
+                    <Text style={localStyles.label}>Notes</Text>
+                    <TextInput
+                        style={[localStyles.input, { height: 60 }]}
+                        value={meeting.notes}
+                        onChangeText={(v) => handleChange('notes', v)}
+                        placeholder='Notes'
+                        multiline
+                    />
+                    {/* Add more fields as needed */}
+                    {isSavable && (
+                        <TouchableOpacity
+                            style={localStyles.saveButton}
+                            onPress={handleSave}
+                        >
+                            <Text style={localStyles.saveText}>Save</Text>
+                        </TouchableOpacity>
+                    )}
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 
 export default NewMeeting;
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        paddingTop: 48,
-        paddingHorizontal: 16,
-    },
+const localStyles = StyleSheet.create({
     title: {
         marginTop: 40,
         fontSize: 24,

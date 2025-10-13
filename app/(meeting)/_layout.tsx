@@ -88,6 +88,7 @@ function MeetingStackLayoutInner() {
                         | undefined;
                     const fromValue = getFrom(params);
                     return {
+                        title: 'New Meeting',
                         headerLeft: () => (
                             <TouchableOpacity
                                 style={{ marginLeft: 16 }}

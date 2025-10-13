@@ -2,8 +2,6 @@ import theme from '@assets/Colors';
 import GroupListCard from '@components/GroupListCard';
 import MealDetails from '@components/meeting/MealDetails';
 import MeetingAttendance from '@components/meeting/MeetingAttendance';
-import MeetingDate from '@components/meeting/MeetingDate';
-import MeetingIds from '@components/meeting/MeetingIds';
 import BadgeNumber from '@components/ui/BadgeNumber';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -167,9 +165,13 @@ const MeetingDetails = () => {
         >
             <Surface style={localStyles.surface}>
                 <View style={localStyles.firstRow}>
-                    <MeetingDate date={meeting.meeting_date} />
-                    <View style={{ flex: 1 }}>
-                        <MeetingIds meeting={meeting} historic={historic} />
+                    <View style={localStyles.meetingTitleContainer}>
+                        <View style={mtrTheme.selectorWrapper}>
+                            <TypeSelectors
+                                pick={theMeeting?.meeting_type}
+                                setPick={handleTypeChange}
+                            />
+                        </View>
                     </View>
                 </View>
                 {meeting.attendance_count > 0 && (
