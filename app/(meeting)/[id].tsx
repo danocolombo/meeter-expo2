@@ -1,12 +1,16 @@
 import theme from '@assets/Colors';
+import themedStyles from '@assets/Styles';
 import GroupListCard from '@components/GroupListCard';
 import MealDetails from '@components/meeting/MealDetails';
 import MeetingAttendance from '@components/meeting/MeetingAttendance';
+import MeetingIds from '@components/meeting/MeetingIds';
 import BadgeNumber from '@components/ui/BadgeNumber';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { FullMeeting, Group } from '@types/interfaces';
 // import { getAMeeting } from '@utils/api';
+import MeetingDate from '@components/meeting/MeetingDate';
+import TypeSelectors from '@components/meeting/TypeSelectors';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {
@@ -32,6 +36,7 @@ const MeetingDetails = () => {
     }>();
     const router = useRouter();
     const [historic, setHistoric] = React.useState(false);
+    const [isSavable, setIsSavable] = React.useState(false);
     const [groups, setGroups] = React.useState<Group[]>([]);
     const [error, setError] = React.useState<string | null>(null);
     const user = useSelector((state: any) => state.user);
@@ -98,6 +103,30 @@ const MeetingDetails = () => {
         board: 'Board Meeting',
         // Add more mappings as needed
     };
+    const handleTypeChange = (value: string) => {
+        if (!user.profile.permissions.includes('manage')) {
+            return;
+        }
+        let titleVal = false;
+        let contactVal = false;
+        switch (meeting?.meeting_type) {
+            case 'Testimony':
+                setIsSavable(titleVal);
+                break;
+            case 'Special':
+                if (titleVal && contactVal) {
+                    setIsSavable(true);
+                }
+                break;
+            case 'Lesson':
+                if (titleVal && contactVal) {
+                    setIsSavable(true);
+                }
+                break;
+            default:
+                break;
+        }
+    };
     const meetingTypeString =
         meeting &&
         (meetingTypeDisplay[meeting.meeting_type] ||
@@ -111,7 +140,8 @@ const MeetingDetails = () => {
             navigation &&
             typeof navigation.setOptions === 'function'
         ) {
-            navigation.setOptions({ title: meetingTypeString });
+            // navigation.setOptions({ title: meetingTypeString });
+            navigation.setOptions({ title: '' });
         }
     }, [meetingTypeString, navigation]);
 
@@ -163,15 +193,21 @@ const MeetingDetails = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
         >
-            <Surface style={localStyles.surface}>
-                <View style={localStyles.firstRow}>
-                    <View style={localStyles.meetingTitleContainer}>
-                        <View style={mtrTheme.selectorWrapper}>
+            <Surface style={themedStyles.surface}>
+                <View style={themedStyles.firstRow}>
+                    <View style={themedStyles.meetingSelectorContainer}>
+                        <View style={themedStyles.meetingSelectorWrapper}>
                             <TypeSelectors
-                                pick={theMeeting?.meeting_type}
+                                pick={meeting?.meeting_type}
                                 setPick={handleTypeChange}
                             />
                         </View>
+                    </View>
+                </View>
+                <View style={themedStyles.firstRow}>
+                    <MeetingDate date={meeting.meeting_date} />
+                    <View style={{ flex: 1 }}>
+                        <MeetingIds meeting={meeting} historic={historic} />
                     </View>
                 </View>
                 {meeting.attendance_count > 0 && (

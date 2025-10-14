@@ -1,8 +1,12 @@
 import themedStyles from '@assets/Styles';
+import MeetingDate from '@components/meeting/MeetingDate';
+// import TitleSection from '@components/meeting/TitleSection';
 import TypeSelectors from '@components/meeting/TypeSelectors';
 import { Meeting } from '@types/interfaces';
+import { printObject } from '@utils/helpers';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
+
 import {
     KeyboardAvoidingView,
     SafeAreaView,
@@ -14,7 +18,6 @@ import {
 } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useSelector } from 'react-redux';
-
 function generateUUID() {
     // Simple UUID v4 generator
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
@@ -73,6 +76,8 @@ const NewMeeting = () => {
         ...initialMeeting,
     });
     const [isSavable, setIsSavable] = useState(false);
+    const [modalMeetingDateVisible, setModalMeetingDateVisible] =
+        useState(false);
     const handleChange = (field: keyof Meeting, value: string) => {
         setMeeting((prev) => ({
             ...prev,
@@ -111,16 +116,43 @@ const NewMeeting = () => {
     const handleSave = () => {
         console.log('saved new meeting:', meeting);
     };
+    const handleDateClick = () => {
+        printObject('UMF:133-->dateValue:', dateValue);
+        printObject('UMF:134-->dateValue type', typeof dateValue);
+        // Don't add a day - just use the current date value as is
+        setModalMeetingDateVisible(true);
+    };
 
     return (
         <SafeAreaView style={themedStyles.container}>
             <KeyboardAvoidingView style={themedStyles.keyboardAvoiding}>
                 <ScrollView style={themedStyles.containerContents}>
-                    <View style={themedStyles.meetingSelectorWrapper}>
+                    <View>
                         <TypeSelectors
                             pick={meeting?.meeting_type}
                             setPick={handleTypeChange}
                         />
+                    </View>
+                    <View>
+                        <View style={themedStyles.logisticsWrapper}>
+                            <TouchableOpacity
+                                onPress={() =>
+                                    user.profile.permissions.includes('manage')
+                                        ? handleDateClick()
+                                        : null
+                                }
+                            >
+                                <View style={themedStyles.dateContainer}>
+                                    <MeetingDate date={meeting?.meeting_date} />
+                                </View>
+                            </TouchableOpacity>
+                            {/* <View style={{ flex: 1 }}>
+                                <TitleSection
+                                    values={meeting}
+                                    setValues={setMeeting}
+                                />
+                            </View> */}
+                        </View>
                     </View>
                     <Text style={themedStyles.formLabels}>Title</Text>
                     <TextInput
