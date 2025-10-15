@@ -16,6 +16,7 @@ import {
     View,
 } from 'react-native';
 // ...existing code...
+import theme from '@assets/Colors';
 import MeetingDate from '@components/meeting/MeetingDate';
 import { useSelector } from 'react-redux';
 function generateUUID() {
@@ -120,10 +121,16 @@ const NewMeeting = () => {
         <SafeAreaView style={themedStyles.container}>
             <KeyboardAvoidingView style={themedStyles.keyboardAvoiding}>
                 <View style={themedStyles.containerContents}>
-                    <TypeSelectors
-                        pick={meeting?.meeting_type}
-                        setPick={handleTypeChange}
-                    />
+                    <View style={themedStyles.firstRow}>
+                        <View style={themedStyles.meetingSelectorContainer}>
+                            <View style={themedStyles.meetingSelectorWrapper}>
+                                <TypeSelectors
+                                    pick={meeting?.meeting_type}
+                                    setPick={handleTypeChange}
+                                />
+                            </View>
+                        </View>
+                    </View>
                     <View style={{ marginVertical: 10 }}>
                         <TouchableOpacity
                             style={[
@@ -153,21 +160,10 @@ const NewMeeting = () => {
                                 markedDates={{
                                     [meeting.meeting_date]: {
                                         selected: true,
-                                        selectedColor: '#007AFF',
+                                        selectedColor: theme.colors.blue,
                                     },
                                 }}
-                                theme={{
-                                    backgroundColor: '#003366',
-                                    calendarBackground: '#003366',
-                                    textSectionTitleColor: '#fff',
-                                    selectedDayBackgroundColor: '#007AFF',
-                                    selectedDayTextColor: '#fff',
-                                    todayTextColor: '#007AFF',
-                                    dayTextColor: '#fff',
-                                    textDisabledColor: '#888',
-                                    monthTextColor: '#fff',
-                                    arrowColor: '#007AFF',
-                                }}
+                                theme={themedStyles.calendarTheme}
                             />
                         )}
                     </View>
@@ -178,20 +174,7 @@ const NewMeeting = () => {
                         onChangeText={(v) => handleChange('title', v)}
                         placeholder='Meeting Title'
                     />
-                    <Text style={localStyles.label}>Date</Text>
-                    <TextInput
-                        style={localStyles.input}
-                        value={meeting.meeting_date}
-                        onChangeText={(v) => handleChange('meeting_date', v)}
-                        placeholder='YYYY-MM-DD'
-                    />
-                    <Text style={localStyles.label}>Type</Text>
-                    <TextInput
-                        style={localStyles.input}
-                        value={meeting.meeting_type}
-                        onChangeText={(v) => handleChange('meeting_type', v)}
-                        placeholder='Type'
-                    />
+
                     <Text style={localStyles.label}>Attendance Count</Text>
                     <TextInput
                         style={localStyles.input}

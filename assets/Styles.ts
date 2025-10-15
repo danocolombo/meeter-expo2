@@ -15,8 +15,17 @@ const themedStyles = {
         paddingTop: 20,
         paddingHorizontal: 10,
     },
-    calendarText: {
-        color: theme.colors.darkText,
+    calendarTheme: {
+        backgroundColor: '#003366',
+        calendarBackground: '#003366',
+        textSectionTitleColor: theme.colors.accent, // days of the week
+        selectedDayBackgroundColor: 'black',
+        // selectedDayTextColor: 'black', // selected background
+        todayTextColor: theme.colors.accent,
+        dayTextColor: 'white',
+        textDisabledColor: '#888',
+        monthTextColor: '#fff',
+        arrowColor: '#007AFF',
     },
     // Add the additional styles needed for MeetingFormScreen
     keyboardAvoiding: {
