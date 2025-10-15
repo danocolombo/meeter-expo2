@@ -12,7 +12,7 @@ const themedStyles = {
         paddingVertical: 16,
     },
     containerContents: {
-        paddingTop: 20,
+        paddingTop: 5,
         paddingHorizontal: 10,
     },
     calendarTheme: {
@@ -34,8 +34,10 @@ const themedStyles = {
     firstRow: {
         flexDirection: 'row' as 'row',
         alignItems: 'center' as 'center',
+        justifyContent: 'center' as 'center',
+        padding: 0,
         marginVertical: 0,
-        marginHorizontal: 10,
+        marginHorizontal: 0,
     },
     row1col2: {
         flexDirection: 'column' as 'column',
@@ -45,18 +47,29 @@ const themedStyles = {
     textColumn: {
         alignContent: 'flex-start' as 'flex-start',
     },
-    formLabels: {
-        fontFamily: 'Roboto-Bold',
-        fontSize: 20,
+    formLabel: {
+        fontFamily: 'Roboto-Regular',
+        fontSize: 18,
         color: theme.colors.lightText,
-        paddingVertical: 5,
+        paddingVertical: 0,
+    },
+    formInput: {
+        fontFamily: 'Roboto-Regular',
+        fontSize: 16,
+        //what
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 6,
+        padding: 8,
+        marginBottom: 8,
+        backgroundColor: '#fff',
     },
     dateContainer: { margin: 5 },
     meetingSelectorContainer: {
         flex: 1,
         alignItems: 'center' as 'center',
         justifyContent: 'center' as 'center',
-        marginBottom: 10,
+        marginBottom: 0,
     },
     meetingSelectorWrapper: {
         flexDirection: 'row' as 'row',
@@ -68,8 +81,8 @@ const themedStyles = {
         borderBottomRightRadius: 20,
         backgroundColor: theme.colors.lightGraphic,
         // marginTop: 5,
-        paddingVertical: 5,
-        marginHorizontal: 10,
+        paddingVertical: 0,
+        marginHorizontal: 0,
     },
     meetingTypeSelectorUnselected: {
         paddingHorizontal: 8,
@@ -94,6 +107,9 @@ const themedStyles = {
     meetingTypeSelectorSelectedText: {
         color: theme.colors.darkText,
     },
+    meetingDateRow: {
+        marginVertical: 2,
+    },
     logisticsWrapper: {
         flexDirection: 'row' as 'row',
         borderWidth: 2,
@@ -111,6 +127,17 @@ const themedStyles = {
         backgroundColor: theme.colors.white,
         marginVertical: 0,
         paddingVertical: 5,
+        marginHorizontal: 10,
+    },
+    mealContainer: {
+        flexDirection: 'column' as 'column',
+        borderWidth: 2,
+        borderColor: theme.colors.lightGraphic, // Use the darkText variable directly, same as darkGraphic',
+        borderRadius: 5,
+        // backgroundColor: theme.colors.white,
+        marginVertical: 0,
+        // paddingVertical: 5,
+        padding: 5,
         marginHorizontal: 10,
     },
     mealSectionContainer: {

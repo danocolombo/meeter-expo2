@@ -18,6 +18,7 @@ import {
 // ...existing code...
 import theme from '@assets/Colors';
 import MeetingDate from '@components/meeting/MeetingDate';
+import NumberInputEditable from '@components/ui/NumberInputEditable';
 import { useSelector } from 'react-redux';
 function generateUUID() {
     // Simple UUID v4 generator
@@ -131,16 +132,9 @@ const NewMeeting = () => {
                             </View>
                         </View>
                     </View>
-                    <View style={{ marginVertical: 10 }}>
+                    <View style={themedStyles.meetingDateRow}>
                         <TouchableOpacity
-                            style={[
-                                themedStyles.firstRow,
-                                {
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    paddingVertical: 8,
-                                },
-                            ]}
+                            style={themedStyles.firstRow}
                             onPress={() => setShowCalendar((v) => !v)}
                             activeOpacity={0.7}
                         >
@@ -167,24 +161,62 @@ const NewMeeting = () => {
                             />
                         )}
                     </View>
-                    <Text style={themedStyles.formLabels}>Title</Text>
+                    <Text style={themedStyles.formLabel}>Title</Text>
                     <TextInput
-                        style={localStyles.input}
+                        style={themedStyles.formInput}
                         value={meeting.title}
                         onChangeText={(v) => handleChange('title', v)}
                         placeholder='Meeting Title'
                     />
-
-                    <Text style={localStyles.label}>Attendance Count</Text>
+                    <Text style={themedStyles.formLabel}>Contact</Text>
                     <TextInput
-                        style={localStyles.input}
-                        value={meeting.attendance_count.toString()}
+                        style={themedStyles.formInput}
+                        value={meeting.facilitator_contact}
                         onChangeText={(v) =>
-                            handleChange('attendance_count', v)
+                            handleChange('facilitator_contact', v)
                         }
-                        placeholder='0'
-                        keyboardType='numeric'
+                        placeholder='Meeting Cont'
                     />
+                    <Text style={themedStyles.formLabel}>Music/Worship</Text>
+                    <TextInput
+                        style={themedStyles.formInput}
+                        value={meeting.worship}
+                        onChangeText={(v) => handleChange('worship', v)}
+                        placeholder='Music/Worship'
+                    />
+                    <View style={themedStyles.mealContainer}>
+                        <Text style={themedStyles.formLabel}>Menu</Text>
+                        <TextInput
+                            style={themedStyles.formInput}
+                            value={meeting.worship}
+                            onChangeText={(v) => handleChange('worship', v)}
+                            placeholder='Menu'
+                        />
+                        <Text style={themedStyles.formLabel}>Contact</Text>
+                        <TextInput
+                            style={themedStyles.formInput}
+                            value={meeting.meal_contact}
+                            onChangeText={(v) =>
+                                handleChange('meal_contact', v)
+                            }
+                            placeholder='Contact'
+                        />
+                        <Text style={themedStyles.formLabel}>Meal Count</Text>
+                        <NumberInputEditable
+                            value={meeting.meal_count}
+                            onAction={(v: number) =>
+                                handleChange('meal_count', String(v))
+                            }
+                            min={0}
+                            max={999}
+                            fontSize={14} // Make the number and buttons a bit smaller
+                            paddingHorizontal={5} // Add more horizontal padding to the input
+                            controlSize={25} // Make the +/- buttons larger
+                            numberStyle={{}}
+                            graphicStyle={{}}
+                        />
+                    </View>
+
                     <Text style={localStyles.label}>Notes</Text>
                     <TextInput
                         style={[localStyles.input, { height: 60 }]}

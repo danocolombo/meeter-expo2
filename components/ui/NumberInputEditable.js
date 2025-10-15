@@ -2,7 +2,7 @@ import theme from '@assets/Colors';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { RoundedButton } from './RoundedButton';
-
+// CLEANUP: Remove all duplicate/erroneous declarations above. Only the following function should exist:
 function NumberInputEditable({
     value,
     numberStyle,
@@ -10,6 +10,9 @@ function NumberInputEditable({
     onAction,
     min = 0,
     max = 999,
+    fontSize = 24,
+    paddingHorizontal = 10,
+    controlSize = 30,
 }) {
     const [inputValue, setInputValue] = useState(String(value));
 
@@ -17,20 +20,6 @@ function NumberInputEditable({
         setInputValue(String(value));
     }, [value]);
 
-    const increaseValue = () => {
-        let numericValue = parseInt(inputValue) || 0;
-        if (numericValue < max) {
-            onAction(numericValue + 1);
-        }
-    };
-    const decreaseValue = () => {
-        let numericValue = parseInt(inputValue) || 0;
-        if (numericValue > min) {
-            onAction(numericValue - 1);
-        } else {
-            onAction(min);
-        }
-    };
     const handleInputChange = (text) => {
         // Only allow numbers
         const sanitized = text.replace(/[^0-9]/g, '');
@@ -45,14 +34,32 @@ function NumberInputEditable({
         }
     };
 
+    const increaseValue = () => {
+        let numericValue = parseInt(inputValue) || 0;
+        if (numericValue < max) {
+            onAction(numericValue + 1);
+        }
+    };
+
+    const decreaseValue = () => {
+        let numericValue = parseInt(inputValue) || 0;
+        if (numericValue > min) {
+            onAction(numericValue - 1);
+        }
+    };
+
     return (
         <View>
             <View style={localStyles.rootContainer}>
                 <RoundedButton
                     title='-'
-                    size={30}
+                    size={controlSize}
                     textStyle={[
-                        { fontSize: 18, alignItems: 'center', color: 'white' },
+                        {
+                            fontSize: fontSize * 0.75,
+                            alignItems: 'center',
+                            color: 'white',
+                        },
                         numberStyle,
                     ]}
                     style={{ borderColor: 'white' }}
@@ -64,18 +71,23 @@ function NumberInputEditable({
                         graphicStyle,
                         localStyles.input,
                         numberStyle,
+                        { fontSize, paddingHorizontal },
                     ]}
                     keyboardType='numeric'
                     value={inputValue}
                     onChangeText={handleInputChange}
-                    maxLength={String(max).length}
+                    maxLength={3}
                 />
                 <RoundedButton
                     title='+'
-                    size={30}
+                    size={controlSize}
                     style={{ borderColor: 'white' }}
                     textStyle={[
-                        { fontSize: 18, alignItems: 'center', color: 'white' },
+                        {
+                            fontSize: fontSize * 0.75,
+                            alignItems: 'center',
+                            color: 'white',
+                        },
                         numberStyle,
                     ]}
                     onPress={increaseValue}
