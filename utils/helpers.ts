@@ -568,10 +568,10 @@ export function getCurrentLocalDate() {
 
 /**
  * Formats a local date to YYYY-MM-DD string format
- * @param {Date} date - Date object (optional, defaults to current local date)
+ * @param {Date | null} date - Date object (optional, defaults to current local date)
  * @returns {string} - Date in YYYY-MM-DD format
  */
-export function getCurrentLocalDateString(date = null) {
+export function getCurrentLocalDateString(date: Date | null = null): string {
     const localDate = date || new Date(); // Use regular new Date() for local time
     const year = localDate.getFullYear();
     const month = String(localDate.getMonth() + 1).padStart(2, '0');

@@ -1,11 +1,10 @@
 import themedStyles from '@assets/Styles';
-import MeetingDate from '@components/meeting/MeetingDate';
 // import TitleSection from '@components/meeting/TitleSection';
 import TypeSelectors from '@components/meeting/TypeSelectors';
-import { Meeting } from '@types/interfaces';
-import { printObject } from '@utils/helpers';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { Calendar } from 'react-native-calendars';
+import { Meeting } from '../../types/interfaces';
 
 import {
     KeyboardAvoidingView,
@@ -16,7 +15,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+// ...existing code...
+import MeetingDate from '@components/meeting/MeetingDate';
 import { useSelector } from 'react-redux';
 function generateUUID() {
     // Simple UUID v4 generator
@@ -31,7 +31,7 @@ function generateUUID() {
 }
 
 const initialMeeting: Omit<Meeting, 'id'> = {
-    meeting_date: '',
+    meeting_date: '2025-10-14',
     title: '',
     meeting_type: '',
     mtg_comp_key: '',
@@ -69,90 +69,107 @@ const initialMeeting: Omit<Meeting, 'id'> = {
 
 const NewMeeting = () => {
     const router = useRouter();
+    const [historic, setHistoric] = React.useState(false);
     const user = useSelector((state: any) => state.user);
     const [newId] = React.useState(() => generateUUID());
+    // Remove modal date state, use meeting.meeting_date for calendar
     const [meeting, setMeeting] = React.useState<Meeting>({
         id: newId,
         ...initialMeeting,
     });
     const [isSavable, setIsSavable] = useState(false);
-    const [modalMeetingDateVisible, setModalMeetingDateVisible] =
-        useState(false);
+    const [showCalendar, setShowCalendar] = useState(false);
     const handleChange = (field: keyof Meeting, value: string) => {
         setMeeting((prev) => ({
             ...prev,
             [field]: typeof prev[field] === 'number' ? Number(value) : value,
         }));
     };
+    function inputChangedHandler(
+        inputIdentifier: string,
+        enteredValue: string
+    ) {
+        setMeeting((curInputValues) => {
+            // console.log('inputIdentifier:', inputIdentifier);
+            if (inputIdentifier === 'donations') {
+                // console.log('MFRTK:203-->donations:', enteredValue);
+            }
+
+            return {
+                ...curInputValues,
+                [inputIdentifier]: enteredValue,
+            };
+        });
+    }
+
     const handleTypeChange = (value: string) => {
         if (!user.profile.permissions.includes('manage')) {
             return;
         }
-        let titleVal = false;
-        let contactVal = false;
-        switch (meeting.meeting_type) {
-            case 'Testimony':
-                setIsSavable(titleVal);
-                break;
-            case 'Special':
-                if (titleVal && contactVal) {
-                    setIsSavable(true);
-                }
-                break;
-            case 'Lesson':
-                if (titleVal && contactVal) {
-                    setIsSavable(true);
-                }
-                break;
-            default:
-                break;
-        }
-        const newValues = {
-            ...meeting,
-            meeting_type: value,
-        };
-        setMeeting(newValues);
+        // Only update if the value is different to avoid unnecessary renders
+        if (meeting.meeting_type === value) return;
+        setMeeting((prev) => ({ ...prev, meeting_type: value }));
+        // Example: Only savable if title and meeting_type are set (customize as needed)
+        setIsSavable(!!meeting.title && !!value);
     };
     const handleSave = () => {
         console.log('saved new meeting:', meeting);
-    };
-    const handleDateClick = () => {
-        printObject('UMF:133-->dateValue:', dateValue);
-        printObject('UMF:134-->dateValue type', typeof dateValue);
-        // Don't add a day - just use the current date value as is
-        setModalMeetingDateVisible(true);
     };
 
     return (
         <SafeAreaView style={themedStyles.container}>
             <KeyboardAvoidingView style={themedStyles.keyboardAvoiding}>
-                <ScrollView style={themedStyles.containerContents}>
-                    <View>
-                        <TypeSelectors
-                            pick={meeting?.meeting_type}
-                            setPick={handleTypeChange}
-                        />
-                    </View>
-                    <View>
-                        <View style={themedStyles.logisticsWrapper}>
-                            <TouchableOpacity
-                                onPress={() =>
-                                    user.profile.permissions.includes('manage')
-                                        ? handleDateClick()
-                                        : null
-                                }
-                            >
-                                <View style={themedStyles.dateContainer}>
-                                    <MeetingDate date={meeting?.meeting_date} />
-                                </View>
-                            </TouchableOpacity>
-                            {/* <View style={{ flex: 1 }}>
-                                <TitleSection
-                                    values={meeting}
-                                    setValues={setMeeting}
-                                />
-                            </View> */}
-                        </View>
+                <View style={themedStyles.containerContents}>
+                    <TypeSelectors
+                        pick={meeting?.meeting_type}
+                        setPick={handleTypeChange}
+                    />
+                    <View style={{ marginVertical: 10 }}>
+                        <TouchableOpacity
+                            style={[
+                                themedStyles.firstRow,
+                                {
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    paddingVertical: 8,
+                                },
+                            ]}
+                            onPress={() => setShowCalendar((v) => !v)}
+                            activeOpacity={0.7}
+                        >
+                            <MeetingDate date={meeting.meeting_date} />
+                        </TouchableOpacity>
+
+                        {showCalendar && (
+                            <Calendar
+                                current={meeting.meeting_date}
+                                onDayPress={(day) => {
+                                    handleChange(
+                                        'meeting_date',
+                                        day.dateString
+                                    );
+                                    setShowCalendar(false);
+                                }}
+                                markedDates={{
+                                    [meeting.meeting_date]: {
+                                        selected: true,
+                                        selectedColor: '#007AFF',
+                                    },
+                                }}
+                                theme={{
+                                    backgroundColor: '#003366',
+                                    calendarBackground: '#003366',
+                                    textSectionTitleColor: '#fff',
+                                    selectedDayBackgroundColor: '#007AFF',
+                                    selectedDayTextColor: '#fff',
+                                    todayTextColor: '#007AFF',
+                                    dayTextColor: '#fff',
+                                    textDisabledColor: '#888',
+                                    monthTextColor: '#fff',
+                                    arrowColor: '#007AFF',
+                                }}
+                            />
+                        )}
                     </View>
                     <Text style={themedStyles.formLabels}>Title</Text>
                     <TextInput
@@ -202,8 +219,9 @@ const NewMeeting = () => {
                             <Text style={localStyles.saveText}>Save</Text>
                         </TouchableOpacity>
                     )}
-                </ScrollView>
+                </View>
             </KeyboardAvoidingView>
+            {/* DateTimePickerModal removed, using Calendar above */}
         </SafeAreaView>
     );
 };

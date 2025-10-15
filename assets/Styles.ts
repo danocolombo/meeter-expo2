@@ -15,6 +15,9 @@ const themedStyles = {
         paddingTop: 20,
         paddingHorizontal: 10,
     },
+    calendarText: {
+        color: theme.colors.darkText,
+    },
     // Add the additional styles needed for MeetingFormScreen
     keyboardAvoiding: {
         flex: 1,
