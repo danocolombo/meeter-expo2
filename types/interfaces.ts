@@ -41,11 +41,11 @@ export interface Meeting {
     meal: string;
     meal_contact: string;
     meal_count: number;
-    newcomers_count: string;
+    newcomers_count: number;
     notes: string;
     nursery_contact: string;
     nursery_count: number;
-    resource_contact: number;
+    resource_contact: string;
     security_contact: string;
     setup_contact: string;
     support_contact: string;

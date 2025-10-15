@@ -170,6 +170,10 @@ const themedStyles = {
         fontSize: 18,
         textAlign: 'center',
     },
+    meetingNotesContainer: {
+        marginTop: 10,
+        marginHorizontal: 10,
+    },
 };
 
 export default themedStyles;
