@@ -1,5 +1,5 @@
-import theme from './Colors';
-const themedStyles = {
+import theme from '@assets/Colors';
+const themedStyles: { [key: string]: any } = {
     container: {
         flex: 1,
         flexDirection: 'column' as 'column',
@@ -27,6 +27,69 @@ const themedStyles = {
         monthTextColor: '#fff',
         arrowColor: '#007AFF',
     },
+    cardRootContainer: {
+        marginHorizontal: 10,
+    },
+    cardMeetingItem: {
+        marginVertical: 5,
+        paddingBottom: 5,
+        backgroundColor: theme.colors.darkShadow,
+        flexDirection: 'row',
+        flex: 1,
+        borderRadius: 10,
+        elevation: 3,
+        shadowColor: theme.colors.darkShadow,
+        shadowRadius: 4,
+        shadowOffset: { width: 1, height: 1 },
+        shadowOpacity: 0.4,
+    },
+    cardActiveMeetingPrimary: {
+        backgroundColor: theme.colors.selectedBackground,
+    },
+    cardHistoricMeetingPrimary: {
+        backgroundColor: theme.colors.unselectedBackground,
+    },
+    cardFirstRow: {
+        flexDirection: 'row',
+        flex: 1,
+        marginHorizontal: 5,
+        alignItems: 'center',
+    },
+    cardIconContainer: {
+        marginTop: 10,
+        marginRight: 10,
+        alignItems: 'flex-end',
+    },
+    cardColumnDate: {
+        padding: 5,
+    },
+    cardColumnText: {
+        flex: 1,
+        paddingHorizontal: 8,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    cardDateContainer: {
+        padding: 1,
+    },
+    cardDefinitionContainer: {
+        flex: 1,
+    },
+    cardColumnIcons: {
+        paddingRight: 5,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginVertical: 5,
+    },
+    cardColumnCenter: {
+        justifyContent: 'center',
+    },
+    cardMeetingTypeText: {
+        fontFamily: 'Roboto-Regular',
+        fontSize: 26,
+        fontWeight: '600',
+    },
+
     // Add the additional styles needed for MeetingFormScreen
     keyboardAvoiding: {
         flex: 1,
@@ -110,6 +173,34 @@ const themedStyles = {
     meetingDateRow: {
         marginVertical: 2,
     },
+    modal: {
+        flex: 1,
+        flexDirection: 'column' as 'column',
+        alignItems: 'center' as 'center',
+        justifyContent: 'center' as 'center',
+        backgroundColor: theme.colors.primaryBackground,
+    },
+    modalHeaderContainer: {
+        backgroundColor: theme.colors.primaryBackground,
+    },
+    modalHeaderText: {
+        fontFamily: 'Roboto-Bold' as 'Roboto-Bold',
+        fontSize: 28,
+        fontWeight: '700',
+        color: theme.colors.lightText,
+        textAlign: 'center' as 'center',
+        paddingTop: 10,
+    },
+    modalSurfaceContainer: {
+        alignItems: 'center' as 'center',
+        marginTop: 15,
+    },
+    modalSurface: {
+        backgroundColor: theme.colors.lightGraphic,
+        width: '90%',
+        borderRadius: 10,
+        padding: 20,
+    },
     logisticsWrapper: {
         flexDirection: 'row' as 'row',
         borderWidth: 2,
@@ -174,6 +265,15 @@ const themedStyles = {
         marginTop: 10,
         marginHorizontal: 10,
     },
+    meetingListError: {
+        color: theme.colors.white,
+        fontWeight: 'bold' as 'bold',
+        backgroundColor: theme.colors.accent,
+        padding: 12,
+        borderRadius: 8,
+    },
+    tooltipContainer: {
+        position: 'relative' as 'relative',
+    },
 };
-
 export default themedStyles;

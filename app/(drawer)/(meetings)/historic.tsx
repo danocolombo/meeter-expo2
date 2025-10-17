@@ -1,8 +1,8 @@
-import MeetingListCard from '@components/MeetingListCard';
+import MeetingListCard from '@components/meeting/MeetingListCard';
+import type { Meeting } from '@types/interfaces';
 import { useAppSelector } from '@utils/hooks';
 import React, { useCallback } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
-import type { Meeting } from '../../../types/interfaces';
 
 const HistoricMeetings = () => {
     const renderMeeting = useCallback(({ item }: { item: Meeting }) => {
