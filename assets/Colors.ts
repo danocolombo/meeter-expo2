@@ -37,6 +37,8 @@ const theme = {
     // Specify custom property in nested object
     colors: {
         ...Colors,
+        activeCard: '#daeddaff',
+        historicCard: '#d2cddcff',
         menuText: Colors.menuText,
         surface: Colors.primaryBackground,
         text: Colors.white,

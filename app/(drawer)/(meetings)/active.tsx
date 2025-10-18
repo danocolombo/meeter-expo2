@@ -221,7 +221,7 @@ const ActiveMeetings = () => {
                     <StatusBar style='auto' />
                 </View>
             </Modal>
-            <Text style={styles.text}>Active Meetings</Text>
+            <Text style={themedStyles.screenTitleText}>Active Meetings</Text>
             {/* <FlatList
                 data={meetings || []}
                 renderItem={renderMeeting}

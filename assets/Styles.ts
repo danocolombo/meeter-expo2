@@ -44,10 +44,10 @@ const themedStyles: { [key: string]: any } = {
         shadowOpacity: 0.4,
     },
     cardActiveMeetingPrimary: {
-        backgroundColor: theme.colors.selectedBackground,
+        backgroundColor: theme.colors.activeCard,
     },
     cardHistoricMeetingPrimary: {
-        backgroundColor: theme.colors.unselectedBackground,
+        backgroundColor: theme.colors.historicCard,
     },
     cardFirstRow: {
         flexDirection: 'row',
@@ -183,6 +183,12 @@ const themedStyles: { [key: string]: any } = {
     modalHeaderContainer: {
         backgroundColor: theme.colors.primaryBackground,
     },
+    modalDateContainer: { marginTop: 20 },
+    modalDateText: {
+        fontSize: 24,
+        fontFamily: 'Roboto-Bold',
+        textAlign: 'center' as 'center',
+    },
     modalHeaderText: {
         fontFamily: 'Roboto-Bold' as 'Roboto-Bold',
         fontSize: 28,
@@ -190,6 +196,23 @@ const themedStyles: { [key: string]: any } = {
         color: theme.colors.lightText,
         textAlign: 'center' as 'center',
         paddingTop: 10,
+    },
+    modalMeetingInfoContainer: {},
+    modalMeetingInfoText: {
+        fontSize: 18,
+        fontFamily: 'Roboto-Medium',
+        textAlign: 'center' as 'center',
+    },
+    modalNoteContainer: {
+        marginHorizontal: 20,
+    },
+    modalNoteText: {
+        paddingTop: 20,
+        fontSize: 16,
+        fontFamily: 'Roboto-Bold',
+        color: theme.colors.critical,
+        textTransform: 'uppercase' as 'uppercase',
+        textAlign: 'center' as 'center',
     },
     modalSurfaceContainer: {
         alignItems: 'center' as 'center',
@@ -200,6 +223,14 @@ const themedStyles: { [key: string]: any } = {
         width: '90%',
         borderRadius: 10,
         padding: 20,
+    },
+    modalWarningContainer: {
+        padding: 10,
+    },
+    modalWarningText: {
+        fontSize: 20,
+        textAlign: 'center' as 'center',
+        fontFamily: 'Roboto-Regular',
     },
     logisticsWrapper: {
         flexDirection: 'row' as 'row',
@@ -271,6 +302,13 @@ const themedStyles: { [key: string]: any } = {
         backgroundColor: theme.colors.accent,
         padding: 12,
         borderRadius: 8,
+    },
+    screenTitleText: {
+        fontFamily: 'Roboto-Bold' as 'Roboto-Bold',
+        fontSize: 32,
+        color: theme.colors.lightText,
+        textAlign: 'center' as 'center',
+        marginVertical: 10,
     },
     tooltipContainer: {
         position: 'relative' as 'relative',
