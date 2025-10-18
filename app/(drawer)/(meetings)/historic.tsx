@@ -4,8 +4,8 @@ import MeetingListCard from '@components/meeting/MeetingListCard';
 import CustomButton from '@components/ui/CustomButton';
 import { deleteMeeting } from '@features/meetings/meetingsThunks';
 import type { Meeting } from '@types/interfaces';
-import { useAppSelector } from '@utils/hooks';
-import React, { useCallback, useState } from 'react';
+import { useAppDispatch, useAppSelector } from '@utils/hooks';
+import React, { useState } from 'react';
 import { FlatList, Modal, StatusBar, Text, View } from 'react-native';
 import { Surface } from 'react-native-paper';
 import { useSelector } from 'react-redux';
@@ -14,21 +14,16 @@ interface DeleteInputType {
     organization_id: string;
     meeting_id: string;
 }
+
 const HistoricMeetings = () => {
-    const [refreshKey, setRefreshKey] = useState(Date.now());
-    const renderMeeting = useCallback(({ item }: { item: Meeting }) => {
-        return (
-            <View style={styles.itemContainer}>
-                <MeetingListCard meeting={item} origin='historic' />
-            </View>
-        );
-    }, []);
+    const appDispatch = useAppDispatch();
+    // Removed unused refreshKey and renderMeeting
     const user = useAppSelector((state) => state.user);
     const historicMeetings = useSelector(
         (state: any) => state.meetings.historicMeetings
     );
     const [meeting, setMeeting] = useState<Meeting | null>(null);
-    const [timeoutReached, setTimeoutReached] = useState(false);
+    const [timeoutReached] = useState(false); // Removed unused setTimeoutReached
     const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
     const refreshHistoricMeetingsFromApi = () => {
         console.log('Refreshing historic meetings from API...');
@@ -36,24 +31,18 @@ const HistoricMeetings = () => {
     const handleDeleteResponse = (id: string, organizationId?: string) => {
         const meetingToDelete = historicMeetings.find((m: any) => m.id === id);
         if (meetingToDelete) {
-            // Use optional chaining for safety
             setMeeting(meetingToDelete);
             setShowDeleteConfirmModal(true);
         }
     };
     const handleDeleteConfirm = () => {
         if (meeting?.id) {
-            //* the database will delete any groups associated with
-            //* the meeting so no need to handle more than the
-            //* meeting table.
-
             const requestValues: DeleteInputType = {
                 api_token: user.apiToken,
                 organization_id: meeting.organization_id || '',
                 meeting_id: meeting.id,
             };
-            const appDispatch = useAppDispatch();
-            (appDispatch as any)(deleteMeeting(requestValues));
+            appDispatch(deleteMeeting(requestValues) as any);
             setMeeting(null);
             setShowDeleteConfirmModal(false);
         }
@@ -127,12 +116,11 @@ const HistoricMeetings = () => {
                             </View>
                         </Surface>
                     </View>
-                    <StatusBar style='auto' />
+                    <StatusBar />
                 </View>
             </Modal>
             <Text style={themedStyles.screenTitleText}>Historic Meetings</Text>
             <FlatList
-                key={`historic-meetings-${refreshKey}`}
                 data={meetings || []}
                 refreshing={isLoading}
                 onRefresh={refreshHistoricMeetingsFromApi}
@@ -146,7 +134,6 @@ const HistoricMeetings = () => {
                     />
                 )}
                 extraData={{
-                    refreshKey,
                     meetingsCount: historicMeetings.length,
                 }}
                 initialNumToRender={10}
