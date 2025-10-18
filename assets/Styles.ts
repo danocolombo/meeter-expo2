@@ -1,20 +1,5 @@
 import theme from '@assets/Colors';
 const themedStyles: { [key: string]: any } = {
-    container: {
-        flex: 1,
-        flexDirection: 'column' as 'column',
-        backgroundColor: theme.colors.primaryBackground,
-    },
-    surface: {
-        flex: 1,
-        flexDirection: 'column' as 'column',
-        backgroundColor: theme.colors.primaryBackground,
-        paddingVertical: 16,
-    },
-    containerContents: {
-        paddingTop: 5,
-        paddingHorizontal: 10,
-    },
     calendarTheme: {
         backgroundColor: '#003366',
         calendarBackground: '#003366',
@@ -27,8 +12,46 @@ const themedStyles: { [key: string]: any } = {
         monthTextColor: '#fff',
         arrowColor: '#007AFF',
     },
-    cardRootContainer: {
-        marginHorizontal: 10,
+    cardActiveMeetingPrimary: {
+        backgroundColor: theme.colors.activeCard,
+    },
+    cardColumnCenter: {
+        justifyContent: 'center',
+    },
+    cardColumnDate: {
+        padding: 5,
+    },
+    cardColumnIcons: {
+        paddingRight: 5,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginVertical: 5,
+    },
+    cardColumnText: {
+        flex: 1,
+        paddingHorizontal: 8,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    cardDateContainer: {
+        padding: 1,
+    },
+    cardDefinitionContainer: {
+        flex: 1,
+    },
+    cardFirstRow: {
+        flexDirection: 'row',
+        flex: 1,
+        marginHorizontal: 5,
+        alignItems: 'center',
+    },
+    cardHistoricMeetingPrimary: {
+        backgroundColor: theme.colors.historicCard,
+    },
+    cardIconContainer: {
+        marginTop: 10,
+        marginRight: 10,
+        alignItems: 'flex-end',
     },
     cardMeetingItem: {
         marginVertical: 5,
@@ -43,57 +66,24 @@ const themedStyles: { [key: string]: any } = {
         shadowOffset: { width: 1, height: 1 },
         shadowOpacity: 0.4,
     },
-    cardActiveMeetingPrimary: {
-        backgroundColor: theme.colors.activeCard,
-    },
-    cardHistoricMeetingPrimary: {
-        backgroundColor: theme.colors.historicCard,
-    },
-    cardFirstRow: {
-        flexDirection: 'row',
-        flex: 1,
-        marginHorizontal: 5,
-        alignItems: 'center',
-    },
-    cardIconContainer: {
-        marginTop: 10,
-        marginRight: 10,
-        alignItems: 'flex-end',
-    },
-    cardColumnDate: {
-        padding: 5,
-    },
-    cardColumnText: {
-        flex: 1,
-        paddingHorizontal: 8,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    cardDateContainer: {
-        padding: 1,
-    },
-    cardDefinitionContainer: {
-        flex: 1,
-    },
-    cardColumnIcons: {
-        paddingRight: 5,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginVertical: 5,
-    },
-    cardColumnCenter: {
-        justifyContent: 'center',
-    },
     cardMeetingTypeText: {
         fontFamily: 'Roboto-Regular',
         fontSize: 26,
         fontWeight: '600',
     },
-
-    // Add the additional styles needed for MeetingFormScreen
-    keyboardAvoiding: {
-        flex: 1,
+    cardRootContainer: {
+        marginHorizontal: 10,
     },
+    container: {
+        flex: 1,
+        flexDirection: 'column' as 'column',
+        backgroundColor: theme.colors.primaryBackground,
+    },
+    containerContents: {
+        paddingTop: 5,
+        paddingHorizontal: 10,
+    },
+    dateContainer: { margin: 5 },
     firstRow: {
         flexDirection: 'row' as 'row',
         alignItems: 'center' as 'center',
@@ -101,20 +91,6 @@ const themedStyles: { [key: string]: any } = {
         padding: 0,
         marginVertical: 0,
         marginHorizontal: 0,
-    },
-    row1col2: {
-        flexDirection: 'column' as 'column',
-        marginLeft: 5,
-        marginRight: 10,
-    },
-    textColumn: {
-        alignContent: 'flex-start' as 'flex-start',
-    },
-    formLabel: {
-        fontFamily: 'Roboto-Regular',
-        fontSize: 18,
-        color: theme.colors.lightText,
-        paddingVertical: 0,
     },
     formInput: {
         fontFamily: 'Roboto-Regular',
@@ -127,7 +103,89 @@ const themedStyles: { [key: string]: any } = {
         marginBottom: 8,
         backgroundColor: '#fff',
     },
-    dateContainer: { margin: 5 },
+    formLabel: {
+        fontFamily: 'Roboto-Regular',
+        fontSize: 18,
+        color: theme.colors.lightText,
+        paddingVertical: 0,
+    },
+    keyboardAvoiding: {
+        flex: 1,
+    },
+    logisticsWrapper: {
+        flexDirection: 'row' as 'row',
+        borderWidth: 2,
+        borderColor: theme.colors.darkText, // Use the darkText variable directly, same as darkGraphic',
+        borderRadius: 5,
+        backgroundColor: theme.colors.white,
+        paddingVertical: 5,
+        marginHorizontal: 10,
+    },
+    mealContainer: {
+        flexDirection: 'column' as 'column',
+        borderWidth: 2,
+        borderColor: theme.colors.lightGraphic, // Use the darkText variable directly, same as darkGraphic',
+        borderRadius: 5,
+        // backgroundColor: theme.colors.white,
+        marginVertical: 0,
+        // paddingVertical: 5,
+        padding: 5,
+        marginHorizontal: 10,
+    },
+    mealSectionContainer: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: theme.colors.darkText,
+        borderRadius: 10,
+        padding: 5,
+        marginHorizontal: 10,
+        marginVertical: 5,
+    },
+    mealSectionCountLabelContainer: {
+        paddingTop: 5,
+        alignItems: 'center',
+    },
+    mealSectionCountLabelText: {
+        fontFamily: 'Roboto-Regular',
+        color: theme.colors.darkText,
+        fontSize: 18,
+        textAlign: 'center',
+    },
+    mealSectionInputLabel: {
+        fontFamily: 'Roboto-Regular',
+        color: theme.colors.darkText,
+        fontSize: 18,
+        marginLeft: 10,
+    },
+    mealSectionTitleText: {
+        fontFamily: 'Roboto-Regular',
+        color: theme.colors.darkText,
+        fontSize: 20,
+    },
+    mealWrapper: {
+        flexDirection: 'row' as 'row',
+        borderWidth: 2,
+        borderColor: theme.colors.darkText, // Use the darkText variable directly, same as darkGraphic',
+        borderRadius: 5,
+        backgroundColor: theme.colors.white,
+        marginVertical: 0,
+        paddingVertical: 5,
+        marginHorizontal: 10,
+    },
+    meetingDateRow: {
+        marginVertical: 2,
+    },
+    meetingListError: {
+        color: theme.colors.white,
+        fontWeight: 'bold' as 'bold',
+        backgroundColor: theme.colors.accent,
+        padding: 12,
+        borderRadius: 8,
+    },
+    meetingNotesContainer: {
+        marginTop: 10,
+        marginHorizontal: 10,
+    },
     meetingSelectorContainer: {
         flex: 1,
         alignItems: 'center' as 'center',
@@ -147,6 +205,13 @@ const themedStyles: { [key: string]: any } = {
         paddingVertical: 0,
         marginHorizontal: 0,
     },
+    meetingTypeSelectorSelected: {
+        backgroundColor: theme.colors.accent,
+        borderWidth: 0,
+    },
+    meetingTypeSelectorSelectedText: {
+        color: theme.colors.darkText,
+    },
     meetingTypeSelectorUnselected: {
         paddingHorizontal: 8,
         paddingVertical: 6,
@@ -163,15 +228,21 @@ const themedStyles: { [key: string]: any } = {
         color: theme.colors.unSelectedText,
         textAlign: 'center' as 'center',
     },
-    meetingTypeSelectorSelected: {
-        backgroundColor: theme.colors.accent,
-        borderWidth: 0,
+    meetingsContainer: {
+        flex: 1,
+        alignItems: 'center' as 'center',
+        paddingTop: 48,
     },
-    meetingTypeSelectorSelectedText: {
-        color: theme.colors.darkText,
+    meetingsText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        textAlign: 'center' as 'center',
+        marginBottom: 16,
     },
-    meetingDateRow: {
-        marginVertical: 2,
+    meetingsItemContainer: {
+        width: '100%',
+        paddingHorizontal: 15,
+        marginVertical: 8,
     },
     modal: {
         flex: 1,
@@ -180,14 +251,14 @@ const themedStyles: { [key: string]: any } = {
         justifyContent: 'center' as 'center',
         backgroundColor: theme.colors.primaryBackground,
     },
-    modalHeaderContainer: {
-        backgroundColor: theme.colors.primaryBackground,
-    },
     modalDateContainer: { marginTop: 20 },
     modalDateText: {
         fontSize: 24,
         fontFamily: 'Roboto-Bold',
         textAlign: 'center' as 'center',
+    },
+    modalHeaderContainer: {
+        backgroundColor: theme.colors.primaryBackground,
     },
     modalHeaderText: {
         fontFamily: 'Roboto-Bold' as 'Roboto-Bold',
@@ -214,15 +285,15 @@ const themedStyles: { [key: string]: any } = {
         textTransform: 'uppercase' as 'uppercase',
         textAlign: 'center' as 'center',
     },
-    modalSurfaceContainer: {
-        alignItems: 'center' as 'center',
-        marginTop: 15,
-    },
     modalSurface: {
         backgroundColor: theme.colors.lightGraphic,
         width: '90%',
         borderRadius: 10,
         padding: 20,
+    },
+    modalSurfaceContainer: {
+        alignItems: 'center' as 'center',
+        marginTop: 15,
     },
     modalWarningContainer: {
         padding: 10,
@@ -232,76 +303,10 @@ const themedStyles: { [key: string]: any } = {
         textAlign: 'center' as 'center',
         fontFamily: 'Roboto-Regular',
     },
-    logisticsWrapper: {
-        flexDirection: 'row' as 'row',
-        borderWidth: 2,
-        borderColor: theme.colors.darkText, // Use the darkText variable directly, same as darkGraphic',
-        borderRadius: 5,
-        backgroundColor: theme.colors.white,
-        paddingVertical: 5,
-        marginHorizontal: 10,
-    },
-    mealWrapper: {
-        flexDirection: 'row' as 'row',
-        borderWidth: 2,
-        borderColor: theme.colors.darkText, // Use the darkText variable directly, same as darkGraphic',
-        borderRadius: 5,
-        backgroundColor: theme.colors.white,
-        marginVertical: 0,
-        paddingVertical: 5,
-        marginHorizontal: 10,
-    },
-    mealContainer: {
+    row1col2: {
         flexDirection: 'column' as 'column',
-        borderWidth: 2,
-        borderColor: theme.colors.lightGraphic, // Use the darkText variable directly, same as darkGraphic',
-        borderRadius: 5,
-        // backgroundColor: theme.colors.white,
-        marginVertical: 0,
-        // paddingVertical: 5,
-        padding: 5,
-        marginHorizontal: 10,
-    },
-    mealSectionContainer: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: theme.colors.darkText,
-        borderRadius: 10,
-        padding: 5,
-        marginHorizontal: 10,
-        marginVertical: 5,
-    },
-    mealSectionTitleText: {
-        fontFamily: 'Roboto-Regular',
-        color: theme.colors.darkText,
-        fontSize: 20,
-    },
-    mealSectionInputLabel: {
-        fontFamily: 'Roboto-Regular',
-        color: theme.colors.darkText,
-        fontSize: 18,
-        marginLeft: 10,
-    },
-    mealSectionCountLabelContainer: {
-        paddingTop: 5,
-        alignItems: 'center',
-    },
-    mealSectionCountLabelText: {
-        fontFamily: 'Roboto-Regular',
-        color: theme.colors.darkText,
-        fontSize: 18,
-        textAlign: 'center',
-    },
-    meetingNotesContainer: {
-        marginTop: 10,
-        marginHorizontal: 10,
-    },
-    meetingListError: {
-        color: theme.colors.white,
-        fontWeight: 'bold' as 'bold',
-        backgroundColor: theme.colors.accent,
-        padding: 12,
-        borderRadius: 8,
+        marginLeft: 5,
+        marginRight: 10,
     },
     screenTitleText: {
         fontFamily: 'Roboto-Bold' as 'Roboto-Bold',
@@ -309,6 +314,15 @@ const themedStyles: { [key: string]: any } = {
         color: theme.colors.lightText,
         textAlign: 'center' as 'center',
         marginVertical: 10,
+    },
+    surface: {
+        flex: 1,
+        flexDirection: 'column' as 'column',
+        backgroundColor: theme.colors.primaryBackground,
+        paddingVertical: 16,
+    },
+    textColumn: {
+        alignContent: 'flex-start' as 'flex-start',
     },
     tooltipContainer: {
         position: 'relative' as 'relative',

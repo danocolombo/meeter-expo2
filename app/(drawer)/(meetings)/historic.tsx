@@ -2,12 +2,18 @@ import theme from '@assets/Colors';
 import themedStyles from '@assets/Styles';
 import MeetingListCard from '@components/meeting/MeetingListCard';
 import CustomButton from '@components/ui/CustomButton';
+import { deleteMeeting } from '@features/meetings/meetingsThunks';
 import type { Meeting } from '@types/interfaces';
 import { useAppSelector } from '@utils/hooks';
 import React, { useCallback, useState } from 'react';
 import { FlatList, Modal, StatusBar, Text, View } from 'react-native';
 import { Surface } from 'react-native-paper';
 import { useSelector } from 'react-redux';
+interface DeleteInputType {
+    api_token: any;
+    organization_id: string;
+    meeting_id: string;
+}
 const HistoricMeetings = () => {
     const [refreshKey, setRefreshKey] = useState(Date.now());
     const renderMeeting = useCallback(({ item }: { item: Meeting }) => {
@@ -17,10 +23,12 @@ const HistoricMeetings = () => {
             </View>
         );
     }, []);
+    const user = useAppSelector((state) => state.user);
     const historicMeetings = useSelector(
         (state: any) => state.meetings.historicMeetings
     );
     const [meeting, setMeeting] = useState<Meeting | null>(null);
+    const [timeoutReached, setTimeoutReached] = useState(false);
     const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
     const refreshHistoricMeetingsFromApi = () => {
         console.log('Refreshing historic meetings from API...');
@@ -56,10 +64,10 @@ const HistoricMeetings = () => {
     );
     const isLoading = useAppSelector((state: any) => state.meetings.isLoading);
 
-    if (isLoading)
+    if (isLoading && !timeoutReached)
         return (
-            <View style={themedStyles.container}>
-                <Text style={themedStyles.text}>Loading...</Text>
+            <View style={themedStyles.meetingsContainer}>
+                <Text style={themedStyles.meetingsText}>Loading...</Text>
             </View>
         );
 

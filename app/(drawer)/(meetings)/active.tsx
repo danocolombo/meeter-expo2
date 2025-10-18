@@ -9,14 +9,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '@utils/hooks';
 import React, { useCallback, useState } from 'react';
-import {
-    FlatList,
-    Modal,
-    StatusBar,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
+import { FlatList, Modal, StatusBar, Text, View } from 'react-native';
 import { Surface } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import type { Meeting } from '../../../types/interfaces';
@@ -52,7 +45,7 @@ const ActiveMeetings = () => {
     const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
     const renderMeeting = useCallback(({ item }: { item: Meeting }) => {
         return (
-            <View style={styles.itemContainer}>
+            <View style={themedStyles.meetingsItemContainer}>
                 <MeetingListCard meeting={item} origin='active' />
             </View>
         );
@@ -127,15 +120,20 @@ const ActiveMeetings = () => {
 
     if (isLoading && !timeoutReached)
         return (
-            <View style={styles.container}>
-                <Text style={styles.text}>Loading...</Text>
+            <View style={themedStyles.meetingsContainer}>
+                <Text style={themedStyles.meetingsText}>Loading...</Text>
             </View>
         );
 
     if (error) {
         return (
-            <View style={styles.container}>
-                <Text style={[styles.text, { color: 'red', marginBottom: 12 }]}>
+            <View style={themedStyles.meetingsContainer}>
+                <Text
+                    style={[
+                        themedStyles.meetingsText,
+                        { color: 'red', marginBottom: 12 },
+                    ]}
+                >
                     {error}
                 </Text>
                 <Text style={{ marginBottom: 12 }}>
@@ -173,24 +171,24 @@ const ActiveMeetings = () => {
                     </View>
                     <View style={themedStyles.modalSurfaceContainer}>
                         <Surface style={themedStyles.modalSurface}>
-                            <View style={themedStyles.warningContainer}>
-                                <Text style={themedStyles.warningText}>
+                            <View style={themedStyles.modalWarningContainer}>
+                                <Text style={themedStyles.modalWarningText}>
                                     Your are about to delete the following
                                     meeting.
                                 </Text>
                             </View>
-                            <View style={themedStyles.dateContainer}>
-                                <Text style={themedStyles.dateText}>
+                            <View style={themedStyles.modalDateContainer}>
+                                <Text style={themedStyles.modalDateText}>
                                     {meeting?.meeting_date?.slice(0, 10)}
                                 </Text>
                             </View>
                             <View>
-                                <Text style={themedStyles.meetingInfoText}>
+                                <Text style={themedStyles.modalMeetingInfoText}>
                                     {meeting?.meeting_type}: {meeting?.title}
                                 </Text>
                             </View>
-                            <View style={themedStyles.noteContainer}>
-                                <Text style={themedStyles.noteText}>
+                            <View style={themedStyles.modalNoteContainer}>
+                                <Text style={themedStyles.modalNoteText}>
                                     NOTE: All groups for the meeting will be
                                     deleted as well.
                                 </Text>
@@ -257,32 +255,3 @@ const ActiveMeetings = () => {
 };
 
 export default ActiveMeetings;
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        paddingTop: 48,
-    },
-    text: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 16,
-    },
-    itemContainer: {
-        width: '100%',
-        paddingHorizontal: 15,
-        marginVertical: 8,
-    },
-    link: {
-        marginTop: 24,
-        padding: 12,
-        backgroundColor: '#F2A310',
-        borderRadius: 8,
-    },
-    linkText: {
-        color: '#fff',
-        fontWeight: 'bold',
-    },
-});
