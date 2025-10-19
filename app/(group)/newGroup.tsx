@@ -1,4 +1,5 @@
 import theme from '@assets/Colors';
+import themedStyles from '@assets/Styles';
 import GenderSelectors from '@components/ui/GenderSelectors';
 import NumberInputEditable from '@components/ui/NumberInputEditable';
 import { addGroup } from '@features/meetings/meetingsThunks';
@@ -11,7 +12,6 @@ import {
     Platform,
     ScrollView as RNScrollView,
     TextInput as RNTextInput,
-    StyleSheet,
     Text,
     TouchableOpacity,
     View,
@@ -142,7 +142,7 @@ const NewGroup = () => {
 
     return (
         <SafeAreaView
-            style={{ flex: 1, backgroundColor: theme.colors.primaryBackground }}
+            style={themedStyles.safeAreaView}
             edges={['bottom', 'left', 'right']}
         >
             <KeyboardAvoidingView
@@ -153,19 +153,19 @@ const NewGroup = () => {
                 <View style={{ flex: 1 }}>
                     <RNScrollView
                         ref={scrollViewRef}
-                        contentContainerStyle={styles.container}
+                        contentContainerStyle={themedStyles.newGroupContainer}
                         keyboardShouldPersistTaps='handled'
                     >
                         {/* ...existing input fields... */}
-                        <View style={styles.section}>
-                            <Text style={styles.label}>Group Type</Text>
+                        <View style={themedStyles.newGroupSection}>
+                            <Text style={themedStyles.label}>Group Type</Text>
                             <GenderSelectors
                                 pick={gender}
                                 setPick={setGender}
                             />
                         </View>
-                        <View style={styles.section}>
-                            <Text style={styles.label}>Attendance</Text>
+                        <View style={themedStyles.newGroupSection}>
+                            <Text style={themedStyles.label}>Attendance</Text>
                             <NumberInputEditable
                                 value={attendance}
                                 onAction={setAttendance}
@@ -175,14 +175,14 @@ const NewGroup = () => {
                                 graphicStyle={{}}
                             />
                         </View>
-                        <View style={styles.section}>
-                            <Text style={styles.label}>Title *</Text>
+                        <View style={themedStyles.newGroupSection}>
+                            <Text style={themedStyles.label}>Title *</Text>
                             <RNTextInput
                                 style={[
-                                    styles.input,
+                                    themedStyles.input,
                                     !isTitleValid &&
                                         title.length > 0 &&
-                                        styles.inputError,
+                                        themedStyles.inputError,
                                 ]}
                                 value={title}
                                 onChangeText={setTitle}
@@ -192,19 +192,19 @@ const NewGroup = () => {
                                 returnKeyType='next'
                             />
                             {!isTitleValid && title.length > 0 && (
-                                <Text style={styles.errorText}>
+                                <Text style={themedStyles.error}>
                                     3-25 alphanumeric chars required
                                 </Text>
                             )}
                         </View>
-                        <View style={styles.section}>
-                            <Text style={styles.label}>Location *</Text>
+                        <View style={themedStyles.newGroupSection}>
+                            <Text style={themedStyles.label}>Location *</Text>
                             <RNTextInput
                                 style={[
-                                    styles.input,
+                                    themedStyles.input,
                                     !isLocationValid &&
                                         location.length > 0 &&
-                                        styles.inputError,
+                                        themedStyles.inputError,
                                 ]}
                                 value={location}
                                 onChangeText={setLocation}
@@ -214,19 +214,19 @@ const NewGroup = () => {
                                 returnKeyType='next'
                             />
                             {!isLocationValid && location.length > 0 && (
-                                <Text style={styles.errorText}>
+                                <Text style={themedStyles.error}>
                                     3-25 alphanumeric chars required
                                 </Text>
                             )}
                         </View>
-                        <View style={styles.section}>
-                            <Text style={styles.label}>Facilitator</Text>
+                        <View style={themedStyles.newGroupSection}>
+                            <Text style={themedStyles.label}>Facilitator</Text>
                             <RNTextInput
                                 style={[
-                                    styles.input,
+                                    themedStyles.input,
                                     !isFacilitatorValid &&
                                         facilitator.length > 0 &&
-                                        styles.inputError,
+                                        themedStyles.inputError,
                                 ]}
                                 value={facilitator}
                                 onChangeText={setFacilitator}
@@ -236,14 +236,16 @@ const NewGroup = () => {
                                 returnKeyType='next'
                             />
                         </View>
-                        <View style={styles.section}>
-                            <Text style={styles.label}>Co-Facilitator</Text>
+                        <View style={themedStyles.newGroupSection}>
+                            <Text style={themedStyles.label}>
+                                Co-Facilitator
+                            </Text>
                             <RNTextInput
                                 style={[
-                                    styles.input,
+                                    themedStyles.input,
                                     !isCofacilitatorValid &&
                                         cofacilitator.length > 0 &&
-                                        styles.inputError,
+                                        themedStyles.inputError,
                                 ]}
                                 value={cofacilitator}
                                 onChangeText={setCofacilitator}
@@ -253,15 +255,15 @@ const NewGroup = () => {
                                 returnKeyType='next'
                             />
                         </View>
-                        <View style={styles.section}>
-                            <Text style={styles.label}>Notes</Text>
+                        <View style={themedStyles.newGroupSection}>
+                            <Text style={themedStyles.label}>Notes</Text>
                             <RNTextInput
                                 ref={notesInputRef}
                                 style={[
-                                    styles.input,
+                                    themedStyles.input,
                                     !isNotesValid &&
                                         notes.length > 0 &&
-                                        styles.inputError,
+                                        themedStyles.inputError,
                                 ]}
                                 value={notes}
                                 onChangeText={setNotes}
@@ -283,16 +285,16 @@ const NewGroup = () => {
                             />
                         </View>
                         {error ? (
-                            <Text style={styles.errorText}>{error}</Text>
+                            <Text style={themedStyles.error}>{error}</Text>
                         ) : null}
-                        <View style={styles.buttonRow}>
+                        <View style={themedStyles.buttonRow}>
                             {canSubmit && (
                                 <TouchableOpacity
-                                    style={styles.saveButton}
+                                    style={themedStyles.saveButton}
                                     onPress={handleSubmit}
                                     disabled={submitting}
                                 >
-                                    <Text style={styles.saveText}>
+                                    <Text style={themedStyles.saveText}>
                                         {submitting ? 'Saving...' : 'Save'}
                                     </Text>
                                 </TouchableOpacity>
@@ -300,7 +302,7 @@ const NewGroup = () => {
                         </View>
                     </RNScrollView>
                     {submitting && (
-                        <View style={styles.activityOverlay}>
+                        <View style={themedStyles.activityOverlay}>
                             <ActivityIndicator
                                 size='large'
                                 color={theme.colors.accent}
@@ -312,93 +314,5 @@ const NewGroup = () => {
         </SafeAreaView>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flexGrow: 1,
-        paddingTop: 32,
-        alignItems: 'center',
-        backgroundColor: theme.colors.primaryBackground,
-        paddingBottom: 32,
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        marginBottom: 12,
-        color: theme.colors.lightText,
-    },
-    meetingIdText: {
-        marginBottom: 12,
-        fontSize: 16,
-        color: 'gray',
-    },
-    section: {
-        width: '90%',
-        marginBottom: 8,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 6,
-        color: theme.colors.lightText,
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: theme.colors.accent,
-        borderRadius: 6,
-        padding: 10,
-        fontSize: 18,
-        backgroundColor: 'white',
-        color: theme.colors.darkText,
-    },
-    inputError: {
-        borderColor: 'red',
-    },
-    errorText: {
-        color: 'red',
-        fontSize: 14,
-        marginTop: 2,
-    },
-    buttonRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '90%',
-        marginTop: 24,
-    },
-    cancelButton: {
-        paddingVertical: 12,
-        paddingHorizontal: 32,
-        backgroundColor: '#ccc',
-        borderRadius: 8,
-        marginRight: 10,
-    },
-    cancelButtonText: {
-        color: '#333',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    saveButton: {
-        paddingVertical: 12,
-        paddingHorizontal: 32,
-        backgroundColor: theme.colors.accent,
-        borderRadius: 8,
-    },
-    saveText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    activityOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(255,255,255,0.6)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 10,
-    },
-});
 
 export default NewGroup;

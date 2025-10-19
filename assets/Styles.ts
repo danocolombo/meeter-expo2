@@ -1,5 +1,23 @@
 import theme from '@assets/Colors';
+import { hairlineWidth, screenPaddingVertical } from '@constants/metrics';
 const themedStyles: { [key: string]: any } = {
+    activityOverlay: {
+        position: 'absolute' as 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: theme.colors.activityIndicatorBackground,
+        alignItems: 'center' as 'center',
+        justifyContent: 'center' as 'center',
+        zIndex: 10,
+    },
+    buttonRow: {
+        flexDirection: 'row' as 'row',
+        justifyContent: 'space-between' as 'space-between',
+        width: '90%',
+        marginTop: 24,
+    },
     calendarTheme: {
         backgroundColor: '#003366',
         calendarBackground: '#003366',
@@ -84,6 +102,10 @@ const themedStyles: { [key: string]: any } = {
         paddingHorizontal: 10,
     },
     dateContainer: { margin: 5 },
+    error: {
+        color: theme.colors.critical,
+        marginBottom: 8,
+    },
     firstRow: {
         flexDirection: 'row' as 'row',
         alignItems: 'center' as 'center',
@@ -109,8 +131,27 @@ const themedStyles: { [key: string]: any } = {
         color: theme.colors.lightText,
         paddingVertical: 0,
     },
+    input: {
+        borderWidth: 1,
+        color: theme.colors.darkText,
+        borderColor: theme.colors.textBoxBorderColor,
+        borderRadius: 6,
+        padding: 8,
+        marginBottom: 8,
+        backgroundColor: theme.colors.textBoxBackground,
+    },
+    inputError: {
+        borderColor: theme.colors.critical,
+    },
     keyboardAvoiding: {
         flex: 1,
+    },
+    label: {
+        fontWeight: 'bold',
+        fontSize: 16,
+        color: theme.colors.lightText,
+        marginTop: 12,
+        marginBottom: 4,
     },
     logisticsWrapper: {
         flexDirection: 'row' as 'row',
@@ -172,8 +213,21 @@ const themedStyles: { [key: string]: any } = {
         paddingVertical: 5,
         marginHorizontal: 10,
     },
+    meetingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'stretch',
+    },
     meetingDateRow: {
         marginVertical: 2,
+    },
+    meetingDetailsBadgeContainer: {
+        marginLeft: 'auto' as 'auto',
+        paddingVertical: 0,
+        paddingHorizontal: 10,
+    },
+    meetingDetailsContainer: {
+        marginLeft: 20,
     },
     meetingListError: {
         color: theme.colors.white,
@@ -233,16 +287,16 @@ const themedStyles: { [key: string]: any } = {
         alignItems: 'center' as 'center',
         paddingTop: 48,
     },
+    meetingsItemContainer: {
+        width: '100%',
+        paddingHorizontal: 15,
+        marginVertical: 8,
+    },
     meetingsText: {
         fontSize: 24,
         fontWeight: 'bold',
         textAlign: 'center' as 'center',
         marginBottom: 16,
-    },
-    meetingsItemContainer: {
-        width: '100%',
-        paddingHorizontal: 15,
-        marginVertical: 8,
     },
     modal: {
         flex: 1,
@@ -303,10 +357,108 @@ const themedStyles: { [key: string]: any } = {
         textAlign: 'center' as 'center',
         fontFamily: 'Roboto-Regular',
     },
+    newGroupContainer: {
+        flexGrow: 1,
+        paddingTop: 32,
+        alignItems: 'center' as 'center',
+        backgroundColor: theme.colors.primaryBackground,
+        paddingBottom: 32,
+    },
+    newGroupSection: {
+        width: '90%',
+        marginBottom: 8,
+    },
+    notesContainer: {
+        marginHorizontal: 10,
+        marginBottom: 15,
+        borderRadius: 5,
+        paddingHorizontal: 15,
+        backgroundColor: theme.colors.lightGraphic,
+    },
+    notesText: {
+        color: theme.colors.darkText,
+        fontFamily: 'Roboto-Regular',
+        fontSize: 24,
+    },
+    openShareButtonContainer: {
+        justifyContent: 'center',
+        marginLeft: 10,
+    },
+    openShareContainer: {
+        flexDirection: 'row',
+        textAlign: 'center',
+        justifyContent: 'center',
+    },
+    openShareGroupsButtonContainer: {
+        justifyContent: 'center',
+        verticalAlign: 'middle',
+        borderWidth: 1,
+        borderColor: theme.colors.accent,
+    },
+    openShareGroupsButtonWrapper: {
+        paddingLeft: 20,
+        justifyContent: 'center',
+    },
+    openShareGroupsListFooterContainer: {
+        alignItems: 'center',
+    },
+    openShareGroupsListFooterText: {
+        color: theme.colors.accent,
+        fontFamily: 'Roboto-Regular',
+    },
+    openShareGroupsListHeaderContainer: {
+        alignItems: 'center',
+    },
+    openShareGroupsListHeaderText: {
+        color: theme.colors.accent,
+        fontFamily: 'Roboto-Regular',
+    },
+    openShareGroupsText: {
+        color: theme.colors.lightText,
+        fontSize: 20,
+        fontWeight: '400',
+        fontFamily: 'Roboto-Regular',
+        textAlign: 'center',
+        paddingVertical: 5,
+    },
+    openShareSection: {
+        borderTopColor: theme.colors.accent,
+        borderBottomColor: theme.colors.accent,
+        marginHorizontal: 10,
+        marginBottom: 5,
+        borderBottomWidth: hairlineWidth,
+        borderTopWidth: hairlineWidth,
+    },
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 5,
+    },
     row1col2: {
         flexDirection: 'column' as 'column',
         marginLeft: 5,
         marginRight: 10,
+    },
+    safeAreaView: {
+        flex: 1,
+        backgroundColor: theme.colors.primaryBackground,
+    },
+    saveButton: {
+        marginBottom: 32,
+        paddingVertical: 12,
+        paddingHorizontal: 32,
+        backgroundColor: theme.colors.saveButtonBackground,
+        borderRadius: 8,
+        alignSelf: 'center' as 'center',
+    },
+    saveText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold' as 'bold',
+    },
+    screenTitleContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     screenTitleText: {
         fontFamily: 'Roboto-Bold' as 'Roboto-Bold',
@@ -315,11 +467,12 @@ const themedStyles: { [key: string]: any } = {
         textAlign: 'center' as 'center',
         marginVertical: 10,
     },
+
     surface: {
         flex: 1,
         flexDirection: 'column' as 'column',
         backgroundColor: theme.colors.primaryBackground,
-        paddingVertical: 16,
+        paddingVertical: screenPaddingVertical,
     },
     textColumn: {
         alignContent: 'flex-start' as 'flex-start',

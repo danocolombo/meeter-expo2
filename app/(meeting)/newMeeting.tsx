@@ -7,14 +7,13 @@ import {
     ActivityIndicator,
     KeyboardAvoidingView,
     SafeAreaView,
-    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { saveNewMeeting } from '../../features/meetings/meetingsThunks';
 import { Meeting } from '../../types/interfaces';
 // ...existing code...
@@ -22,7 +21,6 @@ import theme from '@assets/Colors';
 import MeetingDate from '@components/meeting/MeetingDate';
 import NumberInputEditable from '@components/ui/NumberInputEditable';
 import { unwrapResult } from '@reduxjs/toolkit';
-import { useSelector } from 'react-redux';
 import type { AppDispatch } from '../../utils/store';
 function generateUUID() {
     // Simple UUID v4 generator
@@ -386,7 +384,7 @@ const NewMeeting = () => {
                     </View>
                     <View style={themedStyles.meetingNotesContainer}>
                         <TextInput
-                            style={[localStyles.input, { height: 60 }]}
+                            style={[themedStyles.input, { height: 60 }]}
                             value={meeting.notes}
                             onChangeText={(v) => handleChange('notes', v)}
                             placeholder='Notes'
@@ -396,10 +394,10 @@ const NewMeeting = () => {
                     {/* Add more fields as needed */}
                     {isSavable && (
                         <TouchableOpacity
-                            style={localStyles.saveButton}
+                            style={themedStyles.saveButton}
                             onPress={handleSave}
                         >
-                            <Text style={localStyles.saveText}>Save</Text>
+                            <Text style={themedStyles.saveText}>Save</Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -410,44 +408,3 @@ const NewMeeting = () => {
 };
 
 export default NewMeeting;
-
-const localStyles = StyleSheet.create({
-    title: {
-        marginTop: 40,
-        fontSize: 24,
-        fontWeight: 'bold',
-        alignSelf: 'center',
-    },
-    formSection: {
-        marginTop: 32,
-        marginBottom: 24,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: '500',
-        marginBottom: 4,
-        marginTop: 12,
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 6,
-        padding: 8,
-        fontSize: 16,
-        marginBottom: 8,
-        backgroundColor: '#fff',
-    },
-    saveButton: {
-        marginBottom: 32,
-        paddingVertical: 12,
-        paddingHorizontal: 32,
-        backgroundColor: '#007AFF',
-        borderRadius: 8,
-        alignSelf: 'center',
-    },
-    saveText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-});

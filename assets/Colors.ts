@@ -17,6 +17,8 @@ const Colors = {
     blue: '#578CFE',
     darkText: '#000',
     lightText: '#ffffff',
+    textBoxBackground: '#ffffff',
+    textBoxBorderColor: '#dad5d5ff',
     mediumText: '#999999',
     yellow: '#F0DE36',
     red: '#D61C4E',
@@ -26,8 +28,10 @@ const Colors = {
     menuText: '#ffffff',
     unselectedBackground: '#1D5D9B',
     unselectedText: '#ffffff',
+    saveButtonBackground: '#007AFF',
     selectedBackground: '#CAEBF2',
     selectedText: '#000000',
+    activityIndicatorBackground: 'rgba(255, 255, 255, 0.6)',
 };
 
 const theme = {

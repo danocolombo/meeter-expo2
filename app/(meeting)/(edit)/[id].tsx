@@ -1,6 +1,7 @@
+import themedStyles from '@assets/Styles';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Button, Text, TextInput, View } from 'react-native';
 import { FullMeeting } from '../../../types/interfaces';
 import { useAppDispatch, useAppSelector } from '../../../utils/hooks';
 
@@ -107,7 +108,7 @@ const MeetingEditScreen = () => {
 
     if (loading) {
         return (
-            <View style={styles.container}>
+            <View style={themedStyles.meetingContainer}>
                 <Text>Loading meeting...</Text>
             </View>
         );
@@ -189,39 +190,39 @@ const MeetingEditScreen = () => {
 
     if (!meeting) {
         return (
-            <View style={styles.container}>
+            <View style={themedStyles.container}>
                 <Text>Loading meeting...</Text>
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.label}>Title:</Text>
+        <View style={themedStyles.container}>
+            <Text style={themedStyles.label}>Title:</Text>
             <TextInput
-                style={styles.input}
+                style={themedStyles.input}
                 value={meeting.title}
                 onChangeText={(text) => handleChange('title', text)}
                 placeholder='Enter meeting title'
             />
             {errors.title ? (
-                <Text style={styles.error}>{errors.title}</Text>
+                <Text style={themedStyles.error}>{errors.title}</Text>
             ) : null}
 
-            <Text style={styles.label}>Date:</Text>
+            <Text style={themedStyles.label}>Date:</Text>
             <TextInput
-                style={styles.input}
+                style={themedStyles.input}
                 value={meeting.meeting_date}
                 onChangeText={(text) => handleChange('meeting_date', text)}
                 placeholder='YYYY-MM-DD'
             />
             {errors.meeting_date ? (
-                <Text style={styles.error}>{errors.meeting_date}</Text>
+                <Text style={themedStyles.error}>{errors.meeting_date}</Text>
             ) : null}
 
-            <Text style={styles.label}>Support Contact:</Text>
+            <Text style={themedStyles.label}>Support Contact:</Text>
             <TextInput
-                style={styles.input}
+                style={themedStyles.input}
                 value={meeting.support_contact}
                 onChangeText={(text) => handleChange('support_contact', text)}
                 placeholder='Email address'
@@ -229,13 +230,13 @@ const MeetingEditScreen = () => {
                 keyboardType='email-address'
             />
             {errors.support_contact ? (
-                <Text style={styles.error}>{errors.support_contact}</Text>
+                <Text style={themedStyles.error}>{errors.support_contact}</Text>
             ) : null}
 
             {/* Example: Attendance Count */}
-            <Text style={styles.label}>Attendance Count:</Text>
+            <Text style={themedStyles.label}>Attendance Count:</Text>
             <TextInput
-                style={styles.input}
+                style={themedStyles.input}
                 value={String(meeting.attendance_count ?? '')}
                 onChangeText={(text) =>
                     handleChange(
@@ -247,13 +248,15 @@ const MeetingEditScreen = () => {
                 keyboardType='numeric'
             />
             {errors.attendance_count ? (
-                <Text style={styles.error}>{errors.attendance_count}</Text>
+                <Text style={themedStyles.error}>
+                    {errors.attendance_count}
+                </Text>
             ) : null}
 
             {/* Example: Newcomers Count */}
-            <Text style={styles.label}>Newcomers Count:</Text>
+            <Text style={themedStyles.label}>Newcomers Count:</Text>
             <TextInput
-                style={styles.input}
+                style={themedStyles.input}
                 value={String(meeting.newcomers_count ?? '')}
                 onChangeText={(text) =>
                     handleChange('newcomers_count', text.replace(/[^0-9]/g, ''))
@@ -262,7 +265,7 @@ const MeetingEditScreen = () => {
                 keyboardType='numeric'
             />
             {errors.newcomers_count ? (
-                <Text style={styles.error}>{errors.newcomers_count}</Text>
+                <Text style={themedStyles.error}>{errors.newcomers_count}</Text>
             ) : null}
 
             {/* Add more fields and validations as needed */}
@@ -270,28 +273,5 @@ const MeetingEditScreen = () => {
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 24,
-        backgroundColor: '#fff',
-    },
-    label: {
-        fontWeight: 'bold',
-        marginTop: 12,
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 6,
-        padding: 8,
-        marginBottom: 8,
-    },
-    error: {
-        color: 'red',
-        marginBottom: 8,
-    },
-});
 
 export default MeetingEditScreen;
