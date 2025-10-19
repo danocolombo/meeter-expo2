@@ -95,6 +95,10 @@ const MeetingDetails = () => {
             refreshMeeting();
         }, [refreshMeeting])
     );
+    console.log(
+        '🟨  ➡️  [id].tsx:99  ➡️  MeetingDetails  ➡️  meeting:\n',
+        meeting
+    );
 
     // Map meeting_type to display string
     const meetingTypeDisplay: Record<string, string> = {
