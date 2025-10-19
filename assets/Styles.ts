@@ -1,5 +1,12 @@
 import theme from '@assets/Colors';
-import { hairlineWidth, screenPaddingVertical } from '@constants/metrics';
+import {
+    hairlineWidth,
+    rowPadding,
+    screenMarginHorizontal,
+    screenMarginVertical,
+    screenPaddingHorizontal,
+    screenPaddingVertical,
+} from '@constants/metrics';
 const themedStyles: { [key: string]: any } = {
     activityOverlay: {
         position: 'absolute' as 'absolute',
@@ -95,6 +102,8 @@ const themedStyles: { [key: string]: any } = {
     container: {
         flex: 1,
         flexDirection: 'column' as 'column',
+        marginHorizontal: screenMarginHorizontal,
+        marginVertical: screenMarginVertical,
         backgroundColor: theme.colors.primaryBackground,
     },
     containerContents: {
@@ -137,7 +146,6 @@ const themedStyles: { [key: string]: any } = {
         borderColor: theme.colors.textBoxBorderColor,
         borderRadius: 6,
         padding: 8,
-        marginBottom: 8,
         backgroundColor: theme.colors.textBoxBackground,
     },
     inputError: {
@@ -150,8 +158,6 @@ const themedStyles: { [key: string]: any } = {
         fontWeight: 'bold',
         fontSize: 16,
         color: theme.colors.lightText,
-        marginTop: 12,
-        marginBottom: 4,
     },
     logisticsWrapper: {
         flexDirection: 'row' as 'row',
@@ -244,7 +250,6 @@ const themedStyles: { [key: string]: any } = {
         flex: 1,
         alignItems: 'center' as 'center',
         justifyContent: 'center' as 'center',
-        marginBottom: 0,
     },
     meetingSelectorWrapper: {
         flexDirection: 'row' as 'row',
@@ -255,9 +260,7 @@ const themedStyles: { [key: string]: any } = {
         borderBottomLeftRadius: 20,
         borderBottomRightRadius: 20,
         backgroundColor: theme.colors.lightGraphic,
-        // marginTop: 5,
-        paddingVertical: 0,
-        marginHorizontal: 0,
+        marginVertical: screenMarginVertical,
     },
     meetingTypeSelectorSelected: {
         backgroundColor: theme.colors.accent,
@@ -359,14 +362,14 @@ const themedStyles: { [key: string]: any } = {
     },
     newGroupContainer: {
         flexGrow: 1,
-        paddingTop: 32,
+        paddingTop: screenPaddingVertical,
         alignItems: 'center' as 'center',
-        backgroundColor: theme.colors.primaryBackground,
+        // backgroundColor: theme.colors.yellow,
         paddingBottom: 32,
     },
     newGroupSection: {
-        width: '90%',
-        marginBottom: 8,
+        width: '100%',
+        padding: screenPaddingHorizontal,
     },
     notesContainer: {
         marginHorizontal: 10,
@@ -432,8 +435,14 @@ const themedStyles: { [key: string]: any } = {
     row: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginHorizontal: 5,
+        marginHorizontal: screenMarginHorizontal,
+        paddingVertical: rowPadding,
     },
+    rowInput: {
+        width: '100%',
+        paddingVertical: rowPadding,
+    },
+
     row1col2: {
         flexDirection: 'column' as 'column',
         marginLeft: 5,
@@ -467,12 +476,19 @@ const themedStyles: { [key: string]: any } = {
         textAlign: 'center' as 'center',
         marginVertical: 10,
     },
-
+    selectorBorder: {
+        borderColor: theme.colors.lightGraphic,
+        borderWidth: hairlineWidth,
+        borderRadius: 5,
+        alignItems: 'center' as 'center',
+        justifyContent: 'center' as 'center',
+    },
     surface: {
         flex: 1,
         flexDirection: 'column' as 'column',
         backgroundColor: theme.colors.primaryBackground,
         paddingVertical: screenPaddingVertical,
+        paddingHorizontal: screenPaddingHorizontal,
     },
     textColumn: {
         alignContent: 'flex-start' as 'flex-start',

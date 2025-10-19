@@ -10,13 +10,14 @@ import {
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
-    ScrollView as RNScrollView,
-    TextInput as RNTextInput,
+    ScrollView,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
     useColorScheme,
 } from 'react-native';
+import { Surface } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -52,8 +53,8 @@ const NewGroup = () => {
             : theme.colors.navigateTextDark;
 
     // Ref for ScrollView to scroll Notes into view
-    const scrollViewRef = useRef<RNScrollView>(null);
-    const notesInputRef = useRef<RNTextInput>(null);
+    const scrollViewRef = useRef<ScrollView>(null);
+    const notesInputRef = useRef<TextInput>(null);
 
     // Validation
     const isTitleValid = /^[a-zA-Z0-9 \-_&]{3,25}$/.test(title);
@@ -150,22 +151,21 @@ const NewGroup = () => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
             >
-                <View style={{ flex: 1 }}>
-                    <RNScrollView
+                <Surface style={themedStyles.surface}>
+                    <ScrollView
                         ref={scrollViewRef}
                         contentContainerStyle={themedStyles.newGroupContainer}
                         keyboardShouldPersistTaps='handled'
                     >
-                        {/* ...existing input fields... */}
-                        <View style={themedStyles.newGroupSection}>
-                            <Text style={themedStyles.label}>Group Type</Text>
-                            <GenderSelectors
-                                pick={gender}
-                                setPick={setGender}
-                            />
+                        <View style={themedStyles.selectorBorder}>
+                            <View style={themedStyles.newGroupSection}>
+                                <GenderSelectors
+                                    pick={gender}
+                                    setPick={setGender}
+                                />
+                            </View>
                         </View>
-                        <View style={themedStyles.newGroupSection}>
-                            <Text style={themedStyles.label}>Attendance</Text>
+                        <View style={themedStyles.row}>
                             <NumberInputEditable
                                 value={attendance}
                                 onAction={setAttendance}
@@ -175,9 +175,9 @@ const NewGroup = () => {
                                 graphicStyle={{}}
                             />
                         </View>
-                        <View style={themedStyles.newGroupSection}>
+                        <View style={themedStyles.rowInput}>
                             <Text style={themedStyles.label}>Title *</Text>
-                            <RNTextInput
+                            <TextInput
                                 style={[
                                     themedStyles.input,
                                     !isTitleValid &&
@@ -197,9 +197,9 @@ const NewGroup = () => {
                                 </Text>
                             )}
                         </View>
-                        <View style={themedStyles.newGroupSection}>
+                        <View style={themedStyles.rowInput}>
                             <Text style={themedStyles.label}>Location *</Text>
-                            <RNTextInput
+                            <TextInput
                                 style={[
                                     themedStyles.input,
                                     !isLocationValid &&
@@ -219,9 +219,9 @@ const NewGroup = () => {
                                 </Text>
                             )}
                         </View>
-                        <View style={themedStyles.newGroupSection}>
+                        <View style={themedStyles.rowInput}>
                             <Text style={themedStyles.label}>Facilitator</Text>
-                            <RNTextInput
+                            <TextInput
                                 style={[
                                     themedStyles.input,
                                     !isFacilitatorValid &&
@@ -236,11 +236,11 @@ const NewGroup = () => {
                                 returnKeyType='next'
                             />
                         </View>
-                        <View style={themedStyles.newGroupSection}>
+                        <View style={themedStyles.rowInput}>
                             <Text style={themedStyles.label}>
                                 Co-Facilitator
                             </Text>
-                            <RNTextInput
+                            <TextInput
                                 style={[
                                     themedStyles.input,
                                     !isCofacilitatorValid &&
@@ -255,9 +255,9 @@ const NewGroup = () => {
                                 returnKeyType='next'
                             />
                         </View>
-                        <View style={themedStyles.newGroupSection}>
+                        <View style={themedStyles.rowInput}>
                             <Text style={themedStyles.label}>Notes</Text>
-                            <RNTextInput
+                            <TextInput
                                 ref={notesInputRef}
                                 style={[
                                     themedStyles.input,
@@ -300,7 +300,7 @@ const NewGroup = () => {
                                 </TouchableOpacity>
                             )}
                         </View>
-                    </RNScrollView>
+                    </ScrollView>
                     {submitting && (
                         <View style={themedStyles.activityOverlay}>
                             <ActivityIndicator
@@ -309,7 +309,7 @@ const NewGroup = () => {
                             />
                         </View>
                     )}
-                </View>
+                </Surface>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );

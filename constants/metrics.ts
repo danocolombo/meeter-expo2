@@ -9,9 +9,15 @@ export const hairlineWidth =
 export const screenTopMargin = 50;
 export const screenPaddingHorizontal = 15;
 export const screenPaddingVertical = 16;
+export const screenMarginHorizontal = 10;
+export const screenMarginVertical = 10;
+export const rowPadding = 5;
 export default {
     hairlineWidth,
     screenTopMargin,
+    screenMarginHorizontal,
+    screenMarginVertical,
     screenPaddingHorizontal,
     screenPaddingVertical,
+    rowPadding,
 };
