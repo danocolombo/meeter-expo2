@@ -32,25 +32,49 @@ const MeetingEditScreen = () => {
     const [loading, setLoading] = React.useState(false);
 
     // Debug logging
-    React.useEffect(() => {
-        console.log('[EditMeeting] meetingId:', meetingId);
-        console.log('[EditMeeting] meetingFromRedux:', meetingFromRedux);
-        console.log('[EditMeeting] local meeting state:', meeting);
-    }, [meetingId, meetingFromRedux, meeting]);
+    // React.useEffect(() => {
+    //     console.log('[EditMeeting] meetingId:', meetingId);
+    //     console.log('[EditMeeting] meetingFromRedux:', meetingFromRedux);
+    //     console.log('[EditMeeting] local meeting state:', meeting);
+    // }, [meetingId, meetingFromRedux, meeting]);
 
-    // Try Redux first, then fetch from backend if not found
+    // Try params -> Redux -> fetch from backend if not found
     useEffect(() => {
         let cancelled = false;
         async function fetchMeetingIfNeeded() {
+            // 1) If a meeting object was passed in params (serialized), use it
+            const meetingParam = params.meeting as string | undefined;
+            if (meetingParam) {
+                try {
+                    const parsed: FullMeeting = JSON.parse(meetingParam);
+                    if (!cancelled) {
+                        setMeeting(parsed);
+                        setLoading(false);
+                        return;
+                    }
+                } catch (e) {
+                    console.warn(
+                        '[EditMeeting] Failed to parse meeting param',
+                        e
+                    );
+                    // fallthrough to other methods
+                }
+            }
+
+            // 2) Redux store
             if (meetingFromRedux && meetingFromRedux.id) {
                 setMeeting(meetingFromRedux);
                 return;
             }
+
+            // 3) Fetch from API as before
             if (!meetingId) return;
             setLoading(true);
             try {
                 // Try to get org_id from params or fallback (update as needed)
-                const org_id = params.org_id || '';
+                const org_id = Array.isArray(params.org_id)
+                    ? params.org_id[0]
+                    : params.org_id || '';
                 if (!org_id) {
                     console.warn('[EditMeeting] No org_id provided in params.');
                     setLoading(false);
@@ -79,7 +103,7 @@ const MeetingEditScreen = () => {
         return () => {
             cancelled = true;
         };
-    }, [meetingId, meetingFromRedux, params.org_id]);
+    }, [meetingId, meetingFromRedux, params.meeting, params.org_id]);
 
     if (loading) {
         return (

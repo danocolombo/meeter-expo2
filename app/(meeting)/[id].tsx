@@ -95,10 +95,6 @@ const MeetingDetails = () => {
             refreshMeeting();
         }, [refreshMeeting])
     );
-    console.log(
-        '🟨  ➡️  [id].tsx:99  ➡️  MeetingDetails  ➡️  meeting:\n',
-        meeting
-    );
 
     // Map meeting_type to display string
     const meetingTypeDisplay: Record<string, string> = {
@@ -144,10 +140,56 @@ const MeetingDetails = () => {
             navigation &&
             typeof navigation.setOptions === 'function'
         ) {
-            // navigation.setOptions({ title: meetingTypeString });
-            navigation.setOptions({ title: '' });
+            // Set title and add Edit button to header that passes the meeting object
+            navigation.setOptions({
+                title: '',
+                headerRight: () => {
+                    // Only show edit when we have a meeting and user has manage perms
+                    if (!meeting) return null;
+                    const canEdit =
+                        user?.profile?.permissions?.includes('manage') ||
+                        user?.profile?.perms?.includes('meetings');
+                    if (!canEdit) return null;
+                    return (
+                        <TouchableOpacity
+                            style={{ marginRight: 16 }}
+                            onPress={() => {
+                                try {
+                                    const meetingParam =
+                                        JSON.stringify(meeting);
+                                    router.push({
+                                        pathname: '/(meeting)/(edit)/[id]',
+                                        params: {
+                                            id,
+                                            meeting: meetingParam,
+                                            from: origin || undefined,
+                                        },
+                                    });
+                                } catch (e) {
+                                    console.warn(
+                                        'Failed to serialize meeting for edit navigation',
+                                        e
+                                    );
+                                    // fallback: navigate with id only
+                                    router.push({
+                                        pathname: '/(meeting)/(edit)/[id]',
+                                        params: {
+                                            id,
+                                            from: origin || undefined,
+                                        },
+                                    });
+                                }
+                            }}
+                        >
+                            <Text style={{ color: '#007AFF', fontSize: 16 }}>
+                                Edit
+                            </Text>
+                        </TouchableOpacity>
+                    );
+                },
+            });
         }
-    }, [meetingTypeString, navigation]);
+    }, [meetingTypeString, navigation, meeting, router, id, origin, user]);
 
     // Removed unused generateUUID
     if (isLoading) {
