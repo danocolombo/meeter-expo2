@@ -20,11 +20,12 @@ import {
 import { Surface } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch } from '../../utils/store';
 
 const NewGroup = () => {
     const router = useRouter();
     const navigation = useNavigation();
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
     const { meetingId: meetingIdRaw } = useLocalSearchParams();
     // Ensure meetingId is always a string
     const meetingId = Array.isArray(meetingIdRaw)
@@ -103,10 +104,10 @@ const NewGroup = () => {
                 group,
                 meetingId,
             });
-            await dispatch(
-                // @ts-ignore
-                addGroup({ api_token, group, meetingId })
-            ).unwrap();
+            // The addGroup thunk is defined in plain JS/TS without a narrow arg type in our workspace,
+            // so silence the type-check here for now. This is a minimal, safe change to unblock compilation.
+            // @ts-ignore TS(2345)
+            await dispatch(addGroup({ api_token, group, meetingId })).unwrap();
             handleCancel();
         } catch (err) {
             console.log('Failed to add group:', {

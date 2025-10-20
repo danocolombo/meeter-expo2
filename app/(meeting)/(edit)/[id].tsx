@@ -1,191 +1,168 @@
+import theme from '@assets/Colors';
 import themedStyles from '@assets/Styles';
+import MeetingDate from '@components/meeting/MeetingDate';
+import TypeSelectors from '@components/meeting/TypeSelectors';
+import NumberInputEditable from '@components/ui/NumberInputEditable';
+import { useNavigation } from '@react-navigation/native';
+import { unwrapResult } from '@reduxjs/toolkit';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Alert, Button, Text, TextInput, View } from 'react-native';
+import {
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    SafeAreaView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { Calendar } from 'react-native-calendars';
+import { useDispatch, useSelector } from 'react-redux';
+import { updateMeeting } from '../../../features/meetings/meetingsThunks';
 import { FullMeeting } from '../../../types/interfaces';
-import { useAppDispatch, useAppSelector } from '../../../utils/hooks';
+import type { AppDispatch } from '../../../utils/store';
 
-const REQUIRED_FIELDS: (keyof FullMeeting)[] = [
-    'title',
-    'meeting_date',
-    'organization_id',
-    'support_contact',
-];
+// Infer payload type for updateMeeting thunk to keep typings tight
+type UpdateMeetingPayload = Parameters<typeof updateMeeting>[0];
 
-const EMAIL_FIELDS: (keyof FullMeeting)[] = ['support_contact'];
+// Helper to coerce date to YYYY-MM-DD if needed
+function normalizeDateToISO(dateStr?: string) {
+    if (!dateStr) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    const parsed = new Date(dateStr);
+    if (isNaN(parsed.getTime())) return dateStr;
+    return parsed.toISOString().slice(0, 10);
+}
 
-const MeetingEditScreen = () => {
+const NewLayoutEdit = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
-    const dispatch = useAppDispatch();
-    // Ensure params.id is a string
+    const dispatch = useDispatch<AppDispatch>();
+    const navigation = useNavigation();
+    const user = useSelector((state: any) => state.user);
+    const api_token = user?.apiToken || user?.token || user?.profile?.apiToken;
+
+    const meetingParam = params.meeting as string | undefined;
+    // meetingId fallback from params
     const meetingId = Array.isArray(params.id) ? params.id[0] : params.id;
 
-    // getMeetingById sets state.meetings.specificMeeting
-    const meetingFromRedux = useAppSelector((state: any) =>
-        state.meetings.specificMeeting &&
-        Object.keys(state.meetings.specificMeeting).length > 0
-            ? state.meetings.specificMeeting
-            : null
-    );
+    const [saving, setSaving] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+    const [showCalendar, setShowCalendar] = React.useState(false);
+    const [isSavable, setIsSavable] = React.useState(false);
+
+    // local meeting state
     const [meeting, setMeeting] = React.useState<FullMeeting | null>(null);
-    const [errors, setErrors] = React.useState<{ [key: string]: string }>({});
-    const [loading, setLoading] = React.useState(false);
 
-    // Debug logging
-    // React.useEffect(() => {
-    //     console.log('[EditMeeting] meetingId:', meetingId);
-    //     console.log('[EditMeeting] meetingFromRedux:', meetingFromRedux);
-    //     console.log('[EditMeeting] local meeting state:', meeting);
-    // }, [meetingId, meetingFromRedux, meeting]);
-
-    // Try params -> Redux -> fetch from backend if not found
+    // Load meeting from params JSON or bail
     useEffect(() => {
-        let cancelled = false;
-        async function fetchMeetingIfNeeded() {
-            // 1) If a meeting object was passed in params (serialized), use it
-            const meetingParam = params.meeting as string | undefined;
-            if (meetingParam) {
-                try {
-                    const parsed: FullMeeting = JSON.parse(meetingParam);
-                    if (!cancelled) {
-                        setMeeting(parsed);
-                        setLoading(false);
-                        return;
-                    }
-                } catch (e) {
-                    console.warn(
-                        '[EditMeeting] Failed to parse meeting param',
-                        e
-                    );
-                    // fallthrough to other methods
-                }
+        // Set the parent navigation header title while this screen is mounted
+        try {
+            const parent =
+                (navigation as any).getParent &&
+                (navigation as any).getParent();
+            if (parent && typeof parent.setOptions === 'function') {
+                parent.setOptions({
+                    title: 'Edit Meeting',
+                    headerBackTitle: 'Cancel',
+                });
             }
-
-            // 2) Redux store
-            if (meetingFromRedux && meetingFromRedux.id) {
-                setMeeting(meetingFromRedux);
-                return;
-            }
-
-            // 3) Fetch from API as before
-            if (!meetingId) return;
-            setLoading(true);
+        } catch {
+            // ignore
+        }
+        let parsed: FullMeeting | null = null;
+        if (meetingParam) {
             try {
-                // Try to get org_id from params or fallback (update as needed)
-                const org_id = Array.isArray(params.org_id)
-                    ? params.org_id[0]
-                    : params.org_id || '';
-                if (!org_id) {
-                    console.warn('[EditMeeting] No org_id provided in params.');
-                    setLoading(false);
-                    return;
-                }
-                const { getAMeeting } = await import('../../../utils/api');
-                const fetchedMeeting: FullMeeting = await getAMeeting(
-                    org_id,
-                    meetingId
-                );
-                if (!cancelled && fetchedMeeting && fetchedMeeting.id) {
-                    setMeeting(fetchedMeeting);
-                }
-            } catch (err) {
-                if (!cancelled) {
-                    console.error(
-                        '[EditMeeting] Failed to fetch meeting:',
-                        err
-                    );
-                }
-            } finally {
-                if (!cancelled) setLoading(false);
+                parsed = JSON.parse(meetingParam) as FullMeeting;
+            } catch (e) {
+                console.warn('Failed to parse meeting param for edit:', e);
             }
         }
-        fetchMeetingIfNeeded();
+        // If no parsed meeting but we have meetingId and redux could provide one in future,
+        // leave as null and show loading message. For now prefer param.
+        if (parsed) {
+            // Normalize date
+            parsed.meeting_date = normalizeDateToISO(
+                parsed.meeting_date as string
+            );
+            setMeeting(parsed);
+            setIsSavable(
+                !!parsed.title && !!parsed.meeting_type && !!parsed.meeting_date
+            );
+        }
+    }, [meetingParam, meetingId, navigation]);
+
+    // restore parent title on unmount
+    useEffect(() => {
         return () => {
-            cancelled = true;
+            try {
+                const parent =
+                    (navigation as any).getParent &&
+                    (navigation as any).getParent();
+                if (parent && typeof parent.setOptions === 'function') {
+                    parent.setOptions({
+                        title: undefined,
+                        headerBackTitle: undefined,
+                    });
+                }
+            } catch {
+                // ignore
+            }
         };
-    }, [meetingId, meetingFromRedux, params.meeting, params.org_id]);
+    }, [navigation]);
 
-    if (loading) {
-        return (
-            <View style={themedStyles.meetingContainer}>
-                <Text>Loading meeting...</Text>
-            </View>
-        );
-    }
-
-    const validate = (): boolean => {
-        if (!meeting) return false;
-        const newErrors: { [key: string]: string } = {};
-        // Required fields
-        REQUIRED_FIELDS.forEach((field) => {
-            if (!meeting[field] || String(meeting[field]).trim() === '') {
-                newErrors[field] = 'Required';
-            }
+    const handleChange = (field: keyof FullMeeting, value: any) => {
+        setMeeting((prev) => {
+            if (!prev) return prev;
+            const updated: any = { ...prev, [field]: value };
+            setIsSavable(
+                !!updated.title &&
+                    !!updated.meeting_type &&
+                    !!updated.meeting_date
+            );
+            return updated as FullMeeting;
         });
-        // Email fields
-        EMAIL_FIELDS.forEach((field) => {
-            const value = meeting[field];
-            if (value && !/^\S+@\S+\.\S+$/.test(String(value))) {
-                newErrors[field] = 'Invalid email address';
-            }
-        });
-        // Date format (YYYY-MM-DD)
-        if (
-            meeting.meeting_date &&
-            !/^\d{4}-\d{2}-\d{2}$/.test(meeting.meeting_date)
-        ) {
-            newErrors['meeting_date'] = 'Date must be YYYY-MM-DD';
-        }
-        // Example: attendance_count must be a number >= 0
-        if (
-            meeting.attendance_count !== undefined &&
-            meeting.attendance_count !== null
-        ) {
-            if (
-                isNaN(Number(meeting.attendance_count)) ||
-                Number(meeting.attendance_count) < 0
-            ) {
-                newErrors['attendance_count'] =
-                    'Attendance must be a non-negative number';
-            }
-        }
-        // Example: newcomers_count must be a number >= 0
-        if (
-            meeting.newcomers_count !== undefined &&
-            meeting.newcomers_count !== null
-        ) {
-            if (
-                isNaN(Number(meeting.newcomers_count)) ||
-                Number(meeting.newcomers_count) < 0
-            ) {
-                newErrors['newcomers_count'] =
-                    'Newcomers must be a non-negative number';
-            }
-        }
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
     };
 
-    const handleChange = (field: keyof FullMeeting, value: string) => {
-        setMeeting((prev) => (prev ? { ...prev, [field]: value } : prev));
-        setErrors((prev) => {
-            const newErrors = { ...prev };
-            if (newErrors[field]) {
-                delete newErrors[field];
-            }
-            return newErrors;
-        });
+    const handleTypeChange = (value: string) => {
+        if (!user?.profile?.permissions?.includes('manage')) return;
+        if (!meeting) return;
+        if (meeting.meeting_type === value) return;
+        handleChange('meeting_type', value);
     };
 
     const handleSave = () => {
-        if (!validate() || !meeting) {
-            Alert.alert('Please fix validation errors.');
-            return;
-        }
-        // TODO: Save logic
-        Alert.alert('Meeting updated!');
-        router.back();
+        if (!meeting) return;
+        setSaving(true);
+        setError(null);
+
+        // Clean values similar to newMeeting: empty strings -> null, 0 -> null
+        const cleaned: any = Object.fromEntries(
+            Object.entries(meeting).map(([k, v]) => {
+                if (typeof v === 'string')
+                    return [k, v.trim() === '' ? null : v];
+                if (typeof v === 'number') return [k, v === 0 ? null : v];
+                return [k, v];
+            })
+        );
+
+        // Ensure id present
+        if (!cleaned.id && meetingId) cleaned.id = meetingId;
+
+        const payload: UpdateMeetingPayload = {
+            api_token: api_token,
+            meeting: cleaned,
+        } as unknown as UpdateMeetingPayload;
+        dispatch(updateMeeting(payload))
+            .then(unwrapResult)
+            .then(() => {
+                setSaving(false);
+                router.replace('/(drawer)');
+            })
+            .catch((err: any) => {
+                setSaving(false);
+                setError(err?.message || 'Failed to update meeting.');
+            });
     };
 
     if (!meeting) {
@@ -197,81 +174,225 @@ const MeetingEditScreen = () => {
     }
 
     return (
-        <View style={themedStyles.container}>
-            <Text style={themedStyles.label}>Title:</Text>
-            <TextInput
-                style={themedStyles.input}
-                value={meeting.title}
-                onChangeText={(text) => handleChange('title', text)}
-                placeholder='Enter meeting title'
-            />
-            {errors.title ? (
-                <Text style={themedStyles.error}>{errors.title}</Text>
-            ) : null}
+        <SafeAreaView style={themedStyles.surface}>
+            <KeyboardAvoidingView style={themedStyles.keyboardAvoiding}>
+                <View style={themedStyles.containerContents}>
+                    {saving && (
+                        <View
+                            style={{ alignItems: 'center', marginVertical: 10 }}
+                        >
+                            <ActivityIndicator size='large' color='#007AFF' />
+                        </View>
+                    )}
+                    {error && (
+                        <Text
+                            style={{
+                                color: 'red',
+                                textAlign: 'center',
+                                marginBottom: 10,
+                            }}
+                        >
+                            {error}
+                        </Text>
+                    )}
 
-            <Text style={themedStyles.label}>Date:</Text>
-            <TextInput
-                style={themedStyles.input}
-                value={meeting.meeting_date}
-                onChangeText={(text) => handleChange('meeting_date', text)}
-                placeholder='YYYY-MM-DD'
-            />
-            {errors.meeting_date ? (
-                <Text style={themedStyles.error}>{errors.meeting_date}</Text>
-            ) : null}
+                    <View style={themedStyles.firstRow}>
+                        <View style={themedStyles.meetingSelectorContainer}>
+                            <View style={themedStyles.meetingSelectorWrapper}>
+                                <TypeSelectors
+                                    pick={meeting.meeting_type}
+                                    setPick={handleTypeChange}
+                                />
+                            </View>
+                        </View>
+                    </View>
 
-            <Text style={themedStyles.label}>Support Contact:</Text>
-            <TextInput
-                style={themedStyles.input}
-                value={meeting.support_contact}
-                onChangeText={(text) => handleChange('support_contact', text)}
-                placeholder='Email address'
-                autoCapitalize='none'
-                keyboardType='email-address'
-            />
-            {errors.support_contact ? (
-                <Text style={themedStyles.error}>{errors.support_contact}</Text>
-            ) : null}
+                    <View style={themedStyles.meetingDateRow}>
+                        <TouchableOpacity
+                            style={themedStyles.firstRow}
+                            onPress={() => setShowCalendar((v) => !v)}
+                            activeOpacity={0.7}
+                        >
+                            <MeetingDate
+                                date={meeting.meeting_date as string}
+                            />
+                        </TouchableOpacity>
 
-            {/* Example: Attendance Count */}
-            <Text style={themedStyles.label}>Attendance Count:</Text>
-            <TextInput
-                style={themedStyles.input}
-                value={String(meeting.attendance_count ?? '')}
-                onChangeText={(text) =>
-                    handleChange(
-                        'attendance_count',
-                        text.replace(/[^0-9]/g, '')
-                    )
-                }
-                placeholder='0'
-                keyboardType='numeric'
-            />
-            {errors.attendance_count ? (
-                <Text style={themedStyles.error}>
-                    {errors.attendance_count}
-                </Text>
-            ) : null}
+                        {showCalendar && (
+                            <Calendar
+                                current={meeting.meeting_date as string}
+                                onDayPress={(day) => {
+                                    handleChange(
+                                        'meeting_date',
+                                        day.dateString
+                                    );
+                                    setShowCalendar(false);
+                                }}
+                                markedDates={{
+                                    [meeting.meeting_date as string]: {
+                                        selected: true,
+                                        selectedColor: theme.colors.blue,
+                                    },
+                                }}
+                                theme={themedStyles.calendarTheme}
+                            />
+                        )}
+                    </View>
 
-            {/* Example: Newcomers Count */}
-            <Text style={themedStyles.label}>Newcomers Count:</Text>
-            <TextInput
-                style={themedStyles.input}
-                value={String(meeting.newcomers_count ?? '')}
-                onChangeText={(text) =>
-                    handleChange('newcomers_count', text.replace(/[^0-9]/g, ''))
-                }
-                placeholder='0'
-                keyboardType='numeric'
-            />
-            {errors.newcomers_count ? (
-                <Text style={themedStyles.error}>{errors.newcomers_count}</Text>
-            ) : null}
+                    <Text style={themedStyles.formLabel}>Title</Text>
+                    <TextInput
+                        style={themedStyles.formInput}
+                        value={meeting.title as string}
+                        onChangeText={(v) => handleChange('title', v)}
+                        placeholder='Meeting Title'
+                    />
 
-            {/* Add more fields and validations as needed */}
-            <Button title='Save' onPress={handleSave} />
-        </View>
+                    <Text style={themedStyles.formLabel}>Contact</Text>
+                    <TextInput
+                        style={themedStyles.formInput}
+                        value={meeting.facilitator_contact as string}
+                        onChangeText={(v) =>
+                            handleChange('facilitator_contact', v)
+                        }
+                        placeholder='Meeting Cont'
+                    />
+
+                    <Text style={themedStyles.formLabel}>Music/Worship</Text>
+                    <TextInput
+                        style={themedStyles.formInput}
+                        value={meeting.worship as string}
+                        onChangeText={(v) => handleChange('worship', v)}
+                        placeholder='Music/Worship'
+                    />
+
+                    <View style={themedStyles.mealContainer}>
+                        <Text style={themedStyles.formLabel}>Menu</Text>
+                        <TextInput
+                            style={themedStyles.formInput}
+                            value={meeting.meal as string}
+                            onChangeText={(v) => handleChange('meal', v)}
+                            placeholder='Menu'
+                        />
+                        <Text style={themedStyles.formLabel}>Contact</Text>
+                        <TextInput
+                            style={themedStyles.formInput}
+                            value={meeting.meal_contact as string}
+                            onChangeText={(v) =>
+                                handleChange('meal_contact', v)
+                            }
+                            placeholder='Contact'
+                        />
+                        <View style={themedStyles.firstRow}>
+                            <Text
+                                style={[
+                                    themedStyles.formLabel,
+                                    { paddingRight: 15 },
+                                ]}
+                            >
+                                Meal Count
+                            </Text>
+                            <NumberInputEditable
+                                value={Number(meeting.meal_count) || 0}
+                                onAction={(v: number) =>
+                                    handleChange('meal_count', v)
+                                }
+                                min={0}
+                                max={999}
+                                fontSize={14}
+                                paddingHorizontal={5}
+                                controlSize={25}
+                                numberStyle={{}}
+                                graphicStyle={{}}
+                            />
+                        </View>
+                    </View>
+
+                    <View
+                        style={[
+                            themedStyles.firstRow,
+                            {
+                                alignContent: 'space-evenly',
+                                paddingVertical: 2,
+                            },
+                        ]}
+                    >
+                        <Text
+                            style={[
+                                themedStyles.formLabel,
+                                { paddingRight: 15 },
+                            ]}
+                        >
+                            Attendance
+                        </Text>
+                        <NumberInputEditable
+                            value={Number(meeting.attendance_count) || 0}
+                            onAction={(v: number) =>
+                                handleChange('attendance_count', v)
+                            }
+                            min={0}
+                            max={999}
+                            fontSize={14}
+                            paddingHorizontal={5}
+                            controlSize={25}
+                            numberStyle={{}}
+                            graphicStyle={{}}
+                        />
+                    </View>
+
+                    <View
+                        style={[
+                            themedStyles.firstRow,
+                            {
+                                alignContent: 'space-evenly',
+                                paddingVertical: 2,
+                            },
+                        ]}
+                    >
+                        <Text
+                            style={[
+                                themedStyles.formLabel,
+                                { paddingRight: 15 },
+                            ]}
+                        >
+                            Newcomers
+                        </Text>
+                        <NumberInputEditable
+                            value={Number(meeting.newcomers_count) || 0}
+                            onAction={(v: number) =>
+                                handleChange('newcomers_count', v)
+                            }
+                            min={0}
+                            max={999}
+                            fontSize={14}
+                            paddingHorizontal={5}
+                            controlSize={25}
+                            numberStyle={{}}
+                            graphicStyle={{}}
+                        />
+                    </View>
+
+                    <View style={themedStyles.meetingNotesContainer}>
+                        <TextInput
+                            style={[themedStyles.input, { height: 60 }]}
+                            value={meeting.notes as string}
+                            onChangeText={(v) => handleChange('notes', v)}
+                            placeholder='Notes'
+                            multiline
+                        />
+                    </View>
+
+                    {isSavable && (
+                        <TouchableOpacity
+                            style={themedStyles.saveButton}
+                            onPress={handleSave}
+                        >
+                            <Text style={themedStyles.saveText}>Save</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 
-export default MeetingEditScreen;
+export default NewLayoutEdit;

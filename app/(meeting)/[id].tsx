@@ -7,7 +7,7 @@ import MeetingIds from '@components/meeting/MeetingIds';
 import BadgeNumber from '@components/ui/BadgeNumber';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { FullMeeting, Group } from '@types/interfaces';
+import { FullMeeting, Group } from '../../types/interfaces';
 // import { getAMeeting } from '@utils/api';
 import MeetingDate from '@components/meeting/MeetingDate';
 import TypeSelectors from '@components/meeting/TypeSelectors';
@@ -35,7 +35,7 @@ const MeetingDetails = () => {
     }>();
     const router = useRouter();
     const [historic, setHistoric] = React.useState(false);
-    const [isSavable, setIsSavable] = React.useState(false);
+    const [, setIsSavable] = React.useState(false);
     const [groups, setGroups] = React.useState<Group[]>([]);
     const [error, setError] = React.useState<string | null>(null);
     const user = useSelector((state: any) => state.user);
@@ -79,7 +79,8 @@ const MeetingDetails = () => {
                 setGroups([]);
                 setError('Meeting not found.');
             }
-        } catch (err) {
+        } catch (err: any) {
+            console.error('Failed to fetch meeting details:', err);
             setMeeting(null);
             setGroups([]);
             setError('Failed to load meeting. Please try again.');
