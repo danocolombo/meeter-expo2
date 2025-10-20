@@ -161,7 +161,7 @@ const ActiveMeetings = () => {
     }
 
     return (
-        <View style={themedStyles.container}>
+        <View style={themedStyles.surface}>
             <Modal visible={showDeleteConfirmModal} animationType='slide'>
                 <View style={themedStyles.modal}>
                     <View style={themedStyles.modalHeaderContainer}>

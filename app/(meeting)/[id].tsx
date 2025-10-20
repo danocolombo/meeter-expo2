@@ -11,7 +11,7 @@ import { FullMeeting, Group } from '../../types/interfaces';
 // import { getAMeeting } from '@utils/api';
 import MeetingDate from '@components/meeting/MeetingDate';
 import TypeSelectors from '@components/meeting/TypeSelectors';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {
     ActivityIndicator,
@@ -31,8 +31,14 @@ const Colors = theme.colors;
 const MeetingDetails = () => {
     const { id, origin } = useLocalSearchParams<{
         id: string;
-        origin?: string;
+        origin?: string | string[];
     }>();
+    // Normalize origin which may be a string or array (from query params)
+    const originValue: string = React.useMemo(() => {
+        if (!origin) return '';
+        if (Array.isArray(origin)) return origin[0] || '';
+        return String(origin || '');
+    }, [origin]);
     const router = useRouter();
     const [historic, setHistoric] = React.useState(false);
     const [, setIsSavable] = React.useState(false);
@@ -47,6 +53,19 @@ const MeetingDetails = () => {
     const [meeting, setMeeting] = React.useState<FullMeeting | null>(null);
     const [isLoading, setIsLoading] = React.useState(false);
     const navigation = useNavigation();
+
+    // Top navigation cancel handler — navigate back to the meetings list
+    const handleCancel = React.useCallback(() => {
+        // Log origin for debugging
+        console.log('MeetingDetails.handleCancel origin:', originValue);
+        // origin expected to be 'active' or 'historic'
+        if (originValue === 'historic') {
+            router.replace('/(drawer)/(meetings)/historic');
+            return;
+        }
+        // default to active
+        router.replace('/(drawer)/(meetings)/active');
+    }, [originValue, router]);
 
     // Add Edit button to header (Expo Router v2+ pattern)
     // Use a custom header if needed, or add edit button in the screen for now
@@ -234,91 +253,117 @@ const MeetingDetails = () => {
 
     // Basic Meeting info form (read-only)
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
-        >
-            <Surface style={themedStyles.surface}>
-                <View style={themedStyles.firstRow}>
-                    <View style={themedStyles.meetingSelectorContainer}>
-                        <View style={themedStyles.meetingSelectorWrapper}>
-                            <TypeSelectors
-                                pick={meeting?.meeting_type}
-                                setPick={handleTypeChange}
-                            />
+        <>
+            <Stack.Screen
+                options={{
+                    headerLeft: () => (
+                        <TouchableOpacity
+                            onPress={handleCancel}
+                            style={{ marginLeft: 16 }}
+                        >
+                            <Text style={{ color: '#007AFF', fontSize: 18 }}>
+                                Cancel
+                            </Text>
+                        </TouchableOpacity>
+                    ),
+                }}
+            />
+
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+            >
+                <Surface style={themedStyles.surface}>
+                    <View style={themedStyles.firstRow}>
+                        <View style={themedStyles.meetingSelectorContainer}>
+                            <View style={themedStyles.meetingSelectorWrapper}>
+                                <TypeSelectors
+                                    pick={meeting?.meeting_type}
+                                    setPick={handleTypeChange}
+                                />
+                            </View>
                         </View>
                     </View>
-                </View>
-                <View style={themedStyles.firstRow}>
-                    <MeetingDate date={meeting.meeting_date} />
-                    <View style={{ flex: 1 }}>
-                        <MeetingIds meeting={meeting} historic={historic} />
+                    <View style={themedStyles.firstRow}>
+                        <MeetingDate date={meeting.meeting_date} />
+                        <View style={{ flex: 1 }}>
+                            <MeetingIds meeting={meeting} historic={historic} />
+                        </View>
                     </View>
-                </View>
-                {meeting.attendance_count > 0 && (
-                    <MeetingAttendance
-                        attendanceCount={meeting.attendance_count}
+                    {meeting.attendance_count > 0 && (
+                        <MeetingAttendance
+                            attendanceCount={meeting.attendance_count}
+                        />
+                    )}
+                    <MealDetails
+                        meal={meeting.meal}
+                        mealContact={meeting.meal_contact}
+                        historic={historic}
+                        mealCount={meeting.meal_count}
                     />
-                )}
-                <MealDetails
-                    meal={meeting.meal}
-                    mealContact={meeting.meal_contact}
-                    historic={historic}
-                    mealCount={meeting.meal_count}
-                />
-                {Number(meeting.newcomers_count) > 0 && (
-                    <View style={themedStyles.row}>
-                        <View style={themedStyles.meetingDetailsContainer}>
-                            <Text style={themedStyles.meetingDetailsRowLabel}>
-                                Newcomers:
+                    {Number(meeting.newcomers_count) > 0 && (
+                        <View style={themedStyles.row}>
+                            <View style={themedStyles.meetingDetailsContainer}>
+                                <Text
+                                    style={themedStyles.meetingDetailsRowLabel}
+                                >
+                                    Newcomers:
+                                </Text>
+                            </View>
+
+                            <View
+                                style={
+                                    themedStyles.meetingDetailsBadgeContainer
+                                }
+                            >
+                                <BadgeNumber
+                                    value={Number(meeting.newcomers_count)}
+                                />
+                            </View>
+                        </View>
+                    )}
+                    {meeting.notes && (
+                        <View style={themedStyles.notesContainer}>
+                            <Text style={themedStyles.notesText}>
+                                {meeting.notes}
                             </Text>
                         </View>
-
-                        <View style={themedStyles.meetingDetailsBadgeContainer}>
-                            <BadgeNumber
-                                value={Number(meeting.newcomers_count)}
-                            />
-                        </View>
-                    </View>
-                )}
-                {meeting.notes && (
-                    <View style={themedStyles.notesContainer}>
-                        <Text style={themedStyles.notesText}>
-                            {meeting.notes}
-                        </Text>
-                    </View>
-                )}
-                <View style={themedStyles.openShareSection}>
-                    <View style={themedStyles.openShareContainer}>
-                        <Text style={themedStyles.openShareGroupsText}>
-                            Open-Share Groups
-                        </Text>
-                        {(user.profile.permissions.includes('manage') ||
-                            user.profile.perms.includes('groups')) && (
-                            <View style={themedStyles.openShareButtonContainer}>
-                                <TouchableOpacity
-                                    key={0}
-                                    onPress={() =>
-                                        router.push(
-                                            `/(group)/newGroup?meetingId=${encodeURIComponent(
-                                                id
-                                            )}`
-                                        )
-                                    }
+                    )}
+                    <View style={themedStyles.openShareSection}>
+                        <View style={themedStyles.openShareContainer}>
+                            <Text style={themedStyles.openShareGroupsText}>
+                                Open-Share Groups
+                            </Text>
+                            {(user.profile.permissions.includes('manage') ||
+                                user.profile.perms.includes('groups')) && (
+                                <View
                                     style={
                                         themedStyles.openShareButtonContainer
                                     }
                                 >
-                                    <FontAwesome5
-                                        name='plus-circle'
-                                        size={20}
-                                        color={theme.colors.lightText}
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                        )}
-                        {/* {defaultGroups?.length > 0 && (
+                                    <TouchableOpacity
+                                        key={0}
+                                        onPress={() =>
+                                            router.push(
+                                                `/(group)/newGroup?meetingId=${encodeURIComponent(
+                                                    id
+                                                )}`
+                                            )
+                                        }
+                                        style={
+                                            themedStyles.openShareButtonContainer
+                                        }
+                                    >
+                                        <FontAwesome5
+                                            name='plus-circle'
+                                            size={20}
+                                            color={theme.colors.lightText}
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+                            {/* {defaultGroups?.length > 0 && (
                             <View style={themedStyles.openShareGroupsButtonWrapper}>
                                 <View
                                     style={
@@ -333,47 +378,48 @@ const MeetingDetails = () => {
                                 </View>
                             </View>
                         )} */}
+                        </View>
                     </View>
-                </View>
-                <FlatList
-                    data={groups}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <GroupListCard
-                            group={item}
-                            fromMeetingId={id}
-                            onGroupDeleted={refreshMeeting}
-                        />
-                    )}
-                />
-                <TouchableOpacity
-                    style={{
-                        backgroundColor: theme.colors.blue,
-                        padding: 16,
-                        borderRadius: 8,
-                        alignItems: 'center',
-                        margin: 16,
-                    }}
-                    onPress={() =>
-                        router.push(
-                            `/(group)/newGroup?meetingId=${encodeURIComponent(
-                                id
-                            )}`
-                        )
-                    }
-                >
-                    <Text
+                    <FlatList
+                        data={groups}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item }) => (
+                            <GroupListCard
+                                group={item}
+                                fromMeetingId={id}
+                                onGroupDeleted={refreshMeeting}
+                            />
+                        )}
+                    />
+                    <TouchableOpacity
                         style={{
-                            color: theme.colors.white,
-                            fontWeight: 'bold',
-                            fontSize: 16,
+                            backgroundColor: theme.colors.blue,
+                            padding: 16,
+                            borderRadius: 8,
+                            alignItems: 'center',
+                            margin: 16,
                         }}
+                        onPress={() =>
+                            router.push(
+                                `/(group)/newGroup?meetingId=${encodeURIComponent(
+                                    id
+                                )}`
+                            )
+                        }
                     >
-                        Add New Group
-                    </Text>
-                </TouchableOpacity>
-            </Surface>
-        </KeyboardAvoidingView>
+                        <Text
+                            style={{
+                                color: theme.colors.white,
+                                fontWeight: 'bold',
+                                fontSize: 16,
+                            }}
+                        >
+                            Add New Group
+                        </Text>
+                    </TouchableOpacity>
+                </Surface>
+            </KeyboardAvoidingView>
+        </>
     );
 };
 

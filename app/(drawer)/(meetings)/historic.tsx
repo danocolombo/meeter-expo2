@@ -2,7 +2,11 @@ import theme from '@assets/Colors';
 import themedStyles from '@assets/Styles';
 import MeetingListCard from '@components/meeting/MeetingListCard';
 import CustomButton from '@components/ui/CustomButton';
-import { deleteMeeting } from '@features/meetings/meetingsThunks';
+import {
+    deleteMeeting,
+    fetchAllMeetings,
+} from '@features/meetings/meetingsThunks';
+import { useFocusEffect } from '@react-navigation/native';
 import type { Meeting } from '@types/interfaces';
 import { useAppDispatch, useAppSelector } from '@utils/hooks';
 import React, { useState } from 'react';
@@ -28,6 +32,18 @@ const HistoricMeetings = () => {
     const refreshHistoricMeetingsFromApi = () => {
         console.log('Refreshing historic meetings from API...');
     };
+
+    // Refresh historic meetings on focus (same pattern as ActiveMeetings)
+    useFocusEffect(
+        React.useCallback(() => {
+            const apiToken = process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
+            const org_id = process.env.EXPO_PUBLIC_TEST_ORGANIZATION_ID;
+            console.log('HistoricMeetings: screen focused, fetching meetings');
+            if (apiToken && org_id) {
+                appDispatch<any>(fetchAllMeetings({ apiToken, org_id }));
+            }
+        }, [appDispatch])
+    );
     const handleDeleteResponse = (id: string, organizationId?: string) => {
         const meetingToDelete = historicMeetings.find((m: any) => m.id === id);
         if (meetingToDelete) {
@@ -61,7 +77,7 @@ const HistoricMeetings = () => {
         );
 
     return (
-        <View style={themedStyles.container}>
+        <View style={themedStyles.surface}>
             <Modal visible={showDeleteConfirmModal} animationType='slide'>
                 <View style={themedStyles.modal}>
                     <View style={themedStyles.modalHeaderContainer}>
