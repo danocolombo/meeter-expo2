@@ -28,6 +28,26 @@ import { fetchMeetingDetailsById } from '../../features/meetings/meetingsThunks'
 import type { AppDispatch } from '../../utils/store';
 const Colors = theme.colors;
 
+// Comparator to sort groups by gender, then title, then location
+function compareGroups(a: Group, b: Group) {
+    const ga = (a.gender || '').toString();
+    const gb = (b.gender || '').toString();
+    if (ga < gb) return -1;
+    if (ga > gb) return 1;
+
+    const ta = (a.title || '').toString().toLowerCase();
+    const tb = (b.title || '').toString().toLowerCase();
+    if (ta < tb) return -1;
+    if (ta > tb) return 1;
+
+    const la = (a.location || '').toString().toLowerCase();
+    const lb = (b.location || '').toString().toLowerCase();
+    if (la < lb) return -1;
+    if (la > lb) return 1;
+
+    return 0;
+}
+
 const MeetingDetails = () => {
     const { id, origin } = useLocalSearchParams<{
         id: string;
@@ -56,8 +76,6 @@ const MeetingDetails = () => {
 
     // Top navigation cancel handler — navigate back to the meetings list
     const handleCancel = React.useCallback(() => {
-        // Log origin for debugging
-        console.log('MeetingDetails.handleCancel origin:', originValue);
         // origin expected to be 'active' or 'historic'
         if (originValue === 'historic') {
             router.replace('/(drawer)/(meetings)/historic');
@@ -87,7 +105,10 @@ const MeetingDetails = () => {
             let meetingData = result?.data?.currentMeeting || result?.data;
             if (meetingData) {
                 setMeeting(meetingData);
-                setGroups(meetingData.groups || []);
+                const fetchedGroups: Group[] = meetingData.groups || [];
+                // Sort groups by gender, title, location for display
+                fetchedGroups.sort(compareGroups);
+                setGroups(fetchedGroups);
                 // Set historic flag
                 const meetingDate = new Date(meetingData.meeting_date);
                 const today = new Date();

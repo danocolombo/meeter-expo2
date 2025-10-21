@@ -42,6 +42,27 @@ function updateHistoricMeetings(existingMeetings, additionalMeetings) {
         [...existingMeetings]
     ); // Create a copy to avoid mutation
 }
+// Comparator to sort groups by gender, then title, then location
+function compareGroups(a, b) {
+    // Normalize values to ensure consistent comparison (handle undefined/null)
+    const ga = (a.gender || '').toString();
+    const gb = (b.gender || '').toString();
+    if (ga < gb) return -1;
+    if (ga > gb) return 1;
+
+    const ta = (a.title || '').toString().toLowerCase();
+    const tb = (b.title || '').toString().toLowerCase();
+    if (ta < tb) return -1;
+    if (ta > tb) return 1;
+
+    const la = (a.location || '').toString().toLowerCase();
+    const lb = (b.location || '').toString().toLowerCase();
+    if (la < lb) return -1;
+    if (la > lb) return 1;
+
+    return 0;
+}
+
 const initialState = {
     meetings: [],
     activeMeetings: [],
@@ -87,23 +108,9 @@ export const meetingsSlice = createSlice({
             wasGroups.forEach((item) => {
                 newGroups.push(item);
             });
-            function asc_sort(b, a) {
-                if (a.gender === b.gender) {
-                    return a.title - b.title;
-                }
-                return a.gender > b.gender ? 1 : -1;
-            }
-            function newDoubleSort(prop1, prop2) {
-                return function (a, b) {
-                    if (a[prop1] === b[prop1]) {
-                        return b[prop2] - a[prop2];
-                    }
-                    return a[prop1] > b[prop1] ? 1 : -1;
-                };
-            }
-            let doubleResults = newGroups.sort(
-                newDoubleSort('gender', 'title')
-            );
+            // Sort groups consistently by gender, then title, then location
+            newGroups.sort(compareGroups);
+            let doubleResults = newGroups;
             // let sortedGroups = theGroups.sort(asc_sort);
             state.groups = doubleResults;
             return state;
@@ -282,21 +289,73 @@ export const meetingsSlice = createSlice({
                 state.isLoading = true;
             })
             .addCase(addGroup.fulfilled, (state, action) => {
-                const groupId = action.payload.group_id;
+                const groupId = action.payload?.group_id;
+                const fullGroup =
+                    action.payload?.group ||
+                    action.payload?.data ||
+                    action.payload;
 
+                // Ensure activeMeetings entries have a groups array and avoid
+                // calling .includes on undefined.
                 state.activeMeetings.forEach((meeting) => {
-                    if (meeting?.groups?.length > 0) {
+                    if (!meeting) return;
+                    if (!Array.isArray(meeting.groups)) {
+                        meeting.groups = [];
+                    }
+                    // If groups are stored as objects, push the object; otherwise push the id
+                    const hasObjects =
+                        meeting.groups.length > 0 &&
+                        typeof meeting.groups[0] === 'object';
+                    if (hasObjects) {
+                        const exists = meeting.groups.find(
+                            (g) => g.id === groupId
+                        );
+                        if (!exists && fullGroup) {
+                            meeting.groups.push(fullGroup);
+                            meeting.groups.sort(compareGroups);
+                        }
+                    } else {
                         if (!meeting.groups.includes(groupId)) {
                             meeting.groups.push(groupId);
                         }
                     }
                 });
 
+                // Same defensive logic for historicMeetings
                 state.historicMeetings.forEach((meeting) => {
-                    if (!meeting.groups.includes(groupId)) {
-                        meeting.groups.push(groupId);
+                    if (!meeting) return;
+                    if (!Array.isArray(meeting.groups)) {
+                        meeting.groups = [];
+                    }
+                    const hasObjects =
+                        meeting.groups.length > 0 &&
+                        typeof meeting.groups[0] === 'object';
+                    if (hasObjects) {
+                        const exists = meeting.groups.find(
+                            (g) => g.id === groupId
+                        );
+                        if (!exists && fullGroup) {
+                            meeting.groups.push(fullGroup);
+                            meeting.groups.sort(compareGroups);
+                        }
+                    } else {
+                        if (!meeting.groups.includes(groupId)) {
+                            meeting.groups.push(groupId);
+                        }
                     }
                 });
+
+                // If the slice-level groups array exists and we have a full group, add & sort
+                if (fullGroup) {
+                    // Avoid duplicates by id
+                    const exists = state.groups.find(
+                        (g) => g.id === fullGroup.id
+                    );
+                    if (!exists) {
+                        state.groups.push(fullGroup);
+                    }
+                    state.groups.sort(compareGroups);
+                }
 
                 state.isLoading = false;
                 return state;
@@ -328,6 +387,13 @@ export const meetingsSlice = createSlice({
                         );
                         if (groupIndex !== -1) {
                             meeting.groups[groupIndex] = group;
+                            // sort if groups are objects
+                            if (
+                                meeting.groups.length > 0 &&
+                                typeof meeting.groups[0] === 'object'
+                            ) {
+                                meeting.groups.sort(compareGroups);
+                            }
                         }
                     }
                 });
@@ -340,6 +406,12 @@ export const meetingsSlice = createSlice({
                         );
                         if (groupIndex !== -1) {
                             meeting.groups[groupIndex] = group;
+                            if (
+                                meeting.groups.length > 0 &&
+                                typeof meeting.groups[0] === 'object'
+                            ) {
+                                meeting.groups.sort(compareGroups);
+                            }
                         }
                     }
                 });
@@ -360,6 +432,14 @@ export const meetingsSlice = createSlice({
                             }
                         });
 
+                        // Sort the updated groups array
+                        if (
+                            newGroups.length > 0 &&
+                            typeof newGroups[0] === 'object'
+                        ) {
+                            newGroups.sort(compareGroups);
+                        }
+
                         const updatedMeeting = {
                             ...mtg,
                             groups: newGroups,
@@ -370,6 +450,20 @@ export const meetingsSlice = createSlice({
                     }
                 });
                 state.meetings = [...updatedMeetings];
+
+                // Also update the top-level groups array if present
+                if (Array.isArray(state.groups) && state.groups.length > 0) {
+                    const topIndex = state.groups.findIndex(
+                        (g) => g.id === group_id
+                    );
+                    if (topIndex !== -1) {
+                        state.groups[topIndex] = group;
+                    } else {
+                        // If not present, add it
+                        state.groups.push(group);
+                    }
+                    state.groups.sort(compareGroups);
+                }
 
                 state.isLoading = false;
                 return state;
@@ -815,7 +909,6 @@ export const meetingsSlice = createSlice({
                 const meeting =
                     action.payload?.meetingDetails?.currentMeeting ||
                     action.payload;
-                console.log('saveNewMeeting.fulfilled - meeting:', meeting);
 
                 if (meeting && meeting.meeting_date) {
                     const isHistoric = isDateDashBeforeToday(

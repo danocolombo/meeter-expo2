@@ -38,7 +38,6 @@ const HistoricMeetings = () => {
         React.useCallback(() => {
             const apiToken = process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
             const org_id = process.env.EXPO_PUBLIC_TEST_ORGANIZATION_ID;
-            console.log('HistoricMeetings: screen focused, fetching meetings');
             if (apiToken && org_id) {
                 appDispatch<any>(fetchAllMeetings({ apiToken, org_id }));
             }

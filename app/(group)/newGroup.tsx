@@ -99,22 +99,28 @@ const NewGroup = () => {
             notes: notes.trim() || null,
         };
         try {
-            console.log('Submitting new group:', {
-                api_token,
-                group,
-                meetingId,
-            });
             // The addGroup thunk is defined in plain JS/TS without a narrow arg type in our workspace,
             // so silence the type-check here for now. This is a minimal, safe change to unblock compilation.
             // @ts-ignore TS(2345)
             await dispatch(addGroup({ api_token, group, meetingId })).unwrap();
             handleCancel();
-        } catch (err) {
+        } catch (err: any) {
             console.log('Failed to add group:', {
                 error: err,
                 request: { api_token, group, meetingId },
             });
-            setError('Failed to add group. Please try again.');
+            // Prefer to show the server-provided message when available
+            const message =
+                err?.message ||
+                (err?.response &&
+                    err.response.data &&
+                    err.response.data.message) ||
+                JSON.stringify(err);
+            setError(
+                typeof message === 'string'
+                    ? message
+                    : 'Failed to add group. Please try again.'
+            );
         } finally {
             setSubmitting(false);
         }

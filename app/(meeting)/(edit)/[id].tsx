@@ -6,7 +6,7 @@ import NumberInputEditable from '@components/ui/NumberInputEditable';
 import { useNavigation } from '@react-navigation/native';
 import { unwrapResult } from '@reduxjs/toolkit';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -52,7 +52,7 @@ const NewLayoutEdit = () => {
     const [isSavable, setIsSavable] = React.useState(false);
 
     // local meeting state
-    const [meeting, setMeeting] = React.useState<FullMeeting | null>(null);
+    const [meeting, setMeeting] = useState<FullMeeting | null>(null);
 
     // Load meeting from params JSON or bail
     useEffect(() => {
@@ -157,7 +157,66 @@ const NewLayoutEdit = () => {
             .then(unwrapResult)
             .then(() => {
                 setSaving(false);
-                router.replace('/(drawer)');
+                // After successful save, navigate back to the meeting details
+                // so that screen's useFocusEffect will re-fetch the latest data.
+                // Use replace to avoid stacking navigation history from edit.
+                // Prefer popping back to the previous screen so the details
+                // screen regains focus and triggers its useFocusEffect refresh.
+                try {
+                    // router.back() will pop the current route when possible.
+                    // If it's not available or doesn't change the screen, fall
+                    // back to replacing to the details route.
+                    (router as any).back?.();
+                    // Note: some router implementations may not throw but also
+                    // may not navigate; schedule a microtask to verify if we
+                    // remained on this screen and then fallback.
+                    setTimeout(() => {
+                        // If still on edit (meeting state exists), try replace
+                        // to the details route as a fallback.
+                        // We check window.history length as a heuristic is not
+                        // reliable in RN; instead assume back worked in normal
+                        // flows. If you consistently see the edit screen after
+                        // save, uncomment the fallback below to force navigation.
+                        /*
+                        try {
+                            if (meeting && meeting.id) {
+                                router.replace({
+                                    pathname: '/(meeting)/[id]',
+                                    params: { id: String(meeting.id) },
+                                });
+                            } else if (meetingId) {
+                                router.replace({
+                                    pathname: '/(meeting)/[id]',
+                                    params: { id: String(meetingId) },
+                                });
+                            } else {
+                                router.replace('/(drawer)');
+                            }
+                        } catch {
+                            router.replace('/(drawer)');
+                        }
+                        */
+                    }, 50);
+                } catch {
+                    // Best-effort fallback
+                    try {
+                        if (meeting && meeting.id) {
+                            router.replace({
+                                pathname: '/(meeting)/[id]',
+                                params: { id: String(meeting.id) },
+                            });
+                        } else if (meetingId) {
+                            router.replace({
+                                pathname: '/(meeting)/[id]',
+                                params: { id: String(meetingId) },
+                            });
+                        } else {
+                            router.replace('/(drawer)');
+                        }
+                    } catch {
+                        router.replace('/(drawer)');
+                    }
+                }
             })
             .catch((err: any) => {
                 setSaving(false);
@@ -172,7 +231,6 @@ const NewLayoutEdit = () => {
             </View>
         );
     }
-
     return (
         <SafeAreaView style={themedStyles.surface}>
             <KeyboardAvoidingView style={themedStyles.keyboardAvoiding}>
@@ -250,10 +308,8 @@ const NewLayoutEdit = () => {
                     <Text style={themedStyles.formLabel}>Contact</Text>
                     <TextInput
                         style={themedStyles.formInput}
-                        value={meeting.facilitator_contact as string}
-                        onChangeText={(v) =>
-                            handleChange('facilitator_contact', v)
-                        }
+                        value={meeting.support_contact as string}
+                        onChangeText={(v) => handleChange('support_contact', v)}
                         placeholder='Meeting Cont'
                     />
 

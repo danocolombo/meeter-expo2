@@ -690,13 +690,30 @@ export const addGroup = createAsyncThunk(
                 meetingId,
                 new_group
             );
-            if (createNewGroupResponse.data.id) {
-                return { group: new_group, meetingId };
+            if (createNewGroupResponse.data && createNewGroupResponse.data.id) {
+                // return the created group's id and data so reducers can update state
+                return {
+                    group_id: createNewGroupResponse.data.id,
+                    group: createNewGroupResponse.data,
+                    meetingId,
+                };
             } else {
                 throw new Error('MT:216-->Failed to create group');
             }
-        } catch (error) {
-            printObject('MT:741-->addGroup', group);
+        } catch (error: any) {
+            // Log the original error and rethrow it so callers can handle/inspect it.
+            printObject('MT:741-->addGroup ERROR', { error, group });
+            if (error instanceof Error) throw error;
+            // If it's an API response object, wrap with a helpful message
+            if (
+                error &&
+                typeof error === 'object' &&
+                (error.message || error.status)
+            ) {
+                const msg =
+                    error.message || `API error (status ${error.status})`;
+                throw new Error(msg);
+            }
             throw new Error('MT:742-->Failed to add group');
         }
     }
