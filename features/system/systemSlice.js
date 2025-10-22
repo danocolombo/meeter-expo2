@@ -1,7 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { initializeSystem, loadActiveOrg } from './systemThunks';
 const makeToday1 = () => {
-    var d = new Date();
+    let d = new Date();
     const dminusone = d.toLocaleString(); //  M/DD/YYYY, H:MM:SS PM
     let datetime = dminusone.split(', '); // M/DD/YYYY
     const dateparts = datetime[0].split('/');
@@ -12,7 +11,7 @@ const makeToday1 = () => {
     return target; // returns YYYYMMDD
 };
 const makeToday = () => {
-    var data = new Date();
+    let data = new Date();
     // printObject('data', data);
     const yr = parseInt(data.getFullYear());
     let mo = parseInt(data.getMonth());
@@ -75,39 +74,7 @@ export const systemSlice = createSlice({
             state.activeOrg = {};
         },
     },
-    extraReducers: (builder) => {
-        builder
-            .addCase(initializeSystem.pending, (state) => {
-                state.isLoading = true;
-                state.meeter.isLoading = true;
-            })
-            .addCase(initializeSystem.fulfilled, (state, action) => {
-                // Set a default state update for testing
-                state.meeter.appName = action.payload.appName;
-                state.meeter.region = action?.payload?.region || '';
-                state.meeter.eventRegion = action?.payload?.eventRegion || '';
-                state.meeter.affiliateTitle = action?.payload?.title || '';
-                state.meeter.affiliation = action?.payload?.value || '';
-                state.meeter.userRole = action?.payload?.userRole || '';
-                state.meeter.isLoading = false;
-                state.isLoading = false;
-            })
-            .addCase(initializeSystem.rejected, (state, action) => {
-                state.isLoading = false;
-                state.meeter.isLoading = false;
-            })
-            .addCase(loadActiveOrg.pending, (state) => {
-                state.isLoading = true;
-            })
-            .addCase(loadActiveOrg.fulfilled, (state, action) => {
-                // Set a default state update for testing
-                state.activeOrg = action.payload;
-                state.isLoading = false;
-            })
-            .addCase(loadActiveOrg.rejected, (state, action) => {
-                state.isLoading = false;
-            });
-    },
+    // extraReducers removed: system no longer consumes GraphQL thunks here
 });
 
 // Action creators are generated for each case reducer function
