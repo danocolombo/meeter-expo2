@@ -1,0 +1,132 @@
+# .githubignore
+# Patterns to exclude files and directories from automated analysis tools, bots,
+# and other processes that read the repository in CI or local analysis. This is
+# intended for use by GitHub Apps or other code-analysis tools that respect
+# repository-level ignore files placed in `.github/`.
+#
+# Guidelines:
+# - Keep patterns broad enough to skip generated/binary/cache files that
+#   increase analysis time or contain secrets.
+# - Avoid ignoring source files where human review is needed.
+# - If you need stricter ignores for a particular tool (e.g., CodeQL, Dependabot),
+#   add tool-specific config files alongside this one.
+
+#########################
+# Build / Generated Artifacts
+#########################
+# iOS build outputs
+ios/Pods/
+ios/Podfile.lock
+ios/DerivedData/
+ios/build/
+
+# Android build outputs (if present)
+android/
+android/app/build/
+android/build/
+
+# Expo / React Native / Metro
+.expo/
+dist/
+web-build/
+build/
+*.keystore
+
+#########################
+# Node / JS artifacts
+#########################
+node_modules/
+npm-debug.log*
+yarn-error.log*
+yarn-debug.log*
+package-lock.json
+pnpm-lock.yaml
+
+# TypeScript build outputs
+lib/
+es/
+dist/
+*.tsbuildinfo
+
+#########################
+# Cache / Temp files
+#########################
+# macOS
+.DS_Store
+
+# Editor / IDE
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Logs and temp
+.cache/
+tmp/
+temp/
+logs/
+*.log
+
+#########################
+# Secrets / Credentials
+#########################
+# Amplify / AWS
+amplify/#current-cloud-backend/
+amplify/.config/
+amplify/backend/awscloudformation/
+amplify/team-provider-info.json
+aws-exports.js
+app/amplifyconfiguration.json
+app/aws-exports.js
+
+# Environment files
+.env
+.env.local
+.env.*.local
+secrets.json
+*.pem
+*.key
+*.p12
+
+#########################
+# Large / Binary files
+#########################
+# Images, archives, DBs, and other heavy files that hamper analysis
+*.sqlite
+*.sqlite3
+*.db
+*.tgz
+*.zip
+*.tar.gz
+*.jpg
+*.png
+*.heic
+*.mov
+*.mp4
+*.apk
+*.ipa
+
+#########################
+# Misc / Project-specific
+#########################
+# Local build artifacts for Xcode workspace
+build/Meeter/
+
+# Expo/React Native emulator/device caches
+.expo-cache/
+.expo-shared/
+
+# Core files used for internal reference (GitHub Copilot Prompt Engineering course)
+# These are reference/prompts and not part of the app source; exclude them from
+# automated analysis to avoid noise.
+.github/core-files/
+
+# Allowlist common source directories — keep these for analysis
+!app/
+!components/
+!assets/
+!features/
+!utils/
+!types/
+
+# End of file
