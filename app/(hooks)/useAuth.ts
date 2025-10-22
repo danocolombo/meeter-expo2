@@ -1,5 +1,6 @@
 import { fetchAllMeetings } from '@features/meetings/meetingsThunks';
 import { loginUser } from '@features/user/userThunks';
+import { setActiveOrg } from '@features/system/systemSlice';
 import { useNavigation } from '@react-navigation/native';
 import type { AppDispatch } from '@utils/store';
 import { useState } from 'react';
@@ -74,7 +75,12 @@ export default function useAuth() {
         const loginResults = await dispatch(
             loginUser({ inputs: mockData, apiToken })
         ).unwrap();
-        const orgId = loginResults.profile.activeOrg.id;
+
+        // update system.activeOrg from the user profile before fetching meetings
+        const activeOrg = loginResults?.profile?.activeOrg || {};
+
+        dispatch(setActiveOrg(activeOrg));
+        const orgId = activeOrg.id;
         await dispatch(fetchAllMeetings({ apiToken, org_id: orgId }));
         setIsLoading(false);
         setUserError(null);

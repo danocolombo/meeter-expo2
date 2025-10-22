@@ -100,12 +100,15 @@ export const systemSlice = createSlice({
             state.activeOrg = {};
             state.meeter.userRole = '';
         },
+        setActiveOrg: (state, action: PayloadAction<Record<string, any>>) => {
+            state.activeOrg = action.payload || {};
+        },
     },
     // no extraReducers needed — system no longer consumes GraphQL thunks here
 });
 
 // Actions
-export const { updateAffiliation, logout } = systemSlice.actions;
+export const { updateAffiliation, logout, setActiveOrg } = systemSlice.actions;
 
 // Selectors
 export const selectMeeter = (state: RootState) => state.system.meeter;

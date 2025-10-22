@@ -366,9 +366,7 @@ export const loginUser = createAsyncThunk(
                 isLoading: false,
                 isLimitedUser: isLimitedUser,
             };
-            // console.log('VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
-            // printObject('🟨 🟨 🟨 UT:228-->results:\n', results);
-            // console.log('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^');
+
             return results;
         } catch (error) {
             // Check if this is our specific Clerk user not found error

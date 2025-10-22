@@ -28,6 +28,7 @@ const Landing = () => {
         (state: any) => state.meetings.activeMeetings
     );
     const userData = useSelector((state: any) => state.user);
+    const system = useSelector((state: any) => state.system);
 
     // Show loading indicator if userData is not loaded yet
     if (!userData || !userData.profile) {
@@ -40,7 +41,10 @@ const Landing = () => {
 
     return (
         <View style={styles.container}>
-            {userData.profile.activeOrg?.heroMessage ? (
+            {/* prefer system.activeOrg.heroMessage when available */}
+            {system?.activeOrg?.heroMessage ? (
+                <HeroMessage message={system.activeOrg.heroMessage} />
+            ) : userData.profile.activeOrg?.heroMessage ? (
                 <HeroMessage message={userData.profile.activeOrg.heroMessage} />
             ) : null}
             <Text>Landing</Text>
@@ -54,6 +58,12 @@ const Landing = () => {
                 title='Log User Info'
                 onPress={() => {
                     printObject('User Data:\n', userData);
+                }}
+            />
+            <Button
+                title='Log System Info'
+                onPress={() => {
+                    printObject('System Data:\n', system);
                 }}
             />
         </View>
