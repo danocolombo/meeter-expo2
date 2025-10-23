@@ -546,14 +546,35 @@ export function getCurrentLocalDateString(date: Date | null = null): string {
  */
 
 export function getPermissionsForActiveOrg(profile: UserProfile): string[] {
-    if (!profile?.affiliations || !profile?.activeOrg?.id) return [];
+    if (!profile?.activeOrg?.id) return [];
     const orgId = profile.activeOrg.id;
-    return profile.affiliations
-        .filter(
-            (aff) => aff.organizationId === orgId && aff.status === 'active'
-        )
-        .map((aff) => aff.role)
-        .sort((a, b) => a.localeCompare(b));
+
+    // affiliations may come in multiple shapes depending on payload:
+    // - an array: profile.affiliations = [{ organizationId, role, status, ... }, ...]
+    // - a wrapper: profile.affiliations = { items: [...] }
+    // normalize to an array
+    const rawAffs: any = (profile as any).affiliations;
+    const affiliationsArr: any[] = Array.isArray(rawAffs)
+        ? rawAffs
+        : Array.isArray(rawAffs?.items)
+        ? rawAffs.items
+        : [];
+
+    const roles = affiliationsArr
+        .filter((aff) => {
+            if (!aff) return false;
+            const affOrgId = aff.organizationId ?? aff.organization?.id ?? null;
+            const affStatus = aff.status ?? null;
+            return affOrgId === orgId && affStatus === 'active';
+        })
+        .map((aff) => String(aff.role))
+        .filter(Boolean);
+
+    // dedupe and sort for stable output
+    const unique = Array.from(new Set(roles)).sort((a, b) =>
+        a.localeCompare(b)
+    );
+    return unique;
 }
 
 /**

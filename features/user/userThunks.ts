@@ -1,6 +1,6 @@
 import { MEETER_DEFAULTS } from '@constants/meeter';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { printObject } from '@utils/helpers';
+import { getPermissionsForActiveOrg, printObject } from '@utils/helpers';
 import { ApiError, Person, UserProfile } from '../../types/interfaces';
 import type { RootState } from '../../utils/store';
 import { fetchPerson, getAPIToken, updateHeroMessage } from './userAPI';
@@ -306,17 +306,14 @@ export const loginUser = createAsyncThunk<
                 throw new Error('User profile not found in system database');
             }
             //************************************** */
-            //*  load perms
+            //*  load perms (use helper to derive permissions for activeOrg)
             //*************************************** */
-            let orgData: any = {};
             let permissions: string[] = [];
-            let thisRole: string | null = null;
             let activeOrg: Record<string, any> = {};
 
             if (isLimitedUser) {
                 // Limited user - no permissions, no organization access
                 permissions = [];
-                thisRole = 'limited';
                 activeOrg = {
                     id: null,
                     code: 'limited',
@@ -327,76 +324,18 @@ export const loginUser = createAsyncThunk<
                     status: 'limited',
                 };
             } else {
-                // Full user with normal processing
-                try {
-                    //TODO: this is when the user is NOT limited
-                    // console.log('🔍 Login Debug - person structure check:', {
-                    //     hasDefaultOrg: !!person?.defaultOrg?.id,
-                    //     defaultOrgId: person?.defaultOrg?.id,
-                    //     hasAffiliations: !!person?.affiliations,
-                    //     hasAffiliationsItems: !!person?.affiliations?.items,
-                    //     affiliationsItemsLength:
-                    //         person?.affiliations?.items?.length,
-                    // });
-
-                    const defaultOrgId = person
-                        ? (person as any).defaultOrg?.id
-                        : null;
-                    const affiliationsItems =
-                        (person as any)?.affiliations?.items ??
-                        (person as any)?.affiliations ??
-                        [];
-                    if (defaultOrgId && Array.isArray(affiliationsItems)) {
-                        orgData = (affiliationsItems as unknown[]).filter(
-                            (a: unknown) => {
-                                const aff = a as any;
-                                return (
-                                    aff?.organization?.id === defaultOrgId &&
-                                    aff?.status === 'active'
-                                );
-                            }
-                        );
-                    } else {
-                        orgData = [];
-                    }
-                    //todo continued debugging when user is NOT limited
-                    // console.log('🔍 Login Debug - orgData:', orgData);
-                } catch (error) {
-                    console.error(
-                        '🚨 Error extracting permissions during login:',
-                        error
-                    );
-                    // Set default permissions to allow login to continue
-                    permissions = ['guest'];
-                    console.log('🔄 Using default guest permissions');
-                }
-
-                if (permissions.some((perm) => perm === 'director')) {
-                    thisRole = 'director';
-                } else if (permissions.some((perm) => perm === 'lead')) {
-                    thisRole = 'lead';
-                } else if (permissions.some((perm) => perm === 'manager')) {
-                    thisRole = 'manager';
-                } else {
-                    thisRole = 'guest';
-                }
-                // console.log('🟣🟣🟣 thisRole:', thisRole);
-
-                //* **************************************
-                //*  need to set activeOrg
-                //* **************************************
-                if (Array.isArray(orgData) && orgData.length > 0) {
-                    //* affiliation found...
+                // Determine activeOrg from defaultOrg presence and set permissions
+                const defaultOrgId = (person as any)?.defaultOrg?.id;
+                if (defaultOrgId) {
                     activeOrg = {
                         id: person?.defaultOrg?.id,
                         code: person?.defaultOrg?.code,
                         name: person?.defaultOrg?.name,
                         heroMessage: person?.defaultOrg?.heroMessage,
-                        role: thisRole,
+                        role: 'guest', // temporary, may be recalculated below
                         status: 'active',
                     };
                 } else {
-                    //* this is default, no affiliations
                     activeOrg = {
                         id: MEETER_DEFAULTS.ORGANIZATION_ID,
                         code: MEETER_DEFAULTS.CODE,
@@ -406,7 +345,36 @@ export const loginUser = createAsyncThunk<
                         status: 'active',
                     };
                 }
+
+                // assign permissions using helper - it will handle different affiliation shapes
+                try {
+                    // make a shallow copy so helper can read activeOrg
+                    const tempProfile = {
+                        ...(person as any),
+                        activeOrg,
+                    } as any;
+                    permissions = getPermissionsForActiveOrg(
+                        tempProfile as any
+                    );
+                } catch (err) {
+                    console.error('Error deriving permissions:', err);
+                    permissions = [];
+                }
+
+                // derive a higher-level role for activeOrg.role if present
+                if (permissions.some((perm) => perm === 'director')) {
+                    activeOrg.role = 'director';
+                } else if (permissions.some((perm) => perm === 'lead')) {
+                    activeOrg.role = 'lead';
+                } else if (permissions.some((perm) => perm === 'manager')) {
+                    activeOrg.role = 'manager';
+                } else if (isLimitedUser) {
+                    activeOrg.role = 'limited';
+                } else {
+                    activeOrg.role = 'guest';
+                }
             }
+
             person = {
                 ...person,
                 activeOrg: activeOrg,
@@ -638,72 +606,33 @@ export const changeActiveOrg = createAsyncThunk<
                 activeOrg: newActiveOrg,
             };
 
-            // Extract permissions for the new active org
-            let perms: string[] = [];
-            console.log(
-                '🔄 UT:changeActiveOrg-->Extracting permissions for org:',
-                newActiveOrg.id
-            );
-            console.log(
-                '🔄 UT:changeActiveOrg-->Available affiliations:',
-                updatedProfile?.affiliations?.length || 0
-            );
-
-            if (
-                updatedProfile?.affiliations &&
-                Array.isArray(updatedProfile.affiliations)
-            ) {
-                updatedProfile.affiliations.forEach(
-                    (aff: unknown, index: number) => {
-                        const a = aff as any;
-                        console.log(
-                            `🔍 UT:changeActiveOrg-->Affiliation ${index}:`,
-                            {
-                                orgId: a.organizationId,
-                                targetOrgId: newActiveOrg.id,
-                                role: a.role,
-                                status: a.status,
-                                matches: a.organizationId === newActiveOrg.id,
-                                isActive: a.status === 'active',
-                            }
-                        );
-
-                        if (a.organizationId === newActiveOrg.id) {
-                            if (a.status === 'active') {
-                                console.log(
-                                    '✅ UT:changeActiveOrg-->Adding permission:',
-                                    a.role
-                                );
-
-                                perms.push(a.role);
-                            } else {
-                                console.log(
-                                    '❌ UT:changeActiveOrg-->Skipping inactive affiliation:',
-                                    a.role
-                                );
-                            }
-                        }
-                    }
+            // Extract permissions for the new active org using helper
+            try {
+                // ensure updatedProfile.activeOrg is set so helper can read it
+                updatedProfile.activeOrg = newActiveOrg;
+                const perms = getPermissionsForActiveOrg(updatedProfile as any);
+                updatedProfile.permissions = perms;
+            } catch (err) {
+                console.error(
+                    'Error extracting permissions in changeActiveOrg',
+                    err
                 );
-            } else {
-                console.log(
-                    '❌ UT:changeActiveOrg-->No affiliations found in profile'
-                );
+                updatedProfile.permissions = [];
             }
-
-            // Add permissions to the profile object
-            updatedProfile.permissions = perms;
 
             const inputValues = {
                 userProfile: updatedProfile,
-                perms: perms,
+                perms: updatedProfile.permissions || [],
             };
 
             console.log(
                 'UT:changeActiveOrg-->Updated activeOrg to:',
                 newActiveOrg.name
             );
-            printObject('UT:changeActiveOrg-->New permissions:', perms);
+            printObject(
+                'UT:changeActiveOrg-->New permissions:',
+                updatedProfile.permissions || []
+            );
 
             // Return the result
             return inputValues;
