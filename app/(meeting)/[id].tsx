@@ -49,9 +49,14 @@ function compareGroups(a: Group, b: Group) {
 }
 
 const MeetingDetails = () => {
-    const { id, origin } = useLocalSearchParams<{
+    const {
+        id,
+        origin,
+        org_id: orgParam,
+    } = useLocalSearchParams<{
         id: string;
         origin?: string | string[];
+        org_id?: string | string[];
     }>();
     // Normalize origin which may be a string or array (from query params)
     const originValue: string = React.useMemo(() => {
@@ -65,8 +70,33 @@ const MeetingDetails = () => {
     const [groups, setGroups] = React.useState<Group[]>([]);
     const [error, setError] = React.useState<string | null>(null);
     const user = useSelector((state: any) => state.user);
-    const org_id = user?.profile?.activeOrg?.id;
-    const api_token = user?.apiToken || user?.token || user?.profile?.apiToken;
+    // Normalize permissions arrays to avoid runtime errors when undefined
+    const userPermissions: string[] = (
+        user && user.profile && Array.isArray(user.profile.permissions)
+            ? user.profile.permissions
+            : []
+    ) as string[];
+    const userPermsLegacy: string[] = (
+        user && user.profile && Array.isArray(user.profile.perms)
+            ? user.profile.perms
+            : []
+    ) as string[];
+    // Prefer organization id from route params if provided (e.g. when navigating
+    // from a meeting list that passes org_id). Normalize if it's an array.
+    const orgIdFromParams: string | undefined = React.useMemo(() => {
+        if (!orgParam) return undefined;
+        if (Array.isArray(orgParam)) return orgParam[0] || undefined;
+        return String(orgParam || undefined);
+    }, [orgParam]);
+
+    const org_id = orgIdFromParams || user?.profile?.activeOrg?.id;
+    const api_token_from_user =
+        user?.apiToken || user?.token || user?.profile?.apiToken;
+    // Fallback to public API token used in some lists (historic/active) so
+    // users who navigated from a list that used env tokens can still view
+    // meeting details.
+    const api_token =
+        api_token_from_user || process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
     const dispatch: AppDispatch = useDispatch();
     // const defaultGroups = useSelector((state) => state.groups.defaultGroups);
     //const newPerms = useSelector((state) => state.user.perms);
@@ -144,7 +174,7 @@ const MeetingDetails = () => {
         // Add more mappings as needed
     };
     const handleTypeChange = (value: string) => {
-        if (!user.profile.permissions.includes('manage')) {
+        if (!userPermissions.includes('manage')) {
             return;
         }
         let titleVal = false;
@@ -356,8 +386,8 @@ const MeetingDetails = () => {
                             <Text style={themedStyles.openShareGroupsText}>
                                 Open-Share Groups
                             </Text>
-                            {(user.profile.permissions.includes('manage') ||
-                                user.profile.perms.includes('groups')) && (
+                            {(userPermissions.includes('manage') ||
+                                userPermsLegacy.includes('groups')) && (
                                 <View
                                     style={
                                         themedStyles.openShareButtonContainer

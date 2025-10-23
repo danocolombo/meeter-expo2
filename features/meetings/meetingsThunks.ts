@@ -1,8 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 // import axios from 'axios';
 // import { API } from 'aws-amplify';
-import { ApiError, FullMeeting } from '../../types/interfaces';
+import { ApiError, FullGroup, FullMeeting } from '../../types/interfaces';
 import { createAWSUniqueID, printObject } from '../../utils/helpers';
+import type { RootState } from '../../utils/store';
 import {
     createNewGroup,
     createNewMeeting,
@@ -15,11 +16,14 @@ import {
     updateAGroup,
     updateTheMeeting,
 } from './meetingsAPI';
-interface MeetingDetailsResponse {
-    data: {
-        currentMeeting: FullMeeting;
-    };
-}
+
+// Lightweight ThunkAPI typing used across these thunks
+// Proper RTK ThunkApi config so createAsyncThunk infers getState correctly
+type ThunkApiConfig = {
+    state: RootState;
+    dispatch: any;
+    rejectValue: any;
+};
 interface GroupUpdateType {
     title: string;
     location: string;
@@ -34,91 +38,90 @@ interface FetchMeetingDetailsByIdArgs {
     organizationId: string;
     meetingId: string;
 }
+// Helper type-guards
+function isSuccessResponse<T>(
+    res: unknown
+): res is { status: number; data: T } {
+    return (
+        !!res &&
+        typeof res === 'object' &&
+        'status' in (res as any) &&
+        typeof (res as any).status === 'number' &&
+        (res as any).status === 200
+    );
+}
+
+function isApiError(res: unknown): res is ApiError {
+    return (
+        !!res &&
+        typeof res === 'object' &&
+        ('message' in (res as any) ||
+            'details' in (res as any) ||
+            'status' in (res as any))
+    );
+}
 type RequestedPageType = {
     status: number;
     data: FullMeeting[];
     currentPage: number;
     lastPage: number;
 };
-export const getSpecificMeeting = createAsyncThunk(
-    'meetings/getSpecificMeeting',
-    async (id, thunkAPI) => {
-        return id;
-    }
-);
-export const getAllMeetings = createAsyncThunk(
+
+type UpdateMeetingType = {
+    status: number;
+    message: string;
+    data: FullMeeting;
+};
+
+export const getAllMeetings = createAsyncThunk<
+    {
+        status: string;
+        meetings: {
+            all: FullMeeting[];
+            active: FullMeeting[];
+            historic: FullMeeting[];
+        };
+    },
+    { apiToken?: string; org_id: string },
+    ThunkApiConfig
+>(
     'meetings/getAllMeetings',
-    async (inputs: any, thunkAPI) => {
+    async (inputs: { apiToken?: string; org_id: string }, thunkAPI) => {
         try {
-            const code = inputs.code;
-            // const meetingList = await API.graphql({
-            //     query: queries.listMeetings,
-            //     variables: {
-            //         filter: {
-            //             organizationMeetingsId: {
-            //                 eq: inputs.orgId,
-            //             },
-            //         },
-            //     },
-            // });
-
-            // Sort meetings by multiple criteria
-            // const sortedMeetings = meetingList?.data?.listMeetings?.items
-            //     ? meetingList.data.listMeetings.items.sort((a, b) => {
-            //           // First, compare by meetingDate in descending order
-            //           const dateComparison = b.meetingDate.localeCompare(
-            //               a.meetingDate
-            //           );
-            //           if (dateComparison !== 0) {
-            //               return dateComparison;
-            //           }
-
-            //           // Then, compare by meetingType in ascending order
-            //           const typeComparison = a.meetingType.localeCompare(
-            //               b.meetingType
-            //           );
-            //           if (typeComparison !== 0) {
-            //               return typeComparison;
-            //           }
-
-            //           // Finally, compare by title in ascending order
-            //           return a.title.localeCompare(b.title);
-            //       })
-            //     : [];
-            // const allTheMeetingsSorted = sortedMeetings;
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Set time to midnight
-            const year = today.getFullYear(); // Get the year (e.g., 2023)
-            const month = String(today.getMonth() + 1).padStart(2, '0'); // Get the month (e.g., 09) and pad with 0 if needed
-            const day = String(today.getDate()).padStart(2, '0'); // Get the day (e.g., 24) and pad with 0 if needed
-            const target = `${code}#${year}#${month}#${day}`;
-            const summary = {
-                all: [],
-                active: [],
-                historic: [],
-            };
-            // allTheMeetingsSorted.forEach((meeting) => {
-            //     if (meeting.mtgCompKey >= target) {
-            //         summary.active.push(meeting);
-            //     } else {
-            //         summary.historic.push(meeting);
-            //     }
-            //     summary.all.push(meeting);
-            // });
-            summary.active.sort((a, b) =>
-                a.mtgCompKey < b.mtgCompKey ? -1 : 1
+            const { apiToken, org_id } = inputs;
+            const activeMeetingInfo = await fetchActiveMeetings(
+                apiToken,
+                org_id
+            );
+            const historicMeetingInfo = await fetchHistoricMeetings(
+                apiToken,
+                org_id
             );
 
-            // printObject('MT:109-->summary:\n', summary);
-            const returnValue = {
+            const activeMeetingsArray = isSuccessResponse<FullMeeting[]>(
+                activeMeetingInfo
+            )
+                ? activeMeetingInfo.data
+                : [];
+            const historicMeetingsArray = isSuccessResponse<FullMeeting[]>(
+                historicMeetingInfo
+            )
+                ? historicMeetingInfo.data
+                : [];
+
+            const summary: { all: any[]; active: any[]; historic: any[] } = {
+                all: [...activeMeetingsArray, ...historicMeetingsArray],
+                active: [...activeMeetingsArray],
+                historic: [...historicMeetingsArray],
+            };
+
+            return {
                 status: '200',
                 meetings: summary,
             };
-            return returnValue;
-        } catch (error) {
+        } catch (error: unknown) {
             printObject('MT:123-->getAllMeetingsG', { status: 'fail' });
-            printObject('MT:124-->error:\n', error);
+            printObject('MT:124-->error:', error);
             throw new Error('MT:125-->Failed to getAllMeetingsG');
         }
     }
@@ -127,9 +130,13 @@ export const getAllMeetings = createAsyncThunk(
 //*************************************************
 //* THIS LOADS ALL FROM SIGN IN
 //*************************************************
-export const fetchAllMeetings = createAsyncThunk(
+export const fetchAllMeetings = createAsyncThunk<
+    { status: string; meetingInfo: any },
+    { apiToken: string; org_id: string },
+    ThunkApiConfig
+>(
     'meetings/fetchAllMeetings',
-    async (inputs: any, thunkAPI) => {
+    async (inputs: { apiToken: string; org_id: string }, thunkAPI) => {
         try {
             //* ************************************
             //* get all activeMeetings
@@ -145,21 +152,39 @@ export const fetchAllMeetings = createAsyncThunk(
                 org_id
             );
 
+            const activeMeetingsArray = isSuccessResponse<FullMeeting[]>(
+                activeMeetingInfo
+            )
+                ? activeMeetingInfo.data
+                : [];
+            const historicMeetingsArray = isSuccessResponse<FullMeeting[]>(
+                historicMeetingInfo
+            )
+                ? historicMeetingInfo.data
+                : [];
+
             const summary = {
-                all: [],
-                activeMeetings: [...activeMeetingInfo.data],
-                activeCurrentPage: activeMeetingInfo?.currentPage,
-                activeLastPage: activeMeetingInfo?.lastPage,
-                historicMeetings: [...historicMeetingInfo.data],
-                historicCurrentPage: historicMeetingInfo?.currentPage,
-                historicLastPage: historicMeetingInfo?.lastPage,
+                activeMeetings: [...activeMeetingsArray],
+                activeCurrentPage: isSuccessResponse(activeMeetingInfo)
+                    ? (activeMeetingInfo as any).currentPage
+                    : 1,
+                activeLastPage: isSuccessResponse(activeMeetingInfo)
+                    ? (activeMeetingInfo as any).lastPage
+                    : 1,
+                historicMeetings: [...historicMeetingsArray],
+                historicCurrentPage: isSuccessResponse(historicMeetingInfo)
+                    ? (historicMeetingInfo as any).currentPage
+                    : 1,
+                historicLastPage: isSuccessResponse(historicMeetingInfo)
+                    ? (historicMeetingInfo as any).lastPage
+                    : 1,
             };
             const returnValue = {
                 status: '200',
                 meetingInfo: summary,
             };
             return returnValue;
-        } catch (error) {
+        } catch (error: unknown) {
             printObject('🔴 MT:163-->fetchAllMeetings', {
                 status: 'fail',
                 error: error,
@@ -168,7 +193,11 @@ export const fetchAllMeetings = createAsyncThunk(
         }
     }
 );
-export const getActiveMeetings = createAsyncThunk(
+export const getActiveMeetings = createAsyncThunk<
+    FullMeeting[],
+    void,
+    ThunkApiConfig
+>(
     'meetings/getActiveMeetings',
     async (input, { getState, rejectWithValue }) => {
         try {
@@ -176,11 +205,11 @@ export const getActiveMeetings = createAsyncThunk(
             const today = d?.toISOString().slice(0, 10);
             const state = getState();
             const filteredMeetings = state.meetings.meetings.filter(
-                (m) => m.meetingDate >= today
+                (m: FullMeeting) => m.meeting_date >= today
             );
-            function compareMeetingDates(a, b) {
-                const dateA = new Date(a.meetingDate);
-                const dateB = new Date(b.meetingDate);
+            function compareMeetingDates(a: any, b: any): number {
+                const dateA = new Date(a.meeting_date);
+                const dateB = new Date(b.meeting_date);
 
                 if (dateA < dateB) return -1; // dateA comes before dateB
                 if (dateA > dateB) return 1; // dateA comes after dateB
@@ -192,13 +221,17 @@ export const getActiveMeetings = createAsyncThunk(
             // printObject('MT:54-->filteredMeetings:\n', filteredMeetings);
             // Return the filtered meetings
             return filteredMeetings;
-        } catch (error) {
-            // Handle errors and optionally return a rejected promise with an error message
+        } catch (error: unknown) {
+            printObject('MT:getActiveMeetings error', { error });
             return rejectWithValue('Failed to fetch active meetings');
         }
     }
 );
-export const getHistoricMeetings = createAsyncThunk(
+export const getHistoricMeetings = createAsyncThunk<
+    FullMeeting[],
+    void,
+    ThunkApiConfig
+>(
     'meetings/getHistoricMeetings',
     async (input, { getState, rejectWithValue }) => {
         try {
@@ -207,12 +240,12 @@ export const getHistoricMeetings = createAsyncThunk(
             const state = getState();
             // printObject('MT:51-->sample:\n', state.allMeetings[0]);
             const filteredMeetings = state.meetings.meetings.filter(
-                (m) => new Date(m.meetingDate) < new Date(today)
+                (m: FullMeeting) => new Date(m.meeting_date) < new Date(today)
             );
-            filteredMeetings.sort((a, b) => {
+            filteredMeetings.sort((a: any, b: any) => {
                 // Compare meetingDates (in descending order)
-                if (a.meetingDate > b.meetingDate) return -1;
-                if (a.meetingDate < b.meetingDate) return 1;
+                if (a.meeting_date > b.meeting_date) return -1;
+                if (a.meeting_date < b.meeting_date) return 1;
 
                 // If meetingDates are equal, compare titles (in alphabetical order)
                 if (a.title < b.title) return -1;
@@ -224,69 +257,48 @@ export const getHistoricMeetings = createAsyncThunk(
             // printObject('MT:54-->filteredMeetings:\n', filteredMeetings);
             // Return the filtered meetings
             return filteredMeetings;
-        } catch (error) {
-            // Handle errors and optionally return a rejected promise with an error message
+        } catch (error: unknown) {
+            printObject('MT:getHistoricMeetings error', { error });
             return rejectWithValue('Failed to fetch active meetings');
         }
     }
 );
 export const getMeetingById = createAsyncThunk<
-    any, // Return type (meeting object)
+    FullMeeting | Record<string, never>, // Return type (meeting object or empty)
     string, // Argument type (meeting id)
-    { state: any }
+    ThunkApiConfig
 >(
     'meetings/getMeetingById',
     async (meetingId, { getState, rejectWithValue }) => {
         try {
             const state = getState();
             const mtg = state.meetings.meetings.filter(
-                (m: any) => m.id === meetingId
+                (m: FullMeeting) => m.id === meetingId
             );
             if (mtg.length === 1) {
                 return mtg[0];
             } else {
                 return {};
             }
-        } catch (error) {
+        } catch (error: unknown) {
+            printObject('caught error', { error });
             return rejectWithValue('Failed to fetch active meetings');
         }
     }
 );
 
+// Backwards-compatible alias: some code (slice) expects `getSpecificMeeting`
+export const getSpecificMeeting = getMeetingById;
+
 //************************************************************************************************
 //* GET THE MEETING DETAILS
 //************************************************************************************************
-export const NEWfetchMeetingDetailsById = createAsyncThunk(
-    'meetings/fetchMeetingDetailsById',
-    async (inputs: any, thunkAPI) => {
-        const { apiToken, org_id, meeting_id } = inputs;
-        const meetingDetails = await fetchMeetingDetails(
-            apiToken,
-            org_id,
-            meeting_id
-        );
-        const meeting = meetingDetails.data.data;
-        printObject('🟡🟡🟡🟡🟡 MT:250 ~ meeting:', meeting);
-        //* extract groups
-        const groups = [...meeting.groups] || [];
-        delete meeting.groups;
-        const summary = {
-            currentMeeting: meeting,
-            currentGroups: [...groups],
-        };
-
-        const returnValue = {
-            status: '200',
-            meetingDetails: summary,
-        };
-        // printObject('MT:128-🟡->returnValue (to Slice)\n', returnValue);
-        return returnValue;
-    }
-);
+// Note: detailed fetchMeetingDetailsById implementation is defined later; removed duplicate helper thunk.
 
 export const fetchMeetingDetailsById = createAsyncThunk<
-    MeetingDetailsResponse,
-    FetchMeetingDetailsByIdArgs
+    any,
+    FetchMeetingDetailsByIdArgs,
+    ThunkApiConfig
 >('meetings/fetchMeetingDetailsById', async (inputs, thunkAPI) => {
     try {
         const { apiToken, organizationId, meetingId } = inputs;
@@ -295,7 +307,9 @@ export const fetchMeetingDetailsById = createAsyncThunk<
             organizationId,
             meetingId
         );
-        const meeting = meetingDetails.data.data;
+        const meeting = isSuccessResponse<FullMeeting>(meetingDetails)
+            ? meetingDetails.data
+            : ({} as FullMeeting);
         const returnValue = {
             status: '200',
             data: meeting,
@@ -309,7 +323,11 @@ export const fetchMeetingDetailsById = createAsyncThunk<
         throw new Error('MT:332-->Failed to fetchMeetingDetailsById');
     }
 });
-export const saveCurrentMeetingAndGroups = createAsyncThunk(
+export const saveCurrentMeetingAndGroups = createAsyncThunk<
+    any,
+    { currentMeeting: any; currentGroups: any[] },
+    ThunkApiConfig
+>(
     'meetings/saveCurrentMeetingAndGroups',
     async (
         { currentMeeting, currentGroups },
@@ -319,7 +337,6 @@ export const saveCurrentMeetingAndGroups = createAsyncThunk(
             //* ************************************
             //* save the meeting and [] to current
             //* ************************************
-            const groups = [];
             const summary = {
                 currentMeeting: currentMeeting,
                 currentGroups: currentGroups,
@@ -331,7 +348,8 @@ export const saveCurrentMeetingAndGroups = createAsyncThunk(
             };
             // printObject('MT:128-🟡->returnValue (to Slice)\n', returnValue);
             return returnValue;
-        } catch (error) {
+        } catch (error: unknown) {
+            printObject('caught error', { error });
             printObject('MT:303-->saveCurrentMeetingAndGroups', {
                 status: 'fail',
                 error: error,
@@ -340,7 +358,11 @@ export const saveCurrentMeetingAndGroups = createAsyncThunk(
         }
     }
 );
-export const getDefaultGroupsFromDB = createAsyncThunk(
+export const getDefaultGroupsFromDB = createAsyncThunk<
+    { status: number; payload: { message: string } },
+    any,
+    ThunkApiConfig
+>(
     'meetings/getDefaultGroupsFromDB',
     async (input, { getState, rejectWithValue }) => {
         try {
@@ -351,24 +373,28 @@ export const getDefaultGroupsFromDB = createAsyncThunk(
                     message: 'GOOD',
                 },
             };
-        } catch (error) {
+        } catch (error: unknown) {
+            printObject('caught error', { error });
             // Handle errors and optionally return a rejected promise with an error message
             return rejectWithValue('Failed to fetch default meetings');
         }
     }
 );
-export const addDefaultGroups = createAsyncThunk(
-    'meetings/addDefaultGroups',
-    async (inputs, thunkAPI) => {
-        try {
-            const newGroupList = inputs?.meeting?.groups?.items
-                ? [...inputs.meeting.groups.items]
-                : [];
+export const addDefaultGroups = createAsyncThunk<
+    FullMeeting,
+    any,
+    ThunkApiConfig
+>('meetings/addDefaultGroups', async (inputs, thunkAPI) => {
+    try {
+        const newGroupList = inputs?.meeting?.groups?.items
+            ? [...inputs.meeting.groups.items]
+            : [];
 
-            const createGroupPromises = inputs.defaultGroups.map(async (dg) => {
+        const createGroupPromises = inputs.defaultGroups.map(
+            async (dg: Record<string, any>) => {
                 const newId = createAWSUniqueID();
                 const derivedGrpCompKey = `${inputs.meeting.mtgCompKey}#${inputs.meeting.id}`;
-                const inputInfo = {
+                const inputInfo: any = {
                     ...dg,
                     id: newId,
                     attendance: 0,
@@ -385,119 +411,132 @@ export const addDefaultGroups = createAsyncThunk(
                 // });
 
                 return inputInfo;
-            });
+            }
+        );
 
-            const createdGroups = await Promise.all(createGroupPromises);
+        const createdGroups = await Promise.all(createGroupPromises);
 
-            const data = {
-                items: [...newGroupList, ...createdGroups],
-            };
+        const data = {
+            items: [...newGroupList, ...createdGroups],
+        };
 
-            data.items.sort((a, b) => {
-                // Sorting logic remains the same
-            });
+        data.items.sort((a: any, b: any) => {
+            // Keep current order by default (stable) — return 0
+            return 0;
+        });
 
-            const newGroupsItems = { items: data.items };
+        const newGroupsItems = { items: data.items };
 
-            const meetingUpdate = {
-                ...inputs.meeting,
-                groups: newGroupsItems,
-            };
+        const meetingUpdate = {
+            ...inputs.meeting,
+            groups: newGroupsItems,
+        };
 
-            return meetingUpdate;
-        } catch (error) {
-            printObject(
-                'MT:242-->::addDefaultGroups thunk try failure.\n',
-                error
-            );
-            throw new Error('MT:245-->addDefaultGroups Failed');
-        }
+        return meetingUpdate;
+    } catch (error: unknown) {
+        printObject('caught error', { error });
+        printObject('MT:242-->::addDefaultGroups thunk try failure.\n', error);
+        throw new Error('MT:245-->addDefaultGroups Failed');
     }
-);
+});
 //* #####################################
 //* saveNewMeeting
 //* #####################################
-export const saveNewMeeting = createAsyncThunk(
-    'meetings/addMeeting',
-    async ({ api_token, meeting }, thunkAPI) => {
-        // printObject('MT:391-->inputs:\n', inputs);
-        try {
-            async function cleanUpData() {
-                // const meeting = { ...meeting };
-
-                // printObject(
-                //     '🟨 => file: meetingsThunks.ts:398 => cleanUpData => meeting:',
-                //     meeting
-                // );
-
-                // Iterate through the object properties and replace 0 values with null
-                for (const key in meeting) {
-                    if (meeting.hasOwnProperty(key) && meeting[key] === 0) {
-                        meeting[key] = null;
-                    }
+export const saveNewMeeting = createAsyncThunk<
+    any,
+    { api_token: any; meeting: any },
+    ThunkApiConfig
+>('meetings/addMeeting', async ({ api_token, meeting }, thunkAPI) => {
+    // printObject('MT:391-->inputs:\n', inputs);
+    try {
+        async function cleanUpData(): Promise<Record<string, any>> {
+            // Iterate through the object properties and replace 0 values with null
+            for (const key in meeting) {
+                if (
+                    Object.prototype.hasOwnProperty.call(meeting, key) &&
+                    meeting[key] === 0
+                ) {
+                    meeting[key] = null;
                 }
-                delete meeting.created_at;
-                delete meeting.updated_at;
-                let mtg = {
-                    ...meeting,
-                    organization_id: meeting.organization_id,
-                    meeting_date: meeting.meeting_date.slice(0, 10),
-                };
-                return mtg;
             }
-            async function convertKeysToSnakeCase(obj) {
-                const newObj = {};
-                for (const key in obj) {
-                    const newKey = key
-                        .replace(
-                            /[A-Z]/g,
-                            (letter) => `_${letter.toLowerCase()}`
-                        )
-                        .toLowerCase();
-                    newObj[newKey] = obj[key];
-                }
-                return newObj;
-            }
-            //***********************************************
-            //* convert mtg from camelCase to snake_case
-            //***********************************************
-
-            const cleanData = await cleanUpData();
-
-            const transformedObject = await convertKeysToSnakeCase(cleanData);
-            const meetingDetails = await createNewMeeting(
-                api_token,
-                transformedObject
-            );
-
-            if (meetingDetails?.status === 200) {
-                const summary = {
-                    currentMeeting: meetingDetails.data,
-                    currentGroups: [],
-                };
-                const returnValue = {
-                    status: '200',
-                    meetingDetails: summary,
-                };
-                return returnValue;
-            } else {
-                const returnValue = {
-                    status: meetingDetails.status,
-                    meetingDetails: null,
-                    message: 'Error createNewMeeting API',
-                };
-            }
-        } catch (error) {
-            printObject(
-                '🔴🔴🔴🔴🔴MT.ts :451-->addMeeting thunk try failure.\n',
-                error
-            );
-            throw new Error('MT:455-->Failed to create meeting');
+            delete meeting.created_at;
+            delete meeting.updated_at;
+            const mtg: Record<string, any> = {
+                ...meeting,
+                organization_id: meeting.organization_id,
+                meeting_date: meeting.meeting_date.slice(0, 10),
+            };
+            return mtg;
         }
-    }
-);
+        async function convertKeysToSnakeCase(
+            obj: Record<string, any>
+        ): Promise<Record<string, any>> {
+            const newObj: Record<string, any> = {};
+            for (const key in obj) {
+                const newKey = key
+                    .replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
+                    .toLowerCase();
+                newObj[newKey] = obj[key as keyof typeof obj];
+            }
+            return newObj;
+        }
+        //***********************************************
+        //* convert mtg from camelCase to snake_case
+        //***********************************************
 
-export const addMeeting = createAsyncThunk(
+        const cleanData = await cleanUpData();
+
+        const transformedObject = await convertKeysToSnakeCase(cleanData);
+        const meetingDetails = await createNewMeeting(
+            api_token,
+            transformedObject
+        );
+
+        if (isSuccessResponse<FullMeeting>(meetingDetails)) {
+            const summary = {
+                currentMeeting: meetingDetails.data,
+                currentGroups: [],
+            };
+            const returnValue = {
+                status: '200',
+                meetingDetails: summary,
+            };
+            return returnValue;
+        } else if (isApiError(meetingDetails)) {
+            const returnValue = {
+                status: String(meetingDetails.status || 500),
+                meetingDetails: null,
+                message: meetingDetails.message || 'Error createNewMeeting API',
+            };
+            return returnValue;
+        }
+        // Fallback: ensure we always return the declared shape
+        return {
+            status: '500',
+            meetingDetails: null,
+            message: 'Unexpected createNewMeeting response',
+        };
+    } catch (error: unknown) {
+        printObject('caught error', { error });
+        printObject(
+            '🔴🔴🔴🔴🔴MT.ts :451-->addMeeting thunk try failure.\n',
+            error
+        );
+        throw new Error('MT:455-->Failed to create meeting');
+    }
+});
+
+export const addMeeting = createAsyncThunk<
+    {
+        status: string;
+        meetingDetails?: {
+            currentMeeting: FullMeeting;
+            currentGroups: any[];
+        } | null;
+    },
+    { api_token: any; submit_values: any },
+    ThunkApiConfig
+>(
     'meetings/addMeetingLegacy',
     async ({ api_token, submit_values }, thunkAPI) => {
         try {
@@ -518,8 +557,10 @@ export const addMeeting = createAsyncThunk(
                 };
                 return mtg;
             }
-            async function convertKeysToSnakeCase(obj) {
-                const newObj = {};
+            async function convertKeysToSnakeCase(
+                obj: Record<string, any>
+            ): Promise<Record<string, any>> {
+                const newObj: Record<string, any> = {};
                 for (const key in obj) {
                     const newKey = key
                         .replace(
@@ -527,7 +568,7 @@ export const addMeeting = createAsyncThunk(
                             (letter) => `_${letter.toLowerCase()}`
                         )
                         .toLowerCase();
-                    newObj[newKey] = obj[key];
+                    newObj[newKey] = obj[key as keyof typeof obj];
                 }
                 return newObj;
             }
@@ -537,10 +578,10 @@ export const addMeeting = createAsyncThunk(
             const cleanData = await cleanUpData();
             const transformedObject = await convertKeysToSnakeCase(cleanData);
             const meetingDetails = await createNewMeeting(
-                apiToken,
+                api_token,
                 transformedObject
             );
-            if (meetingDetails.status === 200) {
+            if (isSuccessResponse<FullMeeting>(meetingDetails)) {
                 const summary = {
                     currentMeeting: meetingDetails.data,
                     currentGroups: [],
@@ -552,12 +593,14 @@ export const addMeeting = createAsyncThunk(
                 return returnValue;
             } else {
                 const returnValue = {
-                    status: meetingDetails.status,
+                    status: (meetingDetails as any)?.status,
                     meetingDetails: null,
                     message: 'Error createNewMeeting API',
                 };
+                return returnValue;
             }
-        } catch (error) {
+        } catch (error: unknown) {
+            printObject('caught error', { error });
             printObject(
                 '🔴🔴🔴🔴🔴MT:451-->addMeeting thunk try failure.\n',
                 error
@@ -566,16 +609,23 @@ export const addMeeting = createAsyncThunk(
         }
     }
 );
-export const deleteGroupFromMeeting = createAsyncThunk(
+export const deleteGroupFromMeeting = createAsyncThunk<
+    { status: number; group_id: string; meeting_id: string },
+    { api_token: any; group_id: string; meeting_id: string },
+    ThunkApiConfig
+>(
     'meetings/deleteGroupFromMeeting',
-    async (inputs: any, thunkAPI) => {
+    async (
+        inputs: { api_token: any; group_id: string; meeting_id: string },
+        thunkAPI
+    ) => {
         const { api_token, group_id, meeting_id } = inputs;
         try {
             //* -----------------------
             //* delete group from gql
             //* -----------------------
             const deleteGroupResponse = await deleteAGroup(api_token, group_id);
-            if (deleteGroupResponse.status === 200) {
+            if (isSuccessResponse<any>(deleteGroupResponse)) {
                 //todo: NEED TO RETURN MEETING_ID, GROUP_ID
                 const results = {
                     status: 200,
@@ -586,7 +636,8 @@ export const deleteGroupFromMeeting = createAsyncThunk(
                 return results;
             }
             throw new Error('MT:593-->Failed to deleteGroupFromMeeting');
-        } catch (error) {
+        } catch (error: unknown) {
+            printObject('caught error', { error });
             printObject(
                 'MT:596-->deleteGroupFromMeeting thunk try failure.\n',
                 error
@@ -595,202 +646,201 @@ export const deleteGroupFromMeeting = createAsyncThunk(
         }
     }
 );
-export const updateMeeting = createAsyncThunk(
-    'meetings/updateMeeting',
-    async ({ api_token, meeting }, thunkAPI) => {
-        //* ************************************
-        //*   UPDATE MEETING
-        //* ************************************
-        try {
-            async function cleanUpData() {
-                // const meeting = { ...submit_values.meeting };
-                // We don't convert 0 to null, because update might acknowledge 0
-                // for (const key in meeting) {
+export const updateMeeting = createAsyncThunk<
+    UpdateMeetingType | ApiError,
+    { api_token: any; meeting: any },
+    ThunkApiConfig
+>('meetings/updateMeeting', async ({ api_token, meeting }, thunkAPI) => {
+    //* ************************************
+    //*   UPDATE MEETING
+    //* ************************************
+    try {
+        async function cleanUpData() {
+            // const meeting = { ...submit_values.meeting };
+            // We don't convert 0 to null, because update might acknowledge 0
+            // for (const key in meeting) {
 
-                delete meeting.created_at;
-                delete meeting.updated_at;
-                delete meeting.groups;
-                let mtg = {
-                    ...meeting,
-                    organization_id: meeting.organization_id,
-                    meeting_date: meeting.meeting_date.slice(0, 10),
-                };
-                return mtg;
-            }
-            async function convertKeysToSnakeCase(obj) {
-                const newObj = {};
-                for (const key in obj) {
-                    const newKey = key
-                        .replace(
-                            /[A-Z]/g,
-                            (letter) => `_${letter.toLowerCase()}`
-                        )
-                        .toLowerCase();
-                    newObj[newKey] = obj[key];
-                }
-                return newObj;
-            }
-            //***********************************************
-            //* convert mtg from camelCase to snake_case
-            //***********************************************
-            const cleanData = await cleanUpData();
-            const transformedObject = await convertKeysToSnakeCase(cleanData);
-
-            //***********************************************
-            //* calls PUT to update the meeting
-            //***********************************************
-            type UpdatedMeetingType = {
-                status: number;
-                message: string;
-                data: {
-                    meeting: FullMeeting;
-                };
+            delete meeting.created_at;
+            delete meeting.updated_at;
+            delete meeting.groups;
+            let mtg = {
+                ...meeting,
+                organization_id: meeting.organization_id,
+                meeting_date: meeting.meeting_date.slice(0, 10),
             };
-
-            const meetingDetails: any = await updateTheMeeting(
-                api_token,
-                transformedObject
-            );
-            const returnMeeting = meetingDetails?.data;
-
-            if (meetingDetails?.status === 200) {
-                return meetingDetails;
-            } else {
-                const returnValue = {
-                    status: meetingDetails.status,
-                    message: meetingDetails.message,
-                    data: meetingDetails.data,
-                };
-            }
-        } catch (error) {
-            printObject(
-                '🔴🔴🔴🔴🔴MT:707-->updateAMeeting thunk try failure.\n',
-                error
-            );
-            throw new Error('MT:710-->Failed to update meeting');
+            return mtg;
         }
-    }
-);
-
-export const addGroup = createAsyncThunk(
-    'meetings/addGroup',
-    async ({ api_token, group, meetingId }, thunkAPI) => {
-        try {
-            if (group.id === '0' || !group.id) {
-                group.id = createAWSUniqueID();
+        async function convertKeysToSnakeCase(
+            obj: Record<string, any>
+        ): Promise<Record<string, any>> {
+            const newObj: Record<string, any> = {};
+            for (const key in obj) {
+                const newKey = key
+                    .replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
+                    .toLowerCase();
+                newObj[newKey] = obj[key as keyof typeof obj];
             }
-            // Fetch meeting details to get mtg_comp_key if needed
-            // (Assume meetingId is enough for backend, else fetch meeting details here)
-            const new_group = {
-                ...group,
-                meeting_id: meetingId,
+            return newObj;
+        }
+        //***********************************************
+        //* convert mtg from camelCase to snake_case
+        //***********************************************
+        const cleanData = await cleanUpData();
+        const transformedObject = await convertKeysToSnakeCase(cleanData);
+
+        //***********************************************
+        //* calls PUT to update the meeting
+        //***********************************************
+        const meetingDetails: any = await updateTheMeeting(
+            api_token,
+            transformedObject
+        );
+        if (isSuccessResponse<any>(meetingDetails)) {
+            return meetingDetails;
+        } else if (isApiError(meetingDetails)) {
+            const returnValue = {
+                status: meetingDetails.status,
+                message: meetingDetails.message,
+                data: meetingDetails.details,
             };
-            const createNewGroupResponse = await createNewGroup(
-                api_token,
+            return returnValue;
+        }
+        // Fallback: return ApiError-like object when response shape is unexpected
+        return {
+            status: 500,
+            message: 'Unexpected updateTheMeeting response',
+            details: meetingDetails,
+        } as ApiError;
+    } catch (error) {
+        printObject(
+            '🔴🔴🔴🔴🔴MT:707-->updateAMeeting thunk try failure.\n',
+            error
+        );
+        throw new Error('MT:710-->Failed to update meeting');
+    }
+});
+
+export const addGroup = createAsyncThunk<
+    { group_id: string; group: any; meetingId: string },
+    { api_token: any; group: any; meetingId: string },
+    ThunkApiConfig
+>('meetings/addGroup', async ({ api_token, group, meetingId }, thunkAPI) => {
+    try {
+        if (group.id === '0' || !group.id) {
+            group.id = createAWSUniqueID();
+        }
+        // Fetch meeting details to get mtg_comp_key if needed
+        // (Assume meetingId is enough for backend, else fetch meeting details here)
+        const new_group = {
+            ...group,
+            meeting_id: meetingId,
+        };
+        const createNewGroupResponse = await createNewGroup(
+            api_token,
+            meetingId,
+            new_group
+        );
+        if (
+            isSuccessResponse<any>(createNewGroupResponse) &&
+            createNewGroupResponse.data &&
+            createNewGroupResponse.data.id
+        ) {
+            // return the created group's id and data so reducers can update state
+            return {
+                group_id: createNewGroupResponse.data.id,
+                group: createNewGroupResponse.data,
                 meetingId,
-                new_group
-            );
-            if (createNewGroupResponse.data && createNewGroupResponse.data.id) {
-                // return the created group's id and data so reducers can update state
-                return {
-                    group_id: createNewGroupResponse.data.id,
-                    group: createNewGroupResponse.data,
-                    meetingId,
-                };
-            } else {
-                throw new Error('MT:216-->Failed to create group');
-            }
-        } catch (error: any) {
-            // Log the original error and rethrow it so callers can handle/inspect it.
-            printObject('MT:741-->addGroup ERROR', { error, group });
-            if (error instanceof Error) throw error;
-            // If it's an API response object, wrap with a helpful message
-            if (
-                error &&
-                typeof error === 'object' &&
-                (error.message || error.status)
-            ) {
-                const msg =
-                    error.message || `API error (status ${error.status})`;
-                throw new Error(msg);
-            }
-            throw new Error('MT:742-->Failed to add group');
-        }
-    }
-);
-
-export const updateGroup = createAsyncThunk(
-    'meetings/updateGroup',
-    async (inputs: any, thunkAPI) => {
-        try {
-            printObject('MT:757-->updateGroup__inputs:\n', inputs);
-            //************************************************************************************************
-            // we only pass object to update.
-            //************************************************************************************************
-            let group: GroupUpdateType = {
-                title: inputs?.group?.title || null,
-                location: inputs?.group?.location || null,
-                gender: inputs.group.gender || null,
-                attendance: inputs.group.attendance || null,
-                facilitator: inputs.group.facilitator || null,
-                cofacilitator: inputs.group.cofacilitator || null,
-                notes: inputs.group.notes || null,
             };
-            printObject('MT:776-->group:\n', group);
-            //* * * * * * * * * * * * * * * * * * * *
-            //* update the group in database
-            //* * * * * * * * * * * * * * * * * * * *
-            const inputValues = {
-                api_token: inputs?.api_token,
-                group_id: inputs?.group_id,
-                group: group,
-            };
-            const groupUpdateResponse: any = await updateAGroup(inputValues);
-            if (groupUpdateResponse?.status === 200) {
-                console.log('🍽️🍽️-status===200');
-                // Return the updated group with meeting_id for the slice to use
-                const updatedGroup = {
-                    ...groupUpdateResponse.data,
-                    meeting_id: inputs?.meeting_id,
-                };
-                return updatedGroup;
-            } else {
-                printObject(
-                    'MT:791-->groupUpdateResponse:\n',
-                    groupUpdateResponse
-                );
-                throw new Error('Failed to update group');
-            }
-
-            // let inputInfo = {
-            //     ...inputs.group,
-            //     id: inputs.group.groupId,
-            //     meetingGroupsId: inputs.group.meetingId,
-            //     organizationGroupsId: inputs.orgId,
-            // };
-            // //* remove unsupported values
-            // delete inputInfo.meetingId;
-            // delete inputInfo.groupId;
-            // const results = await API.graphql({
-            //     query: mutations.updateGroup,
-            //     variables: { input: inputInfo },
-            // });
-            // if (results.data.updateGroup.id) {
-            //     const resultDef = {
-            //         group: inputInfo,
-            //         meetingId: inputs.group.meetingId,
-            //     };
-            //     return resultDef;
-            // } else {
-            //     throw new Error('MT:208-->Failed to update meeting');
-            // }
-        } catch (error) {
-            printObject('MT:409-->updateGroup FAILURE', inputs);
-            // Rethrow the error to let createAsyncThunk handle it
-            throw new Error('MT:411-->Failed to update group');
+        } else {
+            throw new Error('MT:216-->Failed to create group');
         }
+    } catch (error: any) {
+        // Log the original error and rethrow it so callers can handle/inspect it.
+        printObject('MT:741-->addGroup ERROR', { error, group });
+        if (error instanceof Error) throw error;
+        // If it's an API response object, wrap with a helpful message
+        if (
+            error &&
+            typeof error === 'object' &&
+            (error.message || error.status)
+        ) {
+            const msg = error.message || `API error (status ${error.status})`;
+            throw new Error(msg);
+        }
+        throw new Error('MT:742-->Failed to add group');
     }
-);
+});
+
+export const updateGroup = createAsyncThunk<
+    (FullGroup & { meeting_id?: string }) | ApiError,
+    any,
+    ThunkApiConfig
+>('meetings/updateGroup', async (inputs: any, thunkAPI) => {
+    try {
+        printObject('MT:757-->updateGroup__inputs:\n', inputs);
+        //************************************************************************************************
+        // we only pass object to update.
+        //************************************************************************************************
+        let group: GroupUpdateType = {
+            title: inputs?.group?.title || null,
+            location: inputs?.group?.location || null,
+            gender: inputs.group.gender || null,
+            attendance: inputs.group.attendance || null,
+            facilitator: inputs.group.facilitator || null,
+            cofacilitator: inputs.group.cofacilitator || null,
+            notes: inputs.group.notes || null,
+        };
+        printObject('MT:776-->group:\n', group);
+        //* * * * * * * * * * * * * * * * * * * *
+        //* update the group in database
+        //* * * * * * * * * * * * * * * * * * * *
+        const inputValues = {
+            api_token: inputs?.api_token,
+            group_id: inputs?.group_id,
+            group: group,
+        };
+        const groupUpdateResponse: any = await updateAGroup(inputValues);
+        if (isSuccessResponse<any>(groupUpdateResponse)) {
+            console.log('🍽️🍽️-status===200');
+            // Return the updated group with meeting_id for the slice to use
+            const updatedGroup = {
+                ...groupUpdateResponse.data,
+                meeting_id: inputs?.meeting_id,
+            };
+            return updatedGroup;
+        } else {
+            printObject('MT:791-->groupUpdateResponse:\n', groupUpdateResponse);
+            throw new Error('Failed to update group');
+        }
+
+        // let inputInfo = {
+        //     ...inputs.group,
+        //     id: inputs.group.groupId,
+        //     meetingGroupsId: inputs.group.meetingId,
+        //     organizationGroupsId: inputs.orgId,
+        // };
+        // //* remove unsupported values
+        // delete inputInfo.meetingId;
+        // delete inputInfo.groupId;
+        // const results = await API.graphql({
+        //     query: mutations.updateGroup,
+        //     variables: { input: inputInfo },
+        // });
+        // if (results.data.updateGroup.id) {
+        //     const resultDef = {
+        //         group: inputInfo,
+        //         meetingId: inputs.group.meetingId,
+        //     };
+        //     return resultDef;
+        // } else {
+        //     throw new Error('MT:208-->Failed to update meeting');
+        // }
+    } catch (error: unknown) {
+        printObject('MT:409-->updateGroup FAILURE', { inputs, error });
+        // Rethrow the error to let createAsyncThunk handle it
+        throw new Error('MT:411-->Failed to update group');
+    }
+});
 interface DeleteInputType {
     api_token: any;
     organization_id: string;
@@ -801,137 +851,155 @@ interface DeleteAMeetingResponse {
     message: string;
     data: any;
 }
-export const deleteMeeting = createAsyncThunk(
-    'meetings/deleteMeeting',
-    async (inputs: DeleteInputType, thunkAPI) => {
-        try {
-            //* -----------------------
-            //* this will get an object
-            //* with id (meeting) and
-            //* organization_id
-            const { api_token, organization_id, meeting_id } = inputs;
+export const deleteMeeting = createAsyncThunk<
+    any,
+    DeleteInputType,
+    ThunkApiConfig
+>('meetings/deleteMeeting', async (inputs: DeleteInputType, thunkAPI) => {
+    try {
+        //* -----------------------
+        //* this will get an object
+        //* with id (meeting) and
+        //* organization_id
+        const { api_token, organization_id, meeting_id } = inputs;
 
-            //* ************************************************
-            //* delete the meeting
-            //* ************************************************
+        //* ************************************************
+        //* delete the meeting
+        //* ************************************************
 
-            const deleteMeetingResponse: DeleteAMeetingResponse | ApiError =
-                await deleteAMeeting(api_token, organization_id, meeting_id);
+        const deleteMeetingResponse: DeleteAMeetingResponse | ApiError =
+            await deleteAMeeting(api_token, organization_id, meeting_id);
 
-            if (deleteMeetingResponse.status !== 200) {
-                console.log(
-                    `MT:801 --> Failed to delete meeting with: ${inputs}`
-                );
-                printObject(
-                    'MT:803-->deleteMeetingResponse:\n',
-                    deleteMeetingResponse
-                );
-                // If meeting deletion fails, you can choose to handle it here (e.g., show an error message) or throw an error.
-                throw new Error('MT:638-->Failed to delete the meeting');
-            }
-            return deleteMeetingResponse;
-        } catch (error) {
-            printObject('MT:477-->deleteMeeting thunk try failure.\n', error);
-            throw new Error('MT:478-->Failed to deleteMeeting');
+        if (!isSuccessResponse<any>(deleteMeetingResponse)) {
+            console.log(`MT:801 --> Failed to delete meeting with: ${inputs}`);
+            printObject(
+                'MT:803-->deleteMeetingResponse:\n',
+                deleteMeetingResponse
+            );
+            throw new Error('MT:638-->Failed to delete the meeting');
         }
+        return deleteMeetingResponse;
+    } catch (error) {
+        printObject('MT:477-->deleteMeeting thunk try failure.\n', error);
+        throw new Error('MT:478-->Failed to deleteMeeting');
     }
-);
+});
 
 export const fetchNextHistoricPage = createAsyncThunk(
     'meetings/nextHistoricPage',
-    async ({ api_token }, thunkAPI) => {
+    async ({ api_token }: any, thunkAPI: any) => {
         try {
-            const priorMeetings = await getNextHistoricPage(api_token);
-        } catch (error) {
-            console.log('CATCH');
+            // Note: getNextHistoricPage requires apiToken and org_id; org_id not available here.
+            // If you need to fetch prior meetings you'll need to pass org_id into this thunk.
+            // const priorMeetings = await getNextHistoricPage(api_token, org_id);
+        } catch (error: unknown) {
+            console.log('CATCH', error);
         }
     }
 );
 //*************************************************
 //* THIS LOADS ALL THE ACTIVE MEETINGS
 //*************************************************
-export const refreshActiveMeetings = createAsyncThunk(
-    'meetings/fetchActiveMeetings',
-    async (inputs: any, thunkAPI) => {
-        try {
-            //* ************************************
-            //* get all activeMeetings
-            //* ************************************
-            const { apiToken, org_id } = inputs;
-            const activeMeetingInfo = await fetchActiveMeetings(
-                apiToken,
-                org_id
-            );
-            const summary = {
-                activeMeetings: [...activeMeetingInfo.data],
-                activeCurrentPage: activeMeetingInfo?.currentPage,
-                activeLastPage: activeMeetingInfo?.lastPage,
-            };
-            const returnValue = {
-                status: '200',
-                meetingInfo: summary,
-            };
-            return returnValue;
-        } catch (error) {
-            printObject('🔴 MT:1116-->fetchActiveMeetings', {
-                status: 'fail',
-                error: error,
-            });
-            throw new Error('MT:1120-->Failed to fetchActiveMeetings');
-        }
+export const refreshActiveMeetings = createAsyncThunk<
+    {
+        status: string;
+        meetingInfo: {
+            activeMeetings: FullMeeting[];
+            activeCurrentPage: number;
+            activeLastPage: number;
+        };
+    },
+    any,
+    ThunkApiConfig
+>('meetings/fetchActiveMeetings', async (inputs: any, thunkAPI) => {
+    try {
+        //* ************************************
+        //* get all activeMeetings
+        //* ************************************
+        const { apiToken, org_id } = inputs;
+        const activeMeetingInfo = await fetchActiveMeetings(apiToken, org_id);
+        const activeMeetingsArray = isSuccessResponse<any[]>(activeMeetingInfo)
+            ? activeMeetingInfo.data
+            : [];
+        const summary = {
+            activeMeetings: [...activeMeetingsArray],
+            activeCurrentPage: isSuccessResponse(activeMeetingInfo)
+                ? (activeMeetingInfo as any).currentPage
+                : 1,
+            activeLastPage: isSuccessResponse(activeMeetingInfo)
+                ? (activeMeetingInfo as any).lastPage
+                : 1,
+        };
+        const returnValue = {
+            status: '200',
+            meetingInfo: summary,
+        };
+        return returnValue;
+    } catch (error) {
+        printObject('🔴 MT:1116-->fetchActiveMeetings', {
+            status: 'fail',
+            error: error,
+        });
+        throw new Error('MT:1120-->Failed to fetchActiveMeetings');
     }
-);
+});
 //*************************************************
 //* THIS LOADS A HISTORIC PAGE TO REDUX
 //*************************************************
-export const loadHistoricPage = createAsyncThunk(
-    'meetings/loadHistoricPage',
-    async (inputs: any, thunkAPI) => {
-        try {
-            //* ************************************
-            //* get historic page
-            // api_token
-            // organization_id
-            // default_organization
-            // page
-            //* ************************************
-            const { api_token, organization_id, default_organization, page } =
-                inputs;
-            // console.log('MT:1141-->api_token', api_token);
-            // console.log('MT:1142-->organization_id', organization_id);
-            // console.log('MT:1143-->default_organization', default_organization);
-            // console.log('MT:1149-->page', page);
-            const response = await fetchHistoricPage(
-                api_token,
-                organization_id,
-                page
-            );
-            if ('status' in response && response.status === 200) {
-                // Response is of type RequestedPageType
-                const requestedPage: RequestedPageType = response;
-                // printObject('🏴󠁧󠁢󠁳󠁣󠁴󠁿🏴󠁧󠁢󠁳󠁣󠁴󠁿🏴󠁧󠁢󠁳󠁣󠁴󠁿 MT:1158-->requestedPage:', requestedPage);
-                const current_page = requestedPage.currentPage + 1;
-                if (requestedPage.status === 200) {
-                    return {
-                        status: requestedPage.status,
-                        additionalMeetings: requestedPage.data,
-                        historic_current_page: current_page,
-                    };
-                }
-                // ... rest of your logic ...
-            } else {
-                printObject('🔴 MT:1168-->loadHistoricPage', {
-                    status: response.status,
-                    error: 'unexpected response from meetingsAPI',
-                });
-                throw new Error('MT:1172-->Failed to loadHistoricPage');
+export const loadHistoricPage = createAsyncThunk<
+    {
+        status: number;
+        additionalMeetings: FullMeeting[];
+        historic_current_page: number;
+    },
+    any,
+    ThunkApiConfig
+>('meetings/loadHistoricPage', async (inputs: any, thunkAPI) => {
+    try {
+        //* ************************************
+        //* get historic page
+        // api_token
+        // organization_id
+        // default_organization
+        // page
+        //* ************************************
+        const { api_token, organization_id, page } = inputs;
+        // console.log('MT:1141-->api_token', api_token);
+        // console.log('MT:1142-->organization_id', organization_id);
+        // console.log('MT:1143-->default_organization', default_organization);
+        // console.log('MT:1149-->page', page);
+        const response = await fetchHistoricPage(
+            api_token,
+            organization_id,
+            page
+        );
+        if (isSuccessResponse<RequestedPageType>(response)) {
+            // Response is of type RequestedPageType inside response.data
+            const requestedPage: RequestedPageType =
+                response.data as RequestedPageType;
+            // printObject('🏴󠁧󠁢󠁳󠁣󠁴󠁿🏴󠁧󠁢󠁳󠁣󠁴󠁿🏴󠁧󠁢󠁳󠁣󠁴󠁿 MT:1158-->requestedPage:', requestedPage);
+            const current_page = requestedPage.currentPage + 1;
+            if (requestedPage.status === 200) {
+                return {
+                    status: requestedPage.status,
+                    additionalMeetings: requestedPage.data,
+                    historic_current_page: current_page,
+                };
             }
-        } catch (error) {
-            printObject('🔴 MT:1175-->loadHistoricPage', {
-                status: 'fail',
-                error: error,
+            // If not 200, throw to make the thunk reject
+            throw new Error('Unexpected status when loading historic page');
+        } else {
+            printObject('🔴 MT:1168-->loadHistoricPage', {
+                error: 'unexpected response from meetingsAPI',
+                response,
             });
-            throw new Error('MT:1179-->Failed to loadHistoricPage');
+            throw new Error('MT:1172-->Failed to loadHistoricPage');
         }
+    } catch (error) {
+        printObject('🔴 MT:1175-->loadHistoricPage', {
+            status: 'fail',
+            error: error,
+        });
+        throw new Error('MT:1179-->Failed to loadHistoricPage');
     }
-);
+});

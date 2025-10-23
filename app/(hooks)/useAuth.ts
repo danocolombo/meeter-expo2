@@ -1,6 +1,6 @@
 import { fetchAllMeetings } from '@features/meetings/meetingsThunks';
-import { loginUser } from '@features/user/userThunks';
 import { setActiveOrg } from '@features/system/systemSlice';
+import { loginUser } from '@features/user/userThunks';
 import { useNavigation } from '@react-navigation/native';
 import type { AppDispatch } from '@utils/store';
 import { useState } from 'react';
@@ -11,7 +11,9 @@ export default function useAuth() {
     const dispatch = useDispatch<AppDispatch>();
     // const user = useSelector((state: RootState) => state.user);
     const [isLoading, setIsLoading] = useState(false);
-    const [userError, setUserError] = useState(null);
+    const [userError, setUserError] = useState<any>(null);
+    const [user, setUser] = useState<any>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const handleLoginUser = async (login: string, password: string) => {
         setIsLoading(true);
         const mockData: any = {
@@ -84,11 +86,15 @@ export default function useAuth() {
         await dispatch(fetchAllMeetings({ apiToken, org_id: orgId }));
         setIsLoading(false);
         setUserError(null);
+        setUser(mockData);
+        setIsAuthenticated(true);
     };
     return {
         navigation,
         handleLoginUser,
         isLoading,
         userError,
+        user,
+        isAuthenticated,
     };
 }

@@ -1,7 +1,14 @@
 import React from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
-const Input = ({ label, labelStyle, textInputConfig }) => {
-    const inputStyles = [styles.input];
+
+type InputProps = {
+    label?: string;
+    labelStyle?: any;
+    textInputConfig?: any;
+};
+
+const Input = ({ label, labelStyle, textInputConfig }: InputProps) => {
+    const inputStyles: any[] = [styles.input];
     if (textInputConfig && textInputConfig.multiline) {
         inputStyles.push(styles.inputMultiline);
     }
@@ -24,7 +31,7 @@ const Input = ({ label, labelStyle, textInputConfig }) => {
 export default Input;
 
 const styles = StyleSheet.create({
-    inputStyles: {
+    input: {
         height: 20,
     },
     inputMultiline: {

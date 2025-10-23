@@ -1,8 +1,42 @@
 import { MEETER_DEFAULTS } from '@constants/meeter';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { printObject } from '@utils/helpers';
+import { ApiError, Person, UserProfile } from '../../types/interfaces';
+import type { RootState } from '../../utils/store';
 import { fetchPerson, getAPIToken, updateHeroMessage } from './userAPI';
-export const loginUser = createAsyncThunk(
+
+type ThunkApiConfig = {
+    state: RootState;
+    dispatch: any;
+    rejectValue: any;
+};
+
+// Helpers: type guards for API response shapes
+function isSuccessResponse<T>(
+    res: unknown
+): res is { status: number; data: T } {
+    return (
+        !!res &&
+        typeof res === 'object' &&
+        'status' in (res as any) &&
+        typeof (res as any).status === 'number'
+    );
+}
+
+function isApiError(res: unknown): res is ApiError {
+    return (
+        !!res &&
+        typeof res === 'object' &&
+        ('message' in (res as any) ||
+            'details' in (res as any) ||
+            'status' in (res as any))
+    );
+}
+export const loginUser = createAsyncThunk<
+    any,
+    { inputs: any; apiToken: string },
+    ThunkApiConfig
+>(
     'user/loginUser',
     async (args: { inputs: any; apiToken: string }, thunkAPI) => {
         try {
@@ -29,32 +63,33 @@ export const loginUser = createAsyncThunk(
 
             const tokenResponse = await getAPIToken(username, email, sub);
 
-            let token = null;
+            let token: any = null;
 
-            if (tokenResponse.status !== 200) {
-                // Handle specific error cases
-                if (tokenResponse.status === 422) {
-                    // Create a limited access token for basic functionality
+            if (isSuccessResponse<any>(tokenResponse)) {
+                token = tokenResponse.data;
+            } else if (isApiError(tokenResponse)) {
+                // Handle specific error codes
+                const respStatus = (tokenResponse as any).status;
+                if (respStatus === 422) {
                     token = {
                         plainTextToken: 'limited_access_token',
                         isLimited: true,
                     };
                 } else {
                     throw new Error(
-                        `TOKEN_ERROR: Authentication token request failed (${tokenResponse.status})`
+                        `TOKEN_ERROR: Authentication token request failed (${String(
+                            respStatus
+                        )})`
                     );
                 }
-            } else {
-                token = tokenResponse.data;
-                // printObject('🔲 🔲 🔲 UT:29->token:', token);
             }
 
             //*****************************************************
             //* fetch person from database
             //*****************************************************
-            let person = null;
+            let person: UserProfile | Record<string, any> | null = null;
             let isLimitedUser = false;
-            let fetchResponse = null;
+            let fetchResponse: unknown = null;
 
             if (token?.isLimited) {
                 // Skip fetchPerson for limited users and directly create limited profile
@@ -99,9 +134,14 @@ export const loginUser = createAsyncThunk(
             //     fetchResponse
             // );
 
-            if (fetchResponse?.status === 200) {
+            if (
+                isSuccessResponse<Person | Record<string, any>>(
+                    fetchResponse
+                ) &&
+                fetchResponse.status === 200
+            ) {
                 // Person fetched successfully
-                person = fetchResponse?.data;
+                person = fetchResponse.data as Person | Record<string, any>;
 
                 // Only apply transformations to data from the database, not limited users
                 if (!isLimitedUser) {
@@ -109,8 +149,12 @@ export const loginUser = createAsyncThunk(
                     //*****************************************************
                     //* this function is called a ways down to rename keys
                     //*****************************************************
-                    function renameKeys(obj, renamingMap) {
-                        const updatedObject = Object.assign({}, obj); // Create a shallow copy
+                    function renameKeys(
+                        obj: Record<string, any>,
+                        renamingMap: Record<string, string>
+                    ): Record<string, any> {
+                        const updatedObject: Record<string, any> =
+                            Object.assign({}, obj); // Create a shallow copy
 
                         for (const [oldKey, newKey] of Object.entries(
                             renamingMap
@@ -142,23 +186,31 @@ export const loginUser = createAsyncThunk(
                     const updatedPerson = renameKeys(person, renamingMap);
                     person = { ...updatedPerson };
 
-                    function transformKeysRecursively(obj) {
+                    function transformKeysRecursively(
+                        obj: Record<string, any>
+                    ): Record<string, any> {
                         // Helper function to transform a single key
-                        function transformKey(key) {
-                            return key.replace(/_([a-z])/g, (match, char) =>
-                                char.toUpperCase()
+                        function transformKey(key: string) {
+                            return key.replace(
+                                /_([a-z])/g,
+                                (match: string, char: string) =>
+                                    char.toUpperCase()
                             );
                         }
                         for (const [key, value] of Object.entries(obj)) {
                             // Handle array values (affiliations)
                             if (Array.isArray(value)) {
-                                obj[key] = value.map(transformKeysRecursively);
+                                obj[key] = value.map((v: any) =>
+                                    transformKeysRecursively(v)
+                                );
                             } else if (
                                 typeof value === 'object' &&
                                 value !== null
                             ) {
                                 // Handle child objects (defaultOrg)
-                                obj[key] = transformKeysRecursively(value);
+                                obj[key] = transformKeysRecursively(
+                                    value as Record<string, any>
+                                );
                             } else {
                                 // Handle primitive values
                                 if (key.includes('_')) {
@@ -254,10 +306,10 @@ export const loginUser = createAsyncThunk(
             //************************************** */
             //*  load perms
             //*************************************** */
-            let orgData = {};
-            let permissions = [];
-            let thisRole = null;
-            let activeOrg = {};
+            let orgData: any = {};
+            let permissions: string[] = [];
+            let thisRole: string | null = null;
+            let activeOrg: Record<string, any> = {};
 
             if (isLimitedUser) {
                 // Limited user - no permissions, no organization access
@@ -285,23 +337,25 @@ export const loginUser = createAsyncThunk(
                     //         person?.affiliations?.items?.length,
                     // });
 
-                    if (person?.defaultOrg?.id && person?.affiliations?.items) {
-                        orgData = person.affiliations.items.filter(
-                            (a) =>
-                                a.organization?.id === person.defaultOrg.id &&
-                                a.status === 'active'
+                    const defaultOrgId = person
+                        ? (person as any).defaultOrg?.id
+                        : null;
+                    const affiliationsItems =
+                        (person as any)?.affiliations?.items ??
+                        (person as any)?.affiliations ??
+                        [];
+                    if (defaultOrgId && Array.isArray(affiliationsItems)) {
+                        orgData = (affiliationsItems as unknown[]).filter(
+                            (a: unknown) => {
+                                const aff = a as any;
+                                return (
+                                    aff?.organization?.id === defaultOrgId &&
+                                    aff?.status === 'active'
+                                );
+                            }
                         );
-                    } else if (
-                        person?.defaultOrg?.id &&
-                        person?.affiliations &&
-                        Array.isArray(person.affiliations)
-                    ) {
-                        // Fallback: try flat affiliations array structure
-                        orgData = person.affiliations.filter(
-                            (a) =>
-                                a.organizationId === person.defaultOrg.id &&
-                                a.status === 'active'
-                        );
+                    } else {
+                        orgData = [];
                     }
                     //todo continued debugging when user is NOT limited
                     // console.log('🔍 Login Debug - orgData:', orgData);
@@ -329,8 +383,7 @@ export const loginUser = createAsyncThunk(
                 //* **************************************
                 //*  need to set activeOrg
                 //* **************************************
-                let client = {};
-                if (orgData.length > 0) {
+                if (Array.isArray(orgData) && orgData.length > 0) {
                     //* affiliation found...
                     activeOrg = {
                         id: person?.defaultOrg?.id,
@@ -368,16 +421,20 @@ export const loginUser = createAsyncThunk(
             };
 
             return results;
-        } catch (error) {
-            // Check if this is our specific Clerk user not found error
+        } catch (error: unknown) {
+            const e = error as any;
+            const message = e?.message || String(e);
             if (
-                error.message &&
-                error.message.includes('CLERK_USER_NOT_FOUND')
+                typeof message === 'string' &&
+                message.includes('CLERK_USER_NOT_FOUND')
             ) {
                 throw new Error(
                     'User authenticated but not found in system. Please contact support.'
                 );
-            } else if (error.message && error.message.includes('TOKEN_ERROR')) {
+            } else if (
+                typeof message === 'string' &&
+                message.includes('TOKEN_ERROR')
+            ) {
                 throw new Error(
                     'Authentication token error. Please try again or contact support.'
                 );
@@ -389,9 +446,9 @@ export const loginUser = createAsyncThunk(
         }
     }
 );
-export const errorTest = createAsyncThunk(
+export const errorTest = createAsyncThunk<any, any, ThunkApiConfig>(
     'user/errorTest',
-    async (inputs, thunkAPI) => {
+    async (inputs: any, thunkAPI) => {
         // Simulating that code is duplicate
         const throwError = true;
         if (throwError) {
@@ -406,26 +463,29 @@ export const errorTest = createAsyncThunk(
  * Thunk to update permissions for the active organization in the user profile.
  * It reads the current profile from state, computes permissions, and updates the profile.
  */
-export const updateActiveOrgPermissions = createAsyncThunk(
-    'user/updateActiveOrgPermissions',
-    async (_, { getState }) => {
-        const { profile } = getState().user;
-        if (!profile?.affiliations || !profile?.activeOrg?.id) return [];
+export const updateActiveOrgPermissions = createAsyncThunk<
+    string[],
+    void,
+    ThunkApiConfig
+>('user/updateActiveOrgPermissions', async (_, { getState }) => {
+    const state = getState();
+    const { profile } = state.user as any;
+    if (!profile?.affiliations || !profile?.activeOrg?.id) return [];
 
-        const orgId = profile.activeOrg.id;
-        const permissions = profile.affiliations
-            .filter(
-                (aff) => aff.organizationId === orgId && aff.status === 'active'
-            )
-            .map((aff) => aff.role)
-            .sort((a, b) => a.localeCompare(b));
+    const orgId = profile.activeOrg.id;
+    const permissions = (profile.affiliations as any[])
+        .filter(
+            (aff: any) =>
+                aff.organizationId === orgId && aff.status === 'active'
+        )
+        .map((aff: any) => aff.role)
+        .sort((a: string, b: string) => a.localeCompare(b));
 
-        return permissions;
-    }
-);
-export const saveUserProfile = createAsyncThunk(
+    return permissions;
+});
+export const saveUserProfile = createAsyncThunk<any, any, ThunkApiConfig>(
     'user/saveUserProfile',
-    async (inputs, thunkAPI) => {
+    async (inputs: any, thunkAPI) => {
         try {
             // inputs should now be { userProfile, apiToken, perms } OR just the profile data
 
@@ -433,7 +493,11 @@ export const saveUserProfile = createAsyncThunk(
             // or old format (just the profile data)
             let userProfile, apiToken, perms;
 
-            if (inputs && typeof inputs === 'object' && inputs.userProfile) {
+            if (
+                inputs &&
+                typeof inputs === 'object' &&
+                'userProfile' in inputs
+            ) {
                 // New format: { userProfile, apiToken, perms }
                 userProfile = inputs.userProfile;
                 apiToken = inputs.apiToken;
@@ -442,9 +506,9 @@ export const saveUserProfile = createAsyncThunk(
                 // Old/simple format: just the profile data
                 userProfile = inputs;
                 // Get current auth state from Redux to preserve it
-                const currentState = thunkAPI.getState();
-                apiToken = currentState.user?.apiToken || null;
-                perms = currentState.user?.perms || [];
+                const currentState = thunkAPI.getState() as RootState;
+                apiToken = (currentState.user as any)?.apiToken || null;
+                perms = (currentState.user as any)?.perms || [];
             }
 
             const inputValues = {
@@ -455,36 +519,41 @@ export const saveUserProfile = createAsyncThunk(
 
             return inputValues;
         } catch (error) {
-            printObject('UT:436-->ERROR saveUserProfile', inputs);
+            printObject('UT:436-->ERROR saveUserProfile', { inputs, error });
             // Rethrow the error to let createAsyncThunk handle it
             throw new Error('UT:438-->Failed to saveUserProfile thunk');
         }
     }
 );
 
-export const changeOrg = createAsyncThunk(
+export const changeOrg = createAsyncThunk<any, any, ThunkApiConfig>(
     'user/changeOrg',
-    async (inputs, thunkAPI) => {
+    async (inputs: any, thunkAPI) => {
         //* ------------------------------------
         //* inputs will be a new userProfile
         //* ------------------------------------
         const theProfile = inputs;
         try {
             //      set activeOrg based on profile defaultOrg and affiliations
-            let clientData = {};
+            let clientData: any[] = [];
             if (theProfile?.defaultOrg?.id) {
-                clientData = theProfile.affiliations.items.filter(
-                    (a) => a.organization.id === theProfile.defaultOrg.id
-                );
+                const items = (theProfile.affiliations?.items ||
+                    []) as unknown[];
+                clientData = items.filter(
+                    (a: unknown) =>
+                        (a as any)?.organization?.id ===
+                        theProfile.defaultOrg.id
+                ) as any[];
             }
-            let perms = [];
-            clientData.forEach((cd) => {
-                perms.push(cd.role);
+            let perms: string[] = [];
+            clientData.forEach((cd: unknown) => {
+                const c = cd as any;
+                perms.push(c.role);
             });
-            let client = {};
-            let activeOrg = {};
+            let client: any = {};
+            let activeOrg: any = {};
             //* affiliation found...
-            client = clientData[0];
+            client = clientData[0] || {};
             activeOrg = {
                 id: client.organization.id,
                 code: client.organization.code,
@@ -507,9 +576,13 @@ export const changeOrg = createAsyncThunk(
     }
 );
 
-export const changeActiveOrg = createAsyncThunk(
+export const changeActiveOrg = createAsyncThunk<
+    any,
+    { profile: any; newActiveOrg: any },
+    ThunkApiConfig
+>(
     'user/changeActiveOrg',
-    async (inputs, thunkAPI) => {
+    async (inputs: { profile: any; newActiveOrg: any }, thunkAPI) => {
         //* ------------------------------------
         //* Changes only the activeOrg without
         //* updating the database default
@@ -528,7 +601,7 @@ export const changeActiveOrg = createAsyncThunk(
             };
 
             // Extract permissions for the new active org
-            let perms = [];
+            let perms: string[] = [];
             console.log(
                 '🔄 UT:changeActiveOrg-->Extracting permissions for org:',
                 newActiveOrg.id
@@ -542,35 +615,38 @@ export const changeActiveOrg = createAsyncThunk(
                 updatedProfile?.affiliations &&
                 Array.isArray(updatedProfile.affiliations)
             ) {
-                updatedProfile.affiliations.forEach((aff, index) => {
-                    console.log(
-                        `🔍 UT:changeActiveOrg-->Affiliation ${index}:`,
-                        {
-                            orgId: aff.organizationId,
-                            targetOrgId: newActiveOrg.id,
-                            role: aff.role,
-                            status: aff.status,
-                            matches: aff.organizationId === newActiveOrg.id,
-                            isActive: aff.status === 'active',
-                        }
-                    );
+                updatedProfile.affiliations.forEach(
+                    (aff: unknown, index: number) => {
+                        const a = aff as any;
+                        console.log(
+                            `🔍 UT:changeActiveOrg-->Affiliation ${index}:`,
+                            {
+                                orgId: a.organizationId,
+                                targetOrgId: newActiveOrg.id,
+                                role: a.role,
+                                status: a.status,
+                                matches: a.organizationId === newActiveOrg.id,
+                                isActive: a.status === 'active',
+                            }
+                        );
 
-                    if (aff.organizationId === newActiveOrg.id) {
-                        if (aff.status === 'active') {
-                            console.log(
-                                '✅ UT:changeActiveOrg-->Adding permission:',
-                                aff.role
-                            );
+                        if (a.organizationId === newActiveOrg.id) {
+                            if (a.status === 'active') {
+                                console.log(
+                                    '✅ UT:changeActiveOrg-->Adding permission:',
+                                    a.role
+                                );
 
-                            perms.push(aff.role);
-                        } else {
-                            console.log(
-                                '❌ UT:changeActiveOrg-->Skipping inactive affiliation:',
-                                aff.role
-                            );
+                                perms.push(a.role);
+                            } else {
+                                console.log(
+                                    '❌ UT:changeActiveOrg-->Skipping inactive affiliation:',
+                                    a.role
+                                );
+                            }
                         }
                     }
-                });
+                );
             } else {
                 console.log(
                     '❌ UT:changeActiveOrg-->No affiliations found in profile'
@@ -603,9 +679,13 @@ export const changeActiveOrg = createAsyncThunk(
     }
 );
 
-export const updatePermissions = createAsyncThunk(
+export const updatePermissions = createAsyncThunk<
+    string[],
+    { affiliations: any[]; orgId: string },
+    ThunkApiConfig
+>(
     'user/updatePermissions',
-    async (inputs, thunkAPI) => {
+    async (inputs: { affiliations: any[]; orgId: string }, thunkAPI) => {
         //* ------------------------------
         //* expecting...
         //* inputs.affiliations as []
@@ -613,15 +693,16 @@ export const updatePermissions = createAsyncThunk(
         //* ------------------------------
         try {
             printObject('UT:530-->inputs:\n', inputs);
-            const affiliations = inputs.affiliations;
+            const affiliations = inputs.affiliations as unknown[];
             const orgId = inputs.orgId;
-            let clientData = {};
+            let clientData: any[] = [];
             clientData = affiliations.filter(
-                (a) => a.organization.id === orgId
-            );
-            let perms = [];
-            clientData.forEach((cd) => {
-                perms.push(cd.role);
+                (a: unknown) => (a as any)?.organization?.id === orgId
+            ) as any[];
+            let perms: string[] = [];
+            clientData.forEach((cd: unknown) => {
+                const c = cd as any;
+                perms.push(c.role);
             });
             printObject('UT:546-->perms:\n', perms);
             return perms;
@@ -633,26 +714,34 @@ export const updatePermissions = createAsyncThunk(
         }
     }
 );
-export const getUserProfile = createAsyncThunk(
-    'user/getUserProfile',
-    async (_, { getState }) => {
-        const { profile } = getState().user;
-        return profile;
-    }
-);
-export const getPerms = createAsyncThunk(
+export const getUserProfile = createAsyncThunk<
+    UserProfile | null,
+    void,
+    ThunkApiConfig
+>('user/getUserProfile', async (_, { getState }) => {
+    const state = getState() as RootState;
+    return (state.user as any).profile || null;
+});
+export const getPerms = createAsyncThunk<string[], void, ThunkApiConfig>(
     'user/getPerms',
     async (_, { getState }) => {
-        const { perms } = getState().user;
-        return perms;
+        const state = getState() as RootState;
+        return (state.user as any).perms || [];
     }
 );
 //*************************************************
 //* THIS UPDATES THE Hero Message
 //*************************************************
-export const saveHeroMessage = createAsyncThunk(
+export const saveHeroMessage = createAsyncThunk<
+    any,
+    { api_token: any; organization_id: string; message: string },
+    ThunkApiConfig
+>(
     'meetings/saveHeroMessage',
-    async (inputs, thunkAPI) => {
+    async (
+        inputs: { api_token: any; organization_id: string; message: string },
+        thunkAPI
+    ) => {
         try {
             //* ************************************
             // api_token
@@ -666,12 +755,15 @@ export const saveHeroMessage = createAsyncThunk(
                 organization_id,
                 message
             );
-            if (updatedOrganization.status === 200) {
+            if (
+                isSuccessResponse<any>(updatedOrganization) &&
+                updatedOrganization.status === 200
+            ) {
                 //this goes to slice
                 return {
                     status: updatedOrganization.status,
                     organization_id: organization_id,
-                    message: updatedOrganization?.message,
+                    message: (updatedOrganization as any)?.message,
                     data: updatedOrganization.data,
                 };
             }
@@ -695,7 +787,10 @@ export const saveHeroMessage = createAsyncThunk(
 //*************************************************
 //* THIS UPDATES THE Hero Message
 //*************************************************
-export const getUserProfilePic = (profile) => {
+export const getUserProfilePic = (profile: {
+    id: string;
+    picture: string | null;
+}) => {
     //* **********************************************
     // this formulates the userProfile.profilePic value
     //* **********************************************

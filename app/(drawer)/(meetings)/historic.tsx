@@ -7,12 +7,12 @@ import {
     fetchAllMeetings,
 } from '@features/meetings/meetingsThunks';
 import { useFocusEffect } from '@react-navigation/native';
-import type { Meeting } from '@types/interfaces';
 import { useAppDispatch, useAppSelector } from '@utils/hooks';
 import React, { useState } from 'react';
 import { FlatList, Modal, StatusBar, Text, View } from 'react-native';
 import { Surface } from 'react-native-paper';
 import { useSelector } from 'react-redux';
+import type { Meeting } from '../../../types/interfaces';
 interface DeleteInputType {
     api_token: any;
     organization_id: string;

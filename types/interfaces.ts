@@ -98,9 +98,9 @@ export interface Person {
     aws_location_id: string;
 }
 export interface ApiError {
-    status: number;
-    message: string;
-    details: string;
+    status?: number;
+    message?: string;
+    details?: any;
 }
 
 export interface UserProfile {

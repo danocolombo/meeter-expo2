@@ -8,8 +8,9 @@ import {
 } from '@features/meetings/meetingsThunks';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '@utils/hooks';
+import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useState } from 'react';
-import { FlatList, Modal, StatusBar, Text, View } from 'react-native';
+import { FlatList, Modal, Text, View } from 'react-native';
 import { Surface } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import type { Meeting } from '../../../types/interfaces';

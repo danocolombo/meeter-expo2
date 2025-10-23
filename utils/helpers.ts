@@ -1,7 +1,7 @@
 import { PHONE_REGX } from '@constants/meeter';
-import { UserProfile } from '../types/interfaces';
 import { format } from 'date-fns';
 import * as Crypto from 'expo-crypto';
+import { UserProfile } from '../types/interfaces';
 
 ////import { format } from 'date-fns';
 
@@ -554,4 +554,26 @@ export function getPermissionsForActiveOrg(profile: UserProfile): string[] {
         )
         .map((aff) => aff.role)
         .sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Normalize a permissions value into a string[].
+ * Accepts: undefined, null, string (comma-separated), string[] and returns a
+ * stable array (possibly empty). This is useful before calling .includes()
+ * in UI code.
+ */
+export function normalizePermissions(
+    input?: string[] | string | null
+): string[] {
+    if (!input) return [];
+    if (Array.isArray(input)) return input.filter(Boolean).map(String);
+    // it's a string
+    if (typeof input === 'string') {
+        // split on commas and trim
+        return input
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0);
+    }
+    return [];
 }

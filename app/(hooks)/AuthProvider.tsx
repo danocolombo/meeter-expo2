@@ -1,16 +1,22 @@
 import React, { createContext, useContext, useState } from 'react';
 
-const AuthContext = createContext(null);
+type AuthContextType = {
+    user: any;
+    handleLoginUser: (login: string, password: string) => Promise<void>;
+    setUser: React.Dispatch<React.SetStateAction<any>>;
+} | null;
 
-export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null);
+const AuthContext = createContext<AuthContextType>(null);
 
-    const handleLoginUser = async (login, password) => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+    const [user, setUser] = useState<any>(null);
+
+    const handleLoginUser = async (login: string, password: string) => {
         // ...your login logic here...
         // setUser({ ...userData, isAuthenticated: true });
     };
 
-    const value = { user, handleLoginUser, setUser };
+    const value: AuthContextType = { user, handleLoginUser, setUser };
 
     return (
         <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

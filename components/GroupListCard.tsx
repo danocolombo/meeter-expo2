@@ -1,6 +1,5 @@
 import theme from '@assets/Colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import type { FullGroup, Group } from '@types/interfaces';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {
@@ -13,6 +12,7 @@ import {
 import { Badge } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteGroupFromMeeting } from '../features/meetings/meetingsThunks';
+import type { FullGroup, Group } from '../types/interfaces';
 import type { AppDispatch } from '../utils/store';
 type GroupListCardProps = {
     group: Group | FullGroup;

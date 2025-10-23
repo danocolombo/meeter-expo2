@@ -3,7 +3,6 @@ import themedStyles from '@assets/Styles';
 import DateStack from '@components/ui/DateStack';
 import Tooltip from '@components/ui/ToolTip';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Meeting } from '@types/interfaces';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -15,6 +14,7 @@ import {
 } from 'react-native';
 import { Badge } from 'react-native-paper';
 import { useSelector } from 'react-redux';
+import { Meeting } from '../../types/interfaces';
 
 interface MeetingListCardProps {
     meeting: Meeting;

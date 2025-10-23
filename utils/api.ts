@@ -38,20 +38,22 @@ export const getPersonBySub = async (id: string): Promise<Person> => {
     }
     return {
         id: '',
-        first_name: '',
-        last_name: '',
-        email: '',
         created_at: '',
         updated_at: '',
         sub: '',
         username: '',
+        first_name: '',
+        last_name: '',
+        email: '',
         phone: '',
-        avatar: '',
-        bio: '',
-        organization_id: '',
-        role: '',
-        status: '',
-        // Add any other required fields from the Person interface with default values
+        shirt: '',
+        birthday: '',
+        picture: '',
+        default_org_id: '',
+        location_id: '',
+        aws_id: '',
+        aws_def_org_id: '',
+        aws_location_id: '',
     };
 };
 
@@ -77,9 +79,16 @@ export const getPersonAffiliations = async (id: string): Promise<Person> => {
 
 export const getOrganizationAffiliations = async (
     id: string
-): Promise<Product> => {
-    const response = await fetch(`${API_URL}/affiliations/organization/${id}`);
-    return response.json();
+): Promise<Affiliation[]> => {
+    const response = await fetch(`${API_URL}/affiliations/organization/${id}`, {
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${API_TOKEN}`,
+        },
+    });
+    const json = await response.json();
+    if (json?.status === 200 && Array.isArray(json.data)) return json.data;
+    return [];
 };
 
 //      ########################################
@@ -125,11 +134,11 @@ export const getActiveMeetings = async (id: string): Promise<Meeting[]> => {
             meal: '',
             meal_contact: '',
             meal_count: 0,
-            newcomers_count: '',
+            newcomers_count: 0,
             notes: '',
             nursery_contact: '',
             nursery_count: 0,
-            resource_contact: 0,
+            resource_contact: '',
             security_contact: '',
             setup_contact: '',
             support_contact: '',
@@ -194,11 +203,11 @@ export const getAMeeting = async (
         meal: '',
         meal_contact: '',
         meal_count: 0,
-        newcomers_count: '',
+        newcomers_count: 0,
         notes: '',
         nursery_contact: '',
         nursery_count: 0,
-        resource_contact: 0,
+        resource_contact: '',
         security_contact: '',
         setup_contact: '',
         support_contact: '',

@@ -1,6 +1,6 @@
-import { FullMeeting } from '@/types/interfaces';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { FullMeeting } from '../types/interfaces';
 
 interface MeetingMealInfoProps {
     meeting: FullMeeting;

@@ -24,8 +24,8 @@ const CustomButton: React.FC<CustomButtonProps> = ({
     bgColor,
     fgColor,
 }) => {
-    let cStyle;
-    let tStyle;
+    let cStyle: string | undefined;
+    let tStyle: string | undefined;
     switch (type) {
         case 'PRIMARY':
             cStyle = 'container_PRIMARY';
@@ -61,14 +61,14 @@ const CustomButton: React.FC<CustomButtonProps> = ({
                     onPress={onPress}
                     style={[
                         styles.container,
-                        styles[cStyle],
+                        cStyle ? (styles as any)[cStyle] : undefined,
                         bgColor ? { backgroundColor: bgColor } : {},
                     ]}
                 >
                     <Text
                         style={[
                             styles.text,
-                            styles[tStyle],
+                            tStyle ? (styles as any)[tStyle] : undefined,
                             fgColor ? { color: fgColor } : {},
                         ]}
                     >

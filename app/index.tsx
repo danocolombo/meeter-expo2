@@ -25,7 +25,7 @@ export default function Index() {
 
             // Only fetch meetings and login if authenticated
             const apiToken = process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
-            const org_id = process.env.EXPO_PUBLIC_TEST_ORGANIZATION_ID;
+            const org_id = process.env.EXPO_PUBLIC_TEST_ORGANIZATION_ID ?? '';
             if (apiToken && user) {
                 dispatch<any>(fetchAllMeetings({ apiToken, org_id }));
                 dispatch<any>(loginUser({ inputs: user, apiToken }));

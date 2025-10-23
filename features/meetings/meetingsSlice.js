@@ -9,7 +9,6 @@ import {
     fetchAllMeetings,
     fetchMeetingDetailsById,
     getAllMeetings,
-    getSpecificMeeting,
     loadHistoricPage,
     refreshActiveMeetings,
     saveCurrentMeetingAndGroups,
@@ -228,24 +227,6 @@ export const meetingsSlice = createSlice({
                     state.isLoading = false;
                 }
             )
-            .addCase(getSpecificMeeting.pending, (state) => {
-                state.isLoading = true;
-            })
-            .addCase(getSpecificMeeting.fulfilled, (state, action) => {
-                const mtg = state.meetings.filter(
-                    (m) => m.id === action.payload
-                );
-                state.specificMeeting = { ...mtg };
-                state.isLoading = false;
-                return state;
-            })
-            .addCase(getSpecificMeeting.rejected, (state, action) => {
-                printObject(
-                    'MS:219-->REJECTED:action.payload:\n',
-                    action.payload
-                );
-                state.isLoading = false;
-            })
             .addCase(getAllMeetings.pending, (state) => {
                 state.isLoading = true;
             })

@@ -68,6 +68,7 @@ export async function fetchActiveMeetings(
                 const currentPage = response?.data?.data?.current_page;
                 const lastPage = response?.data?.data?.last_page;
                 const ourResults = {
+                    status: 200,
                     data: meetings,
                     currentPage: currentPage,
                     lastPage: lastPage,
@@ -122,24 +123,28 @@ export async function fetchHistoricMeetings(
                 headers: {
                     Authorization: `Bearer ${API_TOKEN}`,
                 },
+                validateStatus: function (status) {
+                    return status === 200 || status === 404; // Accept 404 as valid "no data"
+                },
             })
             .then((response) => {
                 if (response?.data?.status === 404) {
-                    const customError: ApiError = {
+                    const ourResults = {
+                        data: [],
+                        currentPage: 1,
+                        lastPage: 1,
                         status: 404,
-                        message: response.data.message,
-                        details: {
-                            org: response.data.org,
-                            data: [],
-                        },
+                        message: response.data?.message,
+                        org: response.data?.org,
                     };
-                    reject(customError);
+                    resolve(ourResults);
                     return;
                 }
                 const meetings = response?.data?.data?.data;
                 const currentPage = response?.data?.data?.current_page;
                 const lastPage = response?.data?.data?.last_page;
                 const ourResults = {
+                    status: 200,
                     data: meetings,
                     currentPage: currentPage,
                     lastPage: lastPage,
@@ -166,7 +171,9 @@ export async function fetchMeetingDetails(
     api_token: any,
     organization_id: string,
     meeting_id: string
-): Promise<{ data: FullMeeting } | ApiError> {
+): Promise<
+    { status: number; data: FullMeeting | Record<string, never> } | ApiError
+> {
     return new Promise((resolve, reject) => {
         const api2use = API_URL + `/meeting/${organization_id}/${meeting_id}`;
 
@@ -175,13 +182,18 @@ export async function fetchMeetingDetails(
                 headers: {
                     Authorization: `Bearer ${API_TOKEN}`,
                 },
+                validateStatus: function (status) {
+                    return status === 200 || status === 404;
+                },
             })
             .then((response) => {
-                // printObject('🔶🔶🔶 MAPI:148-->response:\n', response);
+                // If the meeting was not found, resolve with 404 and empty data
+                if (response.status === 404 || response?.data?.status === 404) {
+                    resolve({ status: 404, data: {} });
+                    return;
+                }
                 const meeting = response?.data;
-                resolve({
-                    data: meeting,
-                });
+                resolve({ status: 200, data: meeting });
             })
             .catch((error) => {
                 console.error('API call failed:', error);
@@ -191,7 +203,10 @@ export async function fetchMeetingDetails(
                         // More specific error details based on the actual error response
                         ...(error.response && error.response.data),
                     },
+                    status: 500,
                 };
+                // Resolve with an ApiError-like object by rejecting so callers can
+                // decide, but this typically indicates a network/server failure.
                 reject(customError);
             });
     });
@@ -200,7 +215,9 @@ export async function fetchMeetingDetailsOLD(
     apiToken: any,
     org_id: string,
     meeting_id: string
-): Promise<{ meeting: FullMeeting; groups: FullGroup[] } | ApiError> {
+): Promise<
+    { data: FullMeeting[]; currentPage: any; lastPage: any } | ApiError
+> {
     return new Promise((resolve, reject) => {
         console.log('🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶');
         console.log('MAPI:93->apiToken:', apiToken);
@@ -246,20 +263,21 @@ export async function fetchMeetingDetailsOLD(
         }
     });
 }
-type CreateNewFullGroup = {
+// shape for creating a new group
+type CreateNewGroupType = {
     meeting_id: string;
     title: string;
     location: string;
     gender: string;
     attendance: number;
-    facilitator: string;
-    cofacilitator: string;
-    notes: string;
-    grp_comp_key: string;
+    facilitator?: string | null;
+    cofacilitator?: string | null;
+    notes?: string | null;
+    grp_comp_key?: string | null;
 };
 export async function createNewGroup(
     apiToken: any,
-    meeting: FullMeeting,
+    meetingId: string,
     new_group: CreateNewGroupType
 ): Promise<{ status: number; data: FullGroup } | ApiError> {
     return new Promise((resolve, reject) => {
@@ -319,8 +337,8 @@ export async function createNewMeeting(
 ): Promise<{ status: number; data: FullMeeting } | ApiError> {
     return new Promise((resolve, reject) => {
         // printObject('MAPI:209->meeting:', meeting);
-        function convertKeysToSnakeCase(obj) {
-            const newObj = {};
+        function convertKeysToSnakeCase(obj: Record<string, any>) {
+            const newObj: Record<string, any> = {};
             for (const key in obj) {
                 const newKey = key
                     .replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
@@ -485,8 +503,8 @@ export async function updateTheMeeting(
     meeting: any
 ): Promise<UpdateMeetingType | ApiError> {
     return new Promise((resolve, reject) => {
-        function convertKeysToSnakeCase(obj) {
-            const newObj = {};
+        function convertKeysToSnakeCase(obj: Record<string, any>) {
+            const newObj: Record<string, any> = {};
             for (const key in obj) {
                 const newKey = key
                     .replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)

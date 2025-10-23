@@ -72,6 +72,10 @@ const theme = {
         selected: '#293462',
         unSelected: '#8c8c8c',
         unSelectedText: Colors.white,
+        // aliases used throughout the app
+        inputBorder: Colors.textBoxBorderColor,
+        inputBackground: Colors.textBoxBackground,
+        error: Colors.red,
         navBarInactiveBackground: '#293462',
         navBarInactiveText: Colors.primary,
         navBarActiveBackground: Colors.primary,

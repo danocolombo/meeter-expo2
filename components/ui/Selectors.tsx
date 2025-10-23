@@ -1,5 +1,14 @@
 import theme from '@assets/Colors';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+type SelectorsProps = {
+    label?: React.ReactNode;
+    children?: React.ReactNode;
+    values: string[];
+    selectedValue: string;
+    setSelectedValue: (v: string) => void;
+    buttonUnselected?: any;
+};
+
 const Selectors = ({
     label,
     children,
@@ -7,7 +16,7 @@ const Selectors = ({
     selectedValue,
     setSelectedValue,
     buttonUnselected,
-}) => {
+}: SelectorsProps) => {
     const Colors = theme.colors;
     const bUnselected = {
         paddingHorizontal: 8,
