@@ -25,6 +25,7 @@ import {
 import { Surface } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchMeetingDetailsById } from '../../features/meetings/meetingsThunks';
+import { refreshApiToken } from '../../features/user/userThunks';
 import type { AppDispatch } from '../../utils/store';
 const Colors = theme.colors;
 
@@ -90,17 +91,27 @@ const MeetingDetails = () => {
     }, [orgParam]);
 
     const org_id = orgIdFromParams || user?.profile?.activeOrg?.id;
-    const api_token_from_user =
-        user?.apiToken || user?.token || user?.profile?.apiToken;
-    // Fallback to public API token used in some lists (historic/active) so
-    // users who navigated from a list that used env tokens can still view
-    // meeting details.
-    const api_token =
-        api_token_from_user || process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
+    // If the calling list passed a serialized meeting object in params, use it
+    // to render immediately without fetching from the API.
+    const routeMeetingParam = useLocalSearchParams<{ meeting?: string }>()
+        .meeting;
+    // Use only the user's stored API token plainTextToken. If absent, do not
+    // attempt to call the API and show a message to the user.
+    const api_token: string | undefined =
+        user?.profile?.apiToken?.plainTextToken;
     const dispatch: AppDispatch = useDispatch();
     // const defaultGroups = useSelector((state) => state.groups.defaultGroups);
     //const newPerms = useSelector((state) => state.user.perms);
-    const [meeting, setMeeting] = React.useState<FullMeeting | null>(null);
+    const [meeting, setMeeting] = React.useState<FullMeeting | null>(() => {
+        if (routeMeetingParam) {
+            try {
+                return JSON.parse(routeMeetingParam as string) as FullMeeting;
+            } catch {
+                // fall through to null
+            }
+        }
+        return null;
+    });
     const [isLoading, setIsLoading] = React.useState(false);
     const navigation = useNavigation();
 
@@ -120,13 +131,63 @@ const MeetingDetails = () => {
 
     // Helper to refresh meeting after group delete or on mount
     const refreshMeeting = React.useCallback(async () => {
-        if (!api_token || !org_id || !id) return;
+        if (!org_id || !id) return;
+        // Determine the API token to use. Prefer the one in the user slice, but
+        // if missing attempt to refresh it via the refresh utility which will
+        // dispatch an update to the user slice and also return the new token.
+        let tokenToUse: string | undefined = api_token;
+        if (!tokenToUse) {
+            try {
+                // Dispatch the refresh thunk which will update the user slice
+                const refreshed = await dispatch(
+                    refreshApiToken({ profile: user?.profile }) as any
+                ).unwrap();
+
+                if (
+                    refreshed &&
+                    typeof refreshed === 'object' &&
+                    'plainTextToken' in refreshed
+                ) {
+                    tokenToUse = (refreshed as any).plainTextToken;
+                } else if (typeof refreshed === 'string') {
+                    tokenToUse = refreshed;
+                } else if (user?.profile?.apiToken?.plainTextToken) {
+                    // If the thunk updated the slice, the selector `user` will
+                    // reflect the new token; prefer that as a fallback.
+                    tokenToUse = user.profile.apiToken.plainTextToken;
+                }
+            } catch (e) {
+                console.error('Failed to refresh API token:', e);
+                setError(
+                    'API token not available for this user. Please sign in or acquire a valid token.'
+                );
+                setMeeting(null);
+                setGroups([]);
+                setIsLoading(false);
+                return;
+            }
+        }
+        if (!tokenToUse) {
+            setError(
+                'API token not available for this user. Please sign in or acquire a valid token.'
+            );
+            setMeeting(null);
+            setGroups([]);
+            return;
+        }
         setIsLoading(true);
         setError(null);
         try {
+            // Debug: record that we're attempting fetch and whether a token is present
+            console.info('MeetingDetails: fetching', {
+                hasToken: !!tokenToUse,
+                org_id,
+                id,
+            });
+
             const result = await dispatch(
                 fetchMeetingDetailsById({
-                    apiToken: api_token,
+                    apiToken: tokenToUse,
                     organizationId: org_id,
                     meetingId: id,
                 })
@@ -157,13 +218,37 @@ const MeetingDetails = () => {
         } finally {
             setIsLoading(false);
         }
+        // We intentionally avoid including the full `user` object here because
+        // updating the user's profile (for example when refreshing the api token)
+        // would change the object identity and re-create the callback, causing
+        // the focus effect to re-subscribe and re-run while the screen is still
+        // focused. Use only the specific dependencies required.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [api_token, org_id, id, dispatch]);
 
     // Always use Redux thunk for fetching meeting details
     useFocusEffect(
         React.useCallback(() => {
+            // If we have a meeting already from the route params, avoid the
+            // backend fetch; otherwise fetch or refresh as before.
+            if (meeting) {
+                // Ensure groups and historic flags are initialized from the
+                // provided meeting object.
+                try {
+                    const fetchedGroups: Group[] = meeting.groups || [];
+                    fetchedGroups.sort(compareGroups);
+                    setGroups(fetchedGroups);
+                    const meetingDate = new Date(meeting.meeting_date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    setHistoric(meetingDate < today);
+                } catch {
+                    // ignore parse errors
+                }
+                return;
+            }
             refreshMeeting();
-        }, [refreshMeeting])
+        }, [refreshMeeting, meeting])
     );
 
     // Map meeting_type to display string

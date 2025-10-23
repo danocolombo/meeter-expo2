@@ -45,6 +45,9 @@ const MeetingListCard = ({
                             id: meeting.id,
                             org_id: meeting.organization_id,
                             origin: origin || '',
+                            // Pass the meeting object so the details screen can
+                            // render immediately without a backend fetch.
+                            meeting: JSON.stringify(meeting),
                         },
                     })
                 }

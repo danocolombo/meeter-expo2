@@ -5,6 +5,8 @@ import { ApiError, Person, UserProfile } from '../../types/interfaces';
 import type { RootState } from '../../utils/store';
 import { fetchPerson, getAPIToken, updateHeroMessage } from './userAPI';
 
+// Lightweight ThunkAPI typing used across these thunks
+// Proper RTK ThunkApi config so createAsyncThunk infers getState correctly
 type ThunkApiConfig = {
     state: RootState;
     dispatch: any;
@@ -446,19 +448,55 @@ export const loginUser = createAsyncThunk<
         }
     }
 );
-export const errorTest = createAsyncThunk<any, any, ThunkApiConfig>(
-    'user/errorTest',
-    async (inputs: any, thunkAPI) => {
-        // Simulating that code is duplicate
-        const throwError = true;
-        if (throwError) {
-            // Directly throw the error for code 3, since errorCode is always 3
-            throw new Error('03: duplicate');
-        } else {
-            return { results: 'PASS' };
+
+export const errorTest = createAsyncThunk('user/errorTest', async () => {
+    // Simple test thunk used by the legacy user slice for QA hooks
+    return { results: 'PASS' };
+});
+
+/**
+ * Thunk to refresh the API token for the current user.
+ * If `profile` is provided it will use that; otherwise it will read the
+ * profile from the current state.
+ */
+export const refreshApiToken = createAsyncThunk<
+    any,
+    { profile?: any } | void,
+    ThunkApiConfig
+>('user/refreshApiToken', async (args: any | void, thunkAPI) => {
+    try {
+        const profile =
+            (args && args.profile) ||
+            (thunkAPI.getState() as RootState).user.profile;
+        if (!profile) {
+            return thunkAPI.rejectWithValue(
+                'No profile available to refresh token'
+            );
         }
+        const username = profile.username || profile.firstName || profile.email;
+        const email = profile.email || '';
+        const sub = profile.sub || profile.awsId || '';
+        if (!username || !sub) {
+            return thunkAPI.rejectWithValue('Insufficient profile info');
+        }
+
+        const tokenResponse = await getAPIToken(username, email, sub);
+        if (
+            tokenResponse &&
+            typeof tokenResponse === 'object' &&
+            'status' in (tokenResponse as any) &&
+            (tokenResponse as any).status === 200
+        ) {
+            const token = (tokenResponse as any).data;
+            // dispatch the slice action to update the token in state
+            thunkAPI.dispatch({ type: 'user/setAPIToken', payload: token });
+            return token;
+        }
+        return thunkAPI.rejectWithValue(tokenResponse);
+    } catch (err: any) {
+        return thunkAPI.rejectWithValue(String(err));
     }
-);
+});
 /**
  * Thunk to update permissions for the active organization in the user profile.
  * It reads the current profile from state, computes permissions, and updates the profile.

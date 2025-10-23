@@ -43,7 +43,9 @@ export async function fetchActiveMeetings(
             .get(api2use, {
                 headers: {
                     'Content-type': 'application/json; charset=UTF-8',
-                    Authorization: `Bearer ${API_TOKEN}`,
+                    // Prefer the explicit apiToken passed in; fall back to the
+                    // build-time environment token if not provided.
+                    Authorization: `Bearer ${apiToken || API_TOKEN}`,
                 },
                 validateStatus: function (status) {
                     return status === 200 || status === 404; // Accept both 200 and 404 as valid
@@ -121,7 +123,8 @@ export async function fetchHistoricMeetings(
         axios
             .get(api2use, {
                 headers: {
-                    Authorization: `Bearer ${API_TOKEN}`,
+                    // Prefer the explicit apiToken passed in; fall back to env token
+                    Authorization: `Bearer ${apiToken || API_TOKEN}`,
                 },
                 validateStatus: function (status) {
                     return status === 200 || status === 404; // Accept 404 as valid "no data"
@@ -180,7 +183,9 @@ export async function fetchMeetingDetails(
         axios
             .get(api2use, {
                 headers: {
-                    Authorization: `Bearer ${API_TOKEN}`,
+                    // Use the provided api_token (string) when available; fall back
+                    // to the environment token for backward compatibility.
+                    Authorization: `Bearer ${api_token || API_TOKEN}`,
                 },
                 validateStatus: function (status) {
                     return status === 200 || status === 404;
