@@ -56,24 +56,18 @@ const GroupListCard = ({
         <Pressable
             style={({ pressed }) => pressed && localStyle.pressed}
             onPress={() => {
-                const paramsObj: Record<string, string> = {
-                    title: group.title ?? '',
-                    location: group.location ?? '',
-                    facilitator: group.facilitator ?? '',
-                    gender: group.gender ?? '',
-                    attendance:
-                        group.attendance != null
-                            ? String(group.attendance)
-                            : '',
-                };
-                if (fromMeetingId) {
-                    paramsObj.fromMeetingId = fromMeetingId;
-                }
-                if (parentParams.org_id) {
-                    paramsObj.org_id = String(parentParams.org_id);
-                }
-                const params = new URLSearchParams(paramsObj).toString();
-                router.push(`/(group)/${group.id}?${params}`);
+                // Pass the full group object as a param
+                // Use string route and pass group object as query params
+                router.push({
+                    pathname: '/(group)/[id]',
+                    params: {
+                        ...group,
+                        fromMeetingId,
+                        org_id: parentParams.org_id
+                            ? String(parentParams.org_id)
+                            : undefined,
+                    },
+                });
             }}
         >
             <View style={localStyle.rootContainer}>

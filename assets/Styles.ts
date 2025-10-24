@@ -6,7 +6,7 @@ import {
     screenMarginVertical,
     screenPaddingHorizontal,
     screenPaddingVertical,
-} from '@constants/metrics';
+} from './../constants/metrics';
 const themedStyles: { [key: string]: any } = {
     activityOverlay: {
         position: 'absolute' as 'absolute',
@@ -115,6 +115,12 @@ const themedStyles: { [key: string]: any } = {
         color: theme.colors.critical,
         marginBottom: 8,
     },
+    errorText: {
+        color: theme.colors.critical,
+        marginTop: 4,
+        marginBottom: 4,
+        fontSize: 14,
+    },
     firstRow: {
         flexDirection: 'row' as 'row',
         alignItems: 'center' as 'center',
@@ -139,6 +145,43 @@ const themedStyles: { [key: string]: any } = {
         fontSize: 18,
         color: theme.colors.lightText,
         paddingVertical: 0,
+    },
+    groupContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'stretch',
+    },
+    groupGenderSelectorRow: {
+        flexDirection: 'row' as 'row',
+        alignItems: 'center' as 'center',
+        justifyContent: 'center' as 'center',
+        padding: 0,
+        marginVertical: 0,
+        marginHorizontal: 0,
+    },
+    groupFormLabel: {
+        fontFamily: 'Roboto-Bold',
+        fontSize: 24,
+        color: theme.colors.lightText,
+    },
+    groupFormRow: {
+        marginBottom: 16,
+    },
+    groupGenderSelectorContainer: {
+        flex: 1,
+        alignItems: 'center' as 'center',
+    },
+    groupGenderSelectorWrapper: {
+        flexDirection: 'row' as 'row',
+        borderWidth: 2,
+        paddingTop: 5,
+        paddingBottom: 5,
+        borderColor: theme.colors.darkText, // Use the darkText variable directly, same as darkGraphic',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        backgroundColor: theme.colors.lightGraphic,
     },
     input: {
         borderWidth: 1,
@@ -438,15 +481,14 @@ const themedStyles: { [key: string]: any } = {
         marginHorizontal: screenMarginHorizontal,
         paddingVertical: rowPadding,
     },
-    rowInput: {
-        width: '100%',
-        paddingVertical: rowPadding,
-    },
-
     row1col2: {
         flexDirection: 'column' as 'column',
         marginLeft: 5,
         marginRight: 10,
+    },
+    rowInput: {
+        width: '100%',
+        paddingVertical: rowPadding,
     },
     safeAreaView: {
         flex: 1,
