@@ -2,12 +2,13 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 // import { Badge, useTheme } from 'react-native-paper';
 import theme from '@assets/Colors';
+import themedStyles from '@assets/Styles';
 import BadgeNumber from '../ui/BadgeNumber';
 const MeetingAttendance = ({ attendanceCount }) => {
     return (
         <View style={localStyles.row}>
             <View style={localStyles.detailsContainer}>
-                <Text style={localStyles.detailsRowLabel}>Attendance:</Text>
+                <Text style={themedStyles.meetingLabel}>Attendance:</Text>
             </View>
 
             <View style={localStyles.detailsBadgeContainer}>
@@ -25,12 +26,6 @@ const localStyles = StyleSheet.create({
         // borderColor: theme.colors.white,
         // borderWidth: 1,
         padding: 5,
-    },
-    detailsRowLabel: {
-        fontFamily: 'Roboto-Regular',
-        color: theme.colors.lightText,
-        fontSize: 24,
-        fontWeight: '400',
     },
     detailsContainer: { marginLeft: 20 },
     detailsBadgeContainer: {

@@ -160,9 +160,10 @@ const themedStyles: { [key: string]: any } = {
         marginHorizontal: 0,
     },
     groupFormLabel: {
-        fontFamily: 'Roboto-Bold',
-        fontSize: 24,
+        fontFamily: 'Roboto-Regular',
         color: theme.colors.lightText,
+        fontSize: 24,
+        padding: 10,
     },
     groupFormRow: {
         marginBottom: 16,
@@ -251,6 +252,13 @@ const themedStyles: { [key: string]: any } = {
         fontFamily: 'Roboto-Regular',
         color: theme.colors.darkText,
         fontSize: 20,
+    },
+    // Standard label style used across meeting detail screens
+    meetingLabel: {
+        fontFamily: 'Roboto-Regular',
+        color: theme.colors.lightText,
+        fontSize: 24,
+        fontWeight: '400',
     },
     mealWrapper: {
         flexDirection: 'row' as 'row',

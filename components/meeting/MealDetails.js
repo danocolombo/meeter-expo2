@@ -1,4 +1,5 @@
 import theme from '@assets/Colors';
+import themedStyles from '@assets/Styles';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import BadgeNumber from '../ui/BadgeNumber';
@@ -8,7 +9,7 @@ const MealDetails = ({ meal, mealContact, historic, mealCount }) => {
         <>
             <View style={localStyles.row}>
                 <View style={localStyles.detailsContainer}>
-                    <Text style={localStyles.detailsRowLabel}>
+                    <Text style={themedStyles.meetingLabel}>
                         {historic ? 'Meal:' : 'Meal Plans:'}
                     </Text>
                 </View>
@@ -26,9 +27,7 @@ const MealDetails = ({ meal, mealContact, historic, mealCount }) => {
             </View>
             <View style={localStyles.row}>
                 <View style={localStyles.detailsContainer}>
-                    <Text style={localStyles.detailsRowLabel}>
-                        Meal Contact:
-                    </Text>
+                    <Text style={themedStyles.meetingLabel}>Meal Contact:</Text>
                 </View>
                 <View style={{ flex: 1, marginHorizontal: 2 }}>
                     <Text style={localStyles.detailsRowValue}>
@@ -50,12 +49,6 @@ const localStyles = StyleSheet.create({
         marginHorizontal: 5,
     },
     detailsContainer: { marginLeft: 20 },
-    detailsRowLabel: {
-        fontFamily: 'Roboto-Regular',
-        color: theme.colors.lightText,
-        fontSize: 24,
-        fontWeight: '400',
-    },
     detailsRowValue: {
         fontFamily: 'Roboto-Regular',
         color: theme.colors.lightText,

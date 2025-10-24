@@ -441,9 +441,7 @@ const MeetingDetails = () => {
                     {Number(meeting.newcomers_count) > 0 && (
                         <View style={themedStyles.row}>
                             <View style={themedStyles.meetingDetailsContainer}>
-                                <Text
-                                    style={themedStyles.meetingDetailsRowLabel}
-                                >
+                                <Text style={themedStyles.meetingLabel}>
                                     Newcomers:
                                 </Text>
                             </View>

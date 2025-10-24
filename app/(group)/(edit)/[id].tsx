@@ -2,7 +2,6 @@ import theme from '@assets/Colors';
 import themedStyles from '@assets/Styles';
 import GenderSelectors from '@components/ui/GenderSelectors';
 import NumberInputEditable from '@components/ui/NumberInputEditable';
-import { updateGroup } from '@features/meetings/meetingsThunks';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -16,15 +15,15 @@ import {
 } from 'react-native';
 import { Surface } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
+import { updateGroup } from '../../../features/meetings/meetingsThunks';
 
-const Group = () => {
-    // ...existing code...
+const GroupEdit = () => {
     const router = useRouter();
     const dispatch = useDispatch();
     const params = useLocalSearchParams();
     const api_token = useSelector((state: any) => state.user?.apiToken);
     const user = useSelector((state: any) => state.user);
-    // Helper to always get string from param
+
     function getParamString(val: any): string {
         if (Array.isArray(val)) return val[0] || '';
         return val || '';
@@ -33,7 +32,7 @@ const Group = () => {
     const meetingId =
         getParamString(params.meetingId) ||
         getParamString(params.fromMeetingId);
-    // Find meeting by meetingId, then group by groupId within meeting.groups
+
     const meetings = useSelector(
         (state: any) => state.meetings?.meetings || []
     );
@@ -43,7 +42,7 @@ const Group = () => {
     const reduxGroup = meeting?.groups?.find(
         (g: any) => String(g.id) === String(groupId)
     );
-    // If full group object is passed in params, use it (all params are strings)
+
     const paramGroup = React.useMemo(() => {
         if (params.title || params.group_title) {
             const allFields = { ...params };
@@ -83,13 +82,9 @@ const Group = () => {
         }
         return undefined;
     }, [params]);
-    // Otherwise, fallback to Redux lookup
-    // Permissions logic: allow 'groups' or 'manage'
-    const canEdit =
-        user?.profile?.permissions?.includes('groups') ||
-        user?.profile?.permissions?.includes('manage');
 
-    // Form state (initialize as empty, always set from paramGroup/reduxGroup in useEffect)
+    const canEdit = user?.profile?.permissions?.includes('groups');
+
     const [title, setTitle] = useState('');
     const [location, setLocation] = useState('');
     const [facilitator, setFacilitator] = useState('');
@@ -100,10 +95,7 @@ const Group = () => {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
 
-    // On mount or when params change, sync form state from params if present,
-    // otherwise use Redux group data if available.
     useEffect(() => {
-        // Helper to check if a param is missing or empty
         function missing(val: any) {
             return val === undefined || val === null || val === '';
         }
@@ -134,7 +126,6 @@ const Group = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [JSON.stringify(params), paramGroup, reduxGroup]);
 
-    // Validation
     const isTitleValid = /^[a-zA-Z0-9 \-_&]{3,25}$/.test(title);
     const isLocationValid = /^[a-zA-Z0-9 \-_&]{3,25}$/.test(location);
     const isFacilitatorValid =
@@ -152,53 +143,18 @@ const Group = () => {
         isNotesValid &&
         canEdit;
 
-    // Top navigation cancel handler
-    // Always ensure the meeting route receives the meeting id and origin so
-    // MeetingDetails can render correctly. Use replace to avoid stacking a
-    // duplicate meeting route on the history; fall back to router.back() if
-    // no meetingId is available.
-    const originParam =
-        (params &&
-            (Array.isArray(params.origin)
-                ? params.origin[0]
-                : params.origin)) ||
-        undefined;
     const handleCancel = useCallback(() => {
-        // Prefer popping the previous route to preserve any serialized
-        // meeting object or in-memory state. This keeps the UX stable when
-        // navigating back from a group to its parent meeting screen.
-        try {
-            if ((router as any).back) {
-                (router as any).back();
-                return;
-            }
-        } catch {
-            // fall through to fallback navigation
-        }
-
-        // If we can't pop, ensure we navigate to the meeting route with id
         if (meetingId) {
-            const meetingParam = getParamString((params as any).meeting);
-            const navParams: any = { id: meetingId, origin: originParam };
-            if (meetingParam) navParams.meeting = meetingParam;
-            if ((router as any).replace) {
-                (router as any).replace({
-                    pathname: '/(meeting)/[id]',
-                    params: navParams,
-                } as any);
-                return;
-            }
-            if ((router as any).push) {
-                (router as any).push({
-                    pathname: '/(meeting)/[id]',
-                    params: navParams,
-                } as any);
-                return;
-            }
+            router.push({
+                pathname: '/(meeting)/[id]',
+                params: { id: meetingId },
+            });
+        } else {
+            router.back();
         }
-    }, [meetingId, router, originParam, params]);
+    }, [meetingId, router]);
 
-    const handleSubmit = async () => {
+    const handleSave = async () => {
         setSubmitting(true);
         setError('');
         const group = {
@@ -227,8 +183,6 @@ const Group = () => {
         }
     };
 
-    // No navigation.setOptions in expo-router, so skip headerLeft logic
-
     return (
         <>
             <Stack.Screen
@@ -243,34 +197,6 @@ const Group = () => {
                             </Text>
                         </TouchableOpacity>
                     ),
-                    headerRight: () =>
-                        canEdit ? (
-                            <TouchableOpacity
-                                onPress={() =>
-                                    router.push({
-                                        pathname: '/(group)/(edit)/[id]',
-                                        params: {
-                                            id: groupId,
-                                            meetingId,
-                                            title,
-                                            location,
-                                            facilitator,
-                                            cofacilitator,
-                                            notes,
-                                            gender,
-                                            attendance: String(attendance),
-                                        },
-                                    } as any)
-                                }
-                                style={{ marginRight: 16 }}
-                            >
-                                <Text
-                                    style={{ color: '#007AFF', fontSize: 18 }}
-                                >
-                                    Edit
-                                </Text>
-                            </TouchableOpacity>
-                        ) : null,
                 }}
             />
 
@@ -306,15 +232,18 @@ const Group = () => {
                             graphicStyle={{}}
                         />
                     </View>
+
                     <View style={themedStyles.groupFormRow}>
                         <Text style={themedStyles.groupFormLabel}>Title *</Text>
                         <TextInput
                             style={themedStyles.formInput}
                             value={title}
+                            onChangeText={setTitle}
                             placeholder='Group Title'
                             maxLength={25}
                         />
                     </View>
+
                     <View style={themedStyles.groupFormRow}>
                         <Text style={themedStyles.groupFormLabel}>
                             Location *
@@ -322,10 +251,12 @@ const Group = () => {
                         <TextInput
                             style={themedStyles.formInput}
                             value={location}
+                            onChangeText={setLocation}
                             placeholder='Location'
                             maxLength={25}
                         />
                     </View>
+
                     <View style={themedStyles.groupFormRow}>
                         <Text style={themedStyles.groupFormLabel}>
                             Facilitator
@@ -333,10 +264,12 @@ const Group = () => {
                         <TextInput
                             style={themedStyles.formInput}
                             value={facilitator}
+                            onChangeText={setFacilitator}
                             placeholder='Facilitator'
                             maxLength={25}
                         />
                     </View>
+
                     <View style={themedStyles.groupFormRow}>
                         <Text style={themedStyles.groupFormLabel}>
                             Co-Facilitator
@@ -344,15 +277,18 @@ const Group = () => {
                         <TextInput
                             style={themedStyles.formInput}
                             value={cofacilitator}
+                            onChangeText={setCofacilitator}
                             placeholder='Co-Facilitator'
                             maxLength={25}
                         />
                     </View>
+
                     <View style={themedStyles.groupFormRow}>
                         <Text style={themedStyles.groupFormLabel}>Notes</Text>
                         <TextInput
                             style={[themedStyles.input, { height: 60 }]}
                             value={notes as string}
+                            onChangeText={setNotes}
                             placeholder='Notes'
                             multiline
                         />
@@ -374,11 +310,11 @@ const Group = () => {
                         {canEdit && canSubmit && (
                             <TouchableOpacity
                                 style={themedStyles.saveButton}
-                                onPress={handleSubmit}
+                                onPress={handleSave}
                                 disabled={submitting}
                             >
                                 <Text style={themedStyles.saveText}>
-                                    {submitting ? 'Saving...' : 'Update'}
+                                    {submitting ? 'Saving...' : 'Save'}
                                 </Text>
                             </TouchableOpacity>
                         )}
@@ -398,4 +334,4 @@ const Group = () => {
     );
 };
 
-export default Group;
+export default GroupEdit;

@@ -63,8 +63,15 @@ const GroupListCard = ({
                     params: {
                         ...group,
                         fromMeetingId,
+                        // propagate origin, org_id and serialized meeting from parent params when present
+                        origin: parentParams.origin
+                            ? String(parentParams.origin)
+                            : undefined,
                         org_id: parentParams.org_id
                             ? String(parentParams.org_id)
+                            : undefined,
+                        meeting: parentParams.meeting
+                            ? String(parentParams.meeting)
                             : undefined,
                     },
                 });
