@@ -284,12 +284,6 @@ const MeetingDetails = () => {
         }
     }, [meetingFromStore, globalGroups]);
 
-    // Diagnostic: also watch the canonical meetings list and log the
-    // meeting entry for this id so we can confirm the slice updated it.
-    const canonicalMeetings = useSelector(
-        (state: any) => state.meetings?.meetings
-    );
-
     // If route provided a serialized meeting but store doesn't have it yet,
     // upsert it into the store so displayedMeeting can be derived from store.
     React.useEffect(() => {
@@ -604,11 +598,19 @@ const MeetingDetails = () => {
                             />
                         )}
                         ListEmptyComponent={() => (
-                            <Text
-                                style={{ textAlign: 'center', marginTop: 20 }}
+                            <View
+                                style={
+                                    themedStyles.meetingNoGroupsLabelContainer
+                                }
                             >
-                                No groups available for this meeting.
-                            </Text>
+                                <Text
+                                    style={
+                                        themedStyles.meetingNoGroupsLabelText
+                                    }
+                                >
+                                    No groups defined for this meeting.
+                                </Text>
+                            </View>
                         )}
                     />
                     <TouchableOpacity

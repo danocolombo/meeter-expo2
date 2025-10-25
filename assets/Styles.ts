@@ -293,6 +293,17 @@ const themedStyles: { [key: string]: any } = {
         padding: 12,
         borderRadius: 8,
     },
+    meetingNoGroupsLabelContainer: {
+        marginTop: 20,
+        marginHorizontal: 10,
+        alignItems: 'center' as 'center',
+    },
+    meetingNoGroupsLabelText: {
+        fontFamily: 'Roboto-Bold',
+        color: theme.colors.yellow,
+        fontSize: 20,
+        textAlign: 'center' as 'center',
+    },
     meetingNotesContainer: {
         marginTop: 10,
         marginHorizontal: 10,
