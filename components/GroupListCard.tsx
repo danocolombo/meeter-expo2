@@ -52,6 +52,7 @@ const GroupListCard = ({
             // Optionally show error
         }
     };
+
     return (
         <Pressable
             style={({ pressed }) => pressed && localStyle.pressed}

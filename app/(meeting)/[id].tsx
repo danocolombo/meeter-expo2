@@ -24,6 +24,7 @@ import {
 } from 'react-native';
 import { Surface } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
+import { upsertMeeting } from '../../features/meetings/meetingsSlice';
 import { fetchMeetingDetailsById } from '../../features/meetings/meetingsThunks';
 import { refreshApiToken } from '../../features/user/userThunks';
 import type { AppDispatch } from '../../utils/store';
@@ -100,18 +101,45 @@ const MeetingDetails = () => {
     const api_token: string | undefined =
         user?.profile?.apiToken?.plainTextToken;
     const dispatch: AppDispatch = useDispatch();
+    // Global groups cache (objects) from the meetings slice - used to
+    // convert id-only group arrays into object arrays for rendering.
+    const globalGroups: any[] = useSelector((state: any) =>
+        Array.isArray(state.meetings?.groups) ? state.meetings.groups : []
+    );
     // const defaultGroups = useSelector((state) => state.groups.defaultGroups);
     //const newPerms = useSelector((state) => state.user.perms);
-    const [meeting, setMeeting] = React.useState<FullMeeting | null>(() => {
-        if (routeMeetingParam) {
-            try {
-                return JSON.parse(routeMeetingParam as string) as FullMeeting;
-            } catch {
-                // fall through to null
-            }
-        }
-        return null;
+    // No local meeting fallback — prefer the Redux store as the single source
+    // of truth for meeting data. If navigation passes a serialized meeting
+    // param and the store doesn't yet have it, we'll upsert it into the
+    // store (see useEffect below) so the UI can render immediately.
+
+    // Prefer meeting from Redux store (active/historic) when available so the
+    // details screen updates automatically after thunks that modify the store.
+    // Use a selector that returns a single meeting object (by id) instead of
+    // composing a new array each render — this avoids returning a fresh
+    // reference and eliminates the selector memoization warning.
+    const meetingFromStore = useSelector((state: any) => {
+        if (!id) return undefined;
+        const active = Array.isArray(state.meetings?.activeMeetings)
+            ? state.meetings.activeMeetings
+            : [];
+        const historic = Array.isArray(state.meetings?.historicMeetings)
+            ? state.meetings.historicMeetings
+            : [];
+        const all = Array.isArray(state.meetings?.meetings)
+            ? state.meetings.meetings
+            : [];
+        return (
+            active.find((m: any) => String(m.id) === String(id)) ||
+            historic.find((m: any) => String(m.id) === String(id)) ||
+            all.find((m: any) => String(m.id) === String(id))
+        );
     });
+
+    // The displayed meeting prefers the Redux value (fresh after save), then
+    // falls back to the locally parsed route param (fast initial render).
+    const displayedMeeting: FullMeeting | null =
+        (meetingFromStore as any) || null;
     const [isLoading, setIsLoading] = React.useState(false);
     const navigation = useNavigation();
 
@@ -161,7 +189,7 @@ const MeetingDetails = () => {
                 setError(
                     'API token not available for this user. Please sign in or acquire a valid token.'
                 );
-                setMeeting(null);
+                // no local meeting state any more
                 setGroups([]);
                 setIsLoading(false);
                 return;
@@ -171,7 +199,7 @@ const MeetingDetails = () => {
             setError(
                 'API token not available for this user. Please sign in or acquire a valid token.'
             );
-            setMeeting(null);
+            // no local meeting state any more
             setGroups([]);
             return;
         }
@@ -179,11 +207,11 @@ const MeetingDetails = () => {
         setError(null);
         try {
             // Debug: record that we're attempting fetch and whether a token is present
-            console.info('MeetingDetails: fetching', {
-                hasToken: !!tokenToUse,
-                org_id,
-                id,
-            });
+            // console.info('MeetingDetails: fetching', {
+            //     hasToken: !!tokenToUse,
+            //     org_id,
+            //     id,
+            // });
 
             const result = await dispatch(
                 fetchMeetingDetailsById({
@@ -192,27 +220,25 @@ const MeetingDetails = () => {
                     meetingId: id,
                 })
             ).unwrap();
-            // Support both result.data.currentMeeting and result.data (for legacy)
+
             let meetingData = result?.data?.currentMeeting || result?.data;
             if (meetingData) {
-                setMeeting(meetingData);
-                const fetchedGroups: Group[] = meetingData.groups || [];
-                // Sort groups by gender, title, location for display
-                fetchedGroups.sort(compareGroups);
+                dispatch(upsertMeeting(meetingData));
+
+                let fetchedGroups: Group[] = meetingData.groups || [];
+
                 setGroups(fetchedGroups);
-                // Set historic flag
+
                 const meetingDate = new Date(meetingData.meeting_date);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 setHistoric(meetingDate < today);
             } else {
-                setMeeting(null);
                 setGroups([]);
                 setError('Meeting not found.');
             }
         } catch (err: any) {
             console.error('Failed to fetch meeting details:', err);
-            setMeeting(null);
             setGroups([]);
             setError('Failed to load meeting. Please try again.');
         } finally {
@@ -227,28 +253,70 @@ const MeetingDetails = () => {
     }, [api_token, org_id, id, dispatch]);
 
     // Always use Redux thunk for fetching meeting details
+    // Whenever the displayed meeting changes (either from Redux store or
+    // our local fallback), update the derived groups and historic flag so
+    // the UI reflects the current meeting immediately.
+    React.useEffect(() => {
+        const src = meetingFromStore as any;
+        if (src) {
+            try {
+                let fetchedGroups: Group[] = src.groups || [];
+                if (
+                    fetchedGroups.length > 0 &&
+                    typeof fetchedGroups[0] !== 'object'
+                ) {
+                    fetchedGroups = fetchedGroups.map(
+                        (gid: any) =>
+                            globalGroups.find((g: any) => g.id === gid) || {
+                                id: gid,
+                            }
+                    );
+                }
+                fetchedGroups.sort(compareGroups);
+                setGroups(fetchedGroups);
+                const meetingDate = new Date(src.meeting_date);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                setHistoric(meetingDate < today);
+                try {
+                    console.debug(
+                        'MeetingDetails: meetingFromStore groups:',
+                        (fetchedGroups || []).map((g: any) => g.id || g)
+                    );
+                } catch {}
+            } catch {
+                // ignore parse errors
+            }
+        }
+    }, [meetingFromStore, globalGroups]);
+
+    // Diagnostic: also watch the canonical meetings list and log the
+    // meeting entry for this id so we can confirm the slice updated it.
+    const canonicalMeetings = useSelector(
+        (state: any) => state.meetings?.meetings
+    );
+
+    // If route provided a serialized meeting but store doesn't have it yet,
+    // upsert it into the store so displayedMeeting can be derived from store.
+    React.useEffect(() => {
+        if (!meetingFromStore && routeMeetingParam) {
+            try {
+                const parsed = JSON.parse(
+                    routeMeetingParam as string
+                ) as FullMeeting;
+                dispatch(upsertMeeting(parsed));
+            } catch {
+                // ignore parse errors
+            }
+        }
+    }, [routeMeetingParam, meetingFromStore, dispatch]);
+
+    // Always attempt to refresh from backend when the screen focuses so the
+    // latest values are fetched after returning from Edit.
     useFocusEffect(
         React.useCallback(() => {
-            // If we have a meeting already from the route params, avoid the
-            // backend fetch; otherwise fetch or refresh as before.
-            if (meeting) {
-                // Ensure groups and historic flags are initialized from the
-                // provided meeting object.
-                try {
-                    const fetchedGroups: Group[] = meeting.groups || [];
-                    fetchedGroups.sort(compareGroups);
-                    setGroups(fetchedGroups);
-                    const meetingDate = new Date(meeting.meeting_date);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    setHistoric(meetingDate < today);
-                } catch {
-                    // ignore parse errors
-                }
-                return;
-            }
             refreshMeeting();
-        }, [refreshMeeting, meeting])
+        }, [refreshMeeting])
     );
 
     // Map meeting_type to display string
@@ -264,7 +332,7 @@ const MeetingDetails = () => {
         }
         let titleVal = false;
         let contactVal = false;
-        switch (meeting?.meeting_type) {
+        switch (displayedMeeting?.meeting_type) {
             case 'Testimony':
                 setIsSavable(titleVal);
                 break;
@@ -283,9 +351,9 @@ const MeetingDetails = () => {
         }
     };
     const meetingTypeString =
-        meeting &&
-        (meetingTypeDisplay[meeting.meeting_type] ||
-            meeting.meeting_type ||
+        displayedMeeting &&
+        (meetingTypeDisplay[displayedMeeting.meeting_type] ||
+            displayedMeeting.meeting_type ||
             '');
 
     // Set header title dynamically after meeting is loaded
@@ -300,7 +368,7 @@ const MeetingDetails = () => {
                 title: '',
                 headerRight: () => {
                     // Only show edit when we have a meeting and user has manage perms
-                    if (!meeting) return null;
+                    if (!displayedMeeting) return null;
                     const canEdit =
                         user?.profile?.permissions?.includes('manage') ||
                         user?.profile?.perms?.includes('meetings');
@@ -311,7 +379,7 @@ const MeetingDetails = () => {
                             onPress={() => {
                                 try {
                                     const meetingParam =
-                                        JSON.stringify(meeting);
+                                        JSON.stringify(displayedMeeting);
                                     router.push({
                                         pathname: '/(meeting)/(edit)/[id]',
                                         params: {
@@ -344,7 +412,15 @@ const MeetingDetails = () => {
                 },
             });
         }
-    }, [meetingTypeString, navigation, meeting, router, id, origin, user]);
+    }, [
+        meetingTypeString,
+        navigation,
+        displayedMeeting,
+        router,
+        id,
+        origin,
+        user,
+    ]);
 
     // Removed unused generateUUID
     if (isLoading) {
@@ -379,7 +455,7 @@ const MeetingDetails = () => {
             </View>
         );
     }
-    if (!meeting) {
+    if (!displayedMeeting) {
         return (
             <View style={themedStyles.container}>
                 <Text>No meeting data found.</Text>
@@ -415,30 +491,33 @@ const MeetingDetails = () => {
                         <View style={themedStyles.meetingSelectorContainer}>
                             <View style={themedStyles.meetingSelectorWrapper}>
                                 <TypeSelectors
-                                    pick={meeting?.meeting_type}
+                                    pick={displayedMeeting?.meeting_type}
                                     setPick={handleTypeChange}
                                 />
                             </View>
                         </View>
                     </View>
                     <View style={themedStyles.firstRow}>
-                        <MeetingDate date={meeting.meeting_date} />
+                        <MeetingDate date={displayedMeeting.meeting_date} />
                         <View style={{ flex: 1 }}>
-                            <MeetingIds meeting={meeting} historic={historic} />
+                            <MeetingIds
+                                meeting={displayedMeeting}
+                                historic={historic}
+                            />
                         </View>
                     </View>
-                    {meeting.attendance_count > 0 && (
+                    {displayedMeeting.attendance_count > 0 && (
                         <MeetingAttendance
-                            attendanceCount={meeting.attendance_count}
+                            attendanceCount={displayedMeeting.attendance_count}
                         />
                     )}
                     <MealDetails
-                        meal={meeting.meal}
-                        mealContact={meeting.meal_contact}
+                        meal={displayedMeeting.meal}
+                        mealContact={displayedMeeting.meal_contact}
                         historic={historic}
-                        mealCount={meeting.meal_count}
+                        mealCount={displayedMeeting.meal_count}
                     />
-                    {Number(meeting.newcomers_count) > 0 && (
+                    {Number(displayedMeeting.newcomers_count) > 0 && (
                         <View style={themedStyles.row}>
                             <View style={themedStyles.meetingDetailsContainer}>
                                 <Text style={themedStyles.meetingLabel}>
@@ -452,15 +531,17 @@ const MeetingDetails = () => {
                                 }
                             >
                                 <BadgeNumber
-                                    value={Number(meeting.newcomers_count)}
+                                    value={Number(
+                                        displayedMeeting.newcomers_count
+                                    )}
                                 />
                             </View>
                         </View>
                     )}
-                    {meeting.notes && (
+                    {displayedMeeting.notes && (
                         <View style={themedStyles.notesContainer}>
                             <Text style={themedStyles.notesText}>
-                                {meeting.notes}
+                                {displayedMeeting.notes}
                             </Text>
                         </View>
                     )}
@@ -515,14 +596,25 @@ const MeetingDetails = () => {
                         </View>
                     </View>
                     <FlatList
-                        data={groups}
-                        keyExtractor={(item) => item.id}
+                        data={displayedMeeting?.groups || []}
+                        keyExtractor={(item, index) =>
+                            item && item.id
+                                ? String(item.id)
+                                : `group-${index}-${String(item?.title || '')}`
+                        }
                         renderItem={({ item }) => (
                             <GroupListCard
                                 group={item}
                                 fromMeetingId={id}
                                 onGroupDeleted={refreshMeeting}
                             />
+                        )}
+                        ListEmptyComponent={() => (
+                            <Text
+                                style={{ textAlign: 'center', marginTop: 20 }}
+                            >
+                                No groups available for this meeting.
+                            </Text>
                         )}
                     />
                     <TouchableOpacity

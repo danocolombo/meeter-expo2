@@ -2,7 +2,11 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 // import axios from 'axios';
 // import { API } from 'aws-amplify';
 import { ApiError, FullGroup, FullMeeting } from '../../types/interfaces';
-import { createAWSUniqueID, printObject } from '../../utils/helpers';
+import {
+    createAWSUniqueID,
+    normalizeMeeting,
+    printObject,
+} from '../../utils/helpers';
 import type { RootState } from '../../utils/store';
 import {
     createNewGroup,
@@ -307,9 +311,10 @@ export const fetchMeetingDetailsById = createAsyncThunk<
             organizationId,
             meetingId
         );
-        const meeting = isSuccessResponse<FullMeeting>(meetingDetails)
+        let meeting = isSuccessResponse<FullMeeting>(meetingDetails)
             ? meetingDetails.data
             : ({} as FullMeeting);
+
         const returnValue = {
             status: '200',
             data: meeting,
@@ -494,7 +499,7 @@ export const saveNewMeeting = createAsyncThunk<
 
         if (isSuccessResponse<FullMeeting>(meetingDetails)) {
             const summary = {
-                currentMeeting: meetingDetails.data,
+                currentMeeting: normalizeMeeting(meetingDetails.data),
                 currentGroups: [],
             };
             const returnValue = {
@@ -583,7 +588,7 @@ export const addMeeting = createAsyncThunk<
             );
             if (isSuccessResponse<FullMeeting>(meetingDetails)) {
                 const summary = {
-                    currentMeeting: meetingDetails.data,
+                    currentMeeting: normalizeMeeting(meetingDetails.data),
                     currentGroups: [],
                 };
                 const returnValue = {
@@ -666,7 +671,9 @@ export const updateMeeting = createAsyncThunk<
             let mtg = {
                 ...meeting,
                 organization_id: meeting.organization_id,
-                meeting_date: meeting.meeting_date.slice(0, 10),
+                meeting_date: meeting.meeting_date
+                    ? String(meeting.meeting_date).slice(0, 10)
+                    : meeting.meeting_date,
             };
             return mtg;
         }
@@ -696,7 +703,25 @@ export const updateMeeting = createAsyncThunk<
             transformedObject
         );
         if (isSuccessResponse<any>(meetingDetails)) {
-            return meetingDetails;
+            // Ensure meeting_date is normalized to a string to avoid reducers
+            // or comparators calling string methods on undefined.
+            try {
+                if (
+                    meetingDetails &&
+                    meetingDetails.data &&
+                    meetingDetails.data.meeting_date == null
+                ) {
+                    meetingDetails.data.meeting_date = '';
+                }
+            } catch {
+                // swallow any unexpected shape errors but continue returning
+            }
+            // Normalize whole meeting object to be safe
+            try {
+                meetingDetails.data = normalizeMeeting(meetingDetails.data);
+            } catch {
+                // ignore normalization failures
+            }
         } else if (isApiError(meetingDetails)) {
             const returnValue = {
                 status: meetingDetails.status,
@@ -712,10 +737,41 @@ export const updateMeeting = createAsyncThunk<
             details: meetingDetails,
         } as ApiError;
     } catch (error) {
-        printObject(
-            '🔴🔴🔴🔴🔴MT:707-->updateAMeeting thunk try failure.\n',
-            error
-        );
+        // Richer diagnostics for Axios/network errors: capture message,
+        // request and response where available so we can determine whether
+        // the failure is client-side (bad payload), network/transient, or
+        // server-side (status / validation error).
+        try {
+            const err: any = error;
+            const details: Record<string, any> = {
+                message: err?.message,
+                name: err?.name,
+                stack: err?.stack,
+            };
+            // Axios exposes the raw request and response on the error object
+            if (err?.request) details.request = err.request;
+            if (err?.response) {
+                // include status and data for quick inspection
+                details.response = {
+                    status: err.response?.status,
+                    data: err.response?.data,
+                    headers: err.response?.headers,
+                };
+            }
+            printObject(
+                '🔴🔴🔴🔴🔴MT:707-->updateAMeeting thunk try failure. detailed',
+                details
+            );
+        } catch {
+            // fallback: at least log the raw error
+            printObject(
+                '🔴🔴🔴🔴🔴MT:707-->updateAMeeting thunk try failure. raw',
+                error
+            );
+        }
+
+        // Re-throw to preserve existing rejection behavior; keeping the
+        // generic message keeps other code paths stable while we diagnose.
         throw new Error('MT:710-->Failed to update meeting');
     }
 });
@@ -729,8 +785,6 @@ export const addGroup = createAsyncThunk<
         if (group.id === '0' || !group.id) {
             group.id = createAWSUniqueID();
         }
-        // Fetch meeting details to get mtg_comp_key if needed
-        // (Assume meetingId is enough for backend, else fetch meeting details here)
         const new_group = {
             ...group,
             meeting_id: meetingId,
@@ -745,29 +799,28 @@ export const addGroup = createAsyncThunk<
             createNewGroupResponse.data &&
             createNewGroupResponse.data.id
         ) {
-            // return the created group's id and data so reducers can update state
             return {
                 group_id: createNewGroupResponse.data.id,
                 group: createNewGroupResponse.data,
                 meetingId,
             };
         } else {
-            throw new Error('MT:216-->Failed to create group');
+            throw new Error('Failed to create group in database.');
         }
     } catch (error: any) {
-        // Log the original error and rethrow it so callers can handle/inspect it.
         printObject('MT:741-->addGroup ERROR', { error, group });
-        if (error instanceof Error) throw error;
-        // If it's an API response object, wrap with a helpful message
+        if (error instanceof Error) {
+            return thunkAPI.rejectWithValue(error.message);
+        }
         if (
             error &&
             typeof error === 'object' &&
             (error.message || error.status)
         ) {
             const msg = error.message || `API error (status ${error.status})`;
-            throw new Error(msg);
+            return thunkAPI.rejectWithValue(msg);
         }
-        throw new Error('MT:742-->Failed to add group');
+        return thunkAPI.rejectWithValue('Failed to add group');
     }
 });
 
@@ -977,7 +1030,7 @@ export const loadHistoricPage = createAsyncThunk<
             // Response is of type RequestedPageType inside response.data
             const requestedPage: RequestedPageType =
                 response.data as RequestedPageType;
-            // printObject('🏴󠁧󠁢󠁳󠁣󠁴󠁿🏴󠁧󠁢󠁳󠁣󠁴󠁿🏴󠁧󠁢󠁳󠁣󠁴󠁿 MT:1158-->requestedPage:', requestedPage);
+            // printObject('🏴🏴🏴 MT:1158-->requestedPage:', requestedPage);
             const current_page = requestedPage.currentPage + 1;
             if (requestedPage.status === 200) {
                 return {

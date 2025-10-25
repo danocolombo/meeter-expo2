@@ -14,14 +14,21 @@ jest.mock('expo-router', () => {
     const useRouter = () => mockUseRouter();
     const useLocalSearchParams = () => mockUseLocalSearchParams();
 
+    // Require React inside the mock factory to avoid referencing out-of-scope
+    // variables in the jest.mock module factory (Jest forbids accessing
+    // variables from the outer scope inside the factory). This keeps the
+    // mock self-contained and avoids the "module factory not allowed to
+    // reference any out-of-scope variables" error.
+    const ReactLocal = require('react');
+
     const Stack: any = ({ children }: any) =>
-        React.createElement(React.Fragment, null, children);
+        ReactLocal.createElement(ReactLocal.Fragment, null, children);
     // Render headerLeft/headerRight functions for tests so we can find buttons
     Stack.Screen = ({ options, children }: any) => {
         const left = options?.headerLeft ? options.headerLeft() : null;
         const right = options?.headerRight ? options.headerRight() : null;
-        return React.createElement(
-            React.Fragment,
+        return ReactLocal.createElement(
+            ReactLocal.Fragment,
             null,
             left,
             right,
@@ -201,5 +208,78 @@ describe('Navigation transitions: meeting -> group -> group/edit', () => {
             meetingId: 'm1',
             title: 'Group Title',
         });
+    });
+
+    it('MeetingDetails updates displayed values when Redux store changes', () => {
+        // Prepare fake meeting passed in route param initially
+        const fakeMeeting = {
+            id: 'm1',
+            meeting_date: new Date().toISOString(),
+            meeting_type: 'regular',
+            title: 'Test Meeting',
+            groups: [],
+            meal_contact: 'Dano',
+            meal: null,
+            attendance_count: 0,
+            newcomers_count: 0,
+            notes: null,
+            meal_count: 0,
+        };
+
+        // local params: first call for id/origin/org_id, second call for meeting param
+        mockUseLocalSearchParams
+            .mockImplementationOnce(() => ({
+                id: 'm1',
+                origin: 'active',
+                org_id: 'org1',
+            }))
+            .mockImplementationOnce(() => ({
+                meeting: JSON.stringify(fakeMeeting),
+            }));
+
+        // Mock router and navigation
+        mockUseRouter.mockReturnValue({
+            push: jest.fn(),
+            replace: jest.fn(),
+            back: jest.fn(),
+        });
+
+        // Provide selector implementation that reads from a mutable mock state
+        const mockState: any = {
+            user: {
+                profile: {
+                    apiToken: { plainTextToken: 't' },
+                    permissions: ['manage'],
+                },
+            },
+            meetings: {
+                activeMeetings: [],
+                historicMeetings: [],
+                meetings: [],
+            },
+        };
+        mockUseSelector.mockImplementation((sel: any) => sel(mockState));
+
+        // Ensure dispatch returns an object with unwrap() to satisfy refreshMeeting
+        mockUseDispatch.mockReturnValue((action: any) => ({
+            unwrap: () => Promise.resolve({ data: fakeMeeting }),
+        }));
+
+        const tree = renderer.create(React.createElement(MeetingDetails));
+
+        // Initial render should show the meal contact from the route param
+        const contactTextNodes = tree.root.findAllByProps({ children: 'Dano' });
+        expect(contactTextNodes.length).toBeGreaterThan(0);
+
+        // Now simulate the Redux store updating with a changed contact value
+        mockState.meetings.activeMeetings = [
+            { ...fakeMeeting, meal_contact: 'TBD' },
+        ];
+        // Re-render component (useSelector uses the updated mockState)
+        tree.update(React.createElement(MeetingDetails));
+
+        // The UI should now display the updated contact from the store
+        const updatedNodes = tree.root.findAllByProps({ children: 'TBD' });
+        expect(updatedNodes.length).toBeGreaterThan(0);
     });
 });

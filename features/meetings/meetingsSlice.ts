@@ -1,5 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { isDateDashBeforeToday, printObject } from '@utils/helpers';
+import {
+    isDateDashBeforeToday,
+    normalizeMeeting,
+    printObject,
+} from '@utils/helpers';
 import { FullGroup, FullMeeting } from '../../types/interfaces';
 import {
     addDefaultGroups,
@@ -57,6 +61,20 @@ function compareGroups(a: any, b: any) {
     return 0;
 }
 
+// Safe date comparators that tolerate missing or malformed meeting_date.
+function safeDateCompareAsc(a: any, b: any) {
+    const da = a && a.meeting_date ? String(a.meeting_date) : '';
+    const db = b && b.meeting_date ? String(b.meeting_date) : '';
+    if (!da && !db) return 0;
+    if (!da) return 1; // treat missing dates as 'greater' so they sort last
+    if (!db) return -1;
+    return da.localeCompare(db);
+}
+
+function safeDateCompareDesc(a: any, b: any) {
+    return -safeDateCompareAsc(a, b);
+}
+
 const initialState: MeetingsState = {
     meetings: [],
     activeMeetings: [],
@@ -99,6 +117,60 @@ export const meetingsSlice = createSlice({
             if (!state.meetings.find((m: any) => m.id === action.payload.id)) {
                 state.meetings = [...state.meetings, action.payload];
             }
+        },
+        // Upsert a single meeting into the store. Replace existing meeting
+        // by id or append if not present. Also ensure active/historic lists
+        // are updated consistently.
+        upsertMeeting: (state, action: PayloadAction<any>) => {
+            // Normalize incoming meeting to a stable shape before processing
+            const meeting = normalizeMeeting(action.payload);
+            if (!meeting || !meeting.id) return;
+
+            // helper to replace or append in a list
+            function replaceOrAppend(list: any[], item: any) {
+                const idx = list.findIndex((m: any) => m.id === item.id);
+                if (idx !== -1) {
+                    list[idx] = item;
+                } else {
+                    list.push(item);
+                }
+            }
+
+            // update master meetings list
+            replaceOrAppend(state.meetings, meeting);
+
+            // Determine historic vs active by meeting_date
+            let isHistoric = false;
+            try {
+                const parts = (meeting.meeting_date || '').split('-');
+                if (parts.length === 3) {
+                    const mo = parseInt(parts[1]) - 1;
+                    const d = new Date(
+                        parseInt(parts[0]),
+                        mo,
+                        parseInt(parts[2])
+                    );
+                    isHistoric = d < new Date(new Date().toDateString());
+                }
+            } catch {
+                isHistoric = false;
+            }
+
+            if (isHistoric) {
+                // replace or append in historicMeetings and ensure not duplicated in active
+                replaceOrAppend(state.historicMeetings as any[], meeting);
+                state.activeMeetings = (state.activeMeetings || []).filter(
+                    (m: any) => m.id !== meeting.id
+                );
+            } else {
+                replaceOrAppend(state.activeMeetings as any[], meeting);
+                state.historicMeetings = (state.historicMeetings || []).filter(
+                    (m: any) => m.id !== meeting.id
+                );
+            }
+
+            // ensure master meetings array remains in a sensible order (optional)
+            // leave ordering to other code paths that load all meetings.
         },
         deleteAMeeting: (state, action: PayloadAction<any>) => {
             state.meetings = state.meetings.filter(
@@ -204,13 +276,38 @@ export const meetingsSlice = createSlice({
                 state.isLoading = true;
             })
             .addCase(addGroup.fulfilled, (state: any, action: any) => {
+                // Debug: record payload arriving to reducer to help trace why
+                // UI isn't showing the newly created group. Remove after
+                // verification.
+                try {
+                    printObject(
+                        'MS:ADD_GROUP_FULFILLED payload',
+                        action.payload
+                    );
+                } catch {
+                    // ignore logging failures
+                }
                 const groupId = action.payload?.group_id;
                 const fullGroup =
                     action.payload?.group ||
                     action.payload?.data ||
                     action.payload;
+                // Ensure global groups list contains the new full group object
+                // (so we can convert id-only arrays into object arrays below).
+                if (fullGroup) {
+                    const existsGlobal = state.groups.find(
+                        (g: any) => g.id === fullGroup.id
+                    );
+                    if (!existsGlobal) state.groups.push(fullGroup);
+                    state.groups.sort(compareGroups as any);
+                }
+
+                // Only add the new group to the meeting that matches the
+                // meetingId returned by the thunk. Previously this loop
+                // updated all meetings which could lead to confusing state.
                 state.activeMeetings.forEach((meeting: any) => {
                     if (!meeting) return;
+                    if (meeting.id !== action.payload?.meetingId) return;
                     if (!Array.isArray(meeting.groups)) meeting.groups = [];
                     const hasObjects =
                         meeting.groups.length > 0 &&
@@ -224,12 +321,38 @@ export const meetingsSlice = createSlice({
                             meeting.groups.sort(compareGroups as any);
                         }
                     } else {
-                        if (!meeting.groups.includes(groupId))
-                            meeting.groups.push(groupId);
+                        // meeting.groups currently holds ids. If we have the
+                        // fullGroup object available, convert existing ids to
+                        // objects (when possible) and append the fullGroup.
+                        if (fullGroup) {
+                            const converted = meeting.groups.map(
+                                (gid: any) =>
+                                    state.groups.find(
+                                        (g: any) => g.id === gid
+                                    ) || { id: gid }
+                            );
+                            if (
+                                !converted.find(
+                                    (g: any) => g.id === fullGroup.id
+                                )
+                            ) {
+                                converted.push(fullGroup);
+                            }
+                            if (
+                                converted.length > 0 &&
+                                typeof converted[0] === 'object'
+                            )
+                                converted.sort(compareGroups as any);
+                            meeting.groups = converted;
+                        } else {
+                            if (!meeting.groups.includes(groupId))
+                                meeting.groups.push(groupId);
+                        }
                     }
                 });
                 state.historicMeetings.forEach((meeting: any) => {
                     if (!meeting) return;
+                    if (meeting.id !== action.payload?.meetingId) return;
                     if (!Array.isArray(meeting.groups)) meeting.groups = [];
                     const hasObjects =
                         meeting.groups.length > 0 &&
@@ -243,16 +366,102 @@ export const meetingsSlice = createSlice({
                             meeting.groups.sort(compareGroups as any);
                         }
                     } else {
-                        if (!meeting.groups.includes(groupId))
-                            meeting.groups.push(groupId);
+                        if (fullGroup) {
+                            const converted = meeting.groups.map(
+                                (gid: any) =>
+                                    state.groups.find(
+                                        (g: any) => g.id === gid
+                                    ) || { id: gid }
+                            );
+                            if (
+                                !converted.find(
+                                    (g: any) => g.id === fullGroup.id
+                                )
+                            ) {
+                                converted.push(fullGroup);
+                            }
+                            if (
+                                converted.length > 0 &&
+                                typeof converted[0] === 'object'
+                            )
+                                converted.sort(compareGroups as any);
+                            meeting.groups = converted;
+                        } else {
+                            if (!meeting.groups.includes(groupId))
+                                meeting.groups.push(groupId);
+                        }
                     }
                 });
-                if (fullGroup) {
-                    const exists = state.groups.find(
-                        (g: any) => g.id === fullGroup.id
+
+                // Also update the canonical meetings list so selectors that
+                // read from `state.meetings` pick up the new group shape.
+                state.meetings = state.meetings.map((mtg: any) => {
+                    if (!mtg || mtg.id !== action.payload?.meetingId)
+                        return mtg;
+                    let existing = Array.isArray(mtg.groups) ? mtg.groups : [];
+                    const hasObj =
+                        existing.length > 0 && typeof existing[0] === 'object';
+                    if (hasObj) {
+                        const exists = existing.find(
+                            (g: any) => g.id === groupId
+                        );
+                        if (!exists && fullGroup)
+                            existing = [...existing, fullGroup];
+                        if (
+                            existing.length > 0 &&
+                            typeof existing[0] === 'object'
+                        )
+                            existing = existing
+                                .slice()
+                                .sort(compareGroups as any);
+                        return { ...mtg, groups: existing };
+                    }
+                    if (fullGroup) {
+                        const converted = existing.map(
+                            (gid: any) =>
+                                state.groups.find((g: any) => g.id === gid) || {
+                                    id: gid,
+                                }
+                        );
+                        if (!converted.find((g: any) => g.id === fullGroup.id))
+                            converted.push(fullGroup);
+                        if (
+                            converted.length > 0 &&
+                            typeof converted[0] === 'object'
+                        )
+                            converted.sort(compareGroups as any);
+                        return { ...mtg, groups: converted };
+                    }
+                    // fallback: keep ids array but ensure the new id is present
+                    const existingCopy = Array.isArray(existing)
+                        ? [...existing]
+                        : [];
+                    if (!existingCopy.includes(groupId))
+                        existingCopy.push(groupId);
+                    return { ...mtg, groups: existingCopy };
+                });
+
+                // Ensure activeMeetings and historicMeetings receive a new
+                // object reference for the updated meeting. If we mutate the
+                // meeting object in-place the selector may not detect changes
+                // (useSelector compares by reference). Replace the matching
+                // meeting entries with a shallow copy of the updated canonical
+                // meeting so components re-render.
+                const updatedMeeting = state.meetings.find(
+                    (m: any) => m.id === action.payload?.meetingId
+                );
+                if (updatedMeeting) {
+                    state.activeMeetings = state.activeMeetings.map((m: any) =>
+                        m && m.id === updatedMeeting.id
+                            ? { ...updatedMeeting }
+                            : m
                     );
-                    if (!exists) state.groups.push(fullGroup);
-                    state.groups.sort(compareGroups as any);
+                    state.historicMeetings = state.historicMeetings.map(
+                        (m: any) =>
+                            m && m.id === updatedMeeting.id
+                                ? { ...updatedMeeting }
+                                : m
+                    );
                 }
                 state.isLoading = false;
             })
@@ -390,10 +599,80 @@ export const meetingsSlice = createSlice({
             .addCase(
                 fetchMeetingDetailsById.fulfilled,
                 (state: any, action: any) => {
-                    if (action.payload?.status === 200) {
-                        // no-op (original code returned early)
+                    // Normalize status check for string or number
+                    const ok =
+                        action.payload &&
+                        (action.payload.status === 200 ||
+                            action.payload.status === '200');
+                    const meeting = action.payload?.data || action.payload;
+                    if (ok && meeting) {
+                        // Upsert into master meetings
+                        const existingIdx = state.meetings.findIndex(
+                            (m: any) => m.id === meeting.id
+                        );
+                        if (existingIdx !== -1)
+                            state.meetings[existingIdx] = meeting;
+                        else state.meetings.push(meeting);
+
+                        // Update groups
+                        if (Array.isArray(meeting.groups)) {
+                            state.groups = meeting.groups;
+                        }
+
+                        // Determine historic vs active and place accordingly
+                        function isMeetingHistoric(meetingDate: string) {
+                            try {
+                                const parts = (meetingDate || '').split('-');
+                                if (parts.length === 3) {
+                                    const mo = parseInt(parts[1]) - 1;
+                                    const d = new Date(
+                                        parseInt(parts[0]),
+                                        mo,
+                                        parseInt(parts[2])
+                                    );
+                                    return (
+                                        d < new Date(new Date().toDateString())
+                                    );
+                                }
+                            } catch {
+                                // ignore
+                            }
+                            return false;
+                        }
+
+                        const historic = isMeetingHistoric(
+                            meeting.meeting_date
+                        );
+                        if (historic) {
+                            // replace or append in historicMeetings
+                            const hi = state.historicMeetings.findIndex(
+                                (m: any) => m.id === meeting.id
+                            );
+                            if (hi !== -1) state.historicMeetings[hi] = meeting;
+                            else state.historicMeetings.push(meeting);
+                            // remove from active
+                            state.activeMeetings = state.activeMeetings.filter(
+                                (m: any) => m.id !== meeting.id
+                            );
+                        } else {
+                            const ai = state.activeMeetings.findIndex(
+                                (m: any) => m.id === meeting.id
+                            );
+                            if (ai !== -1) state.activeMeetings[ai] = meeting;
+                            else state.activeMeetings.push(meeting);
+                            // remove from historic
+                            state.historicMeetings =
+                                state.historicMeetings.filter(
+                                    (m: any) => m.id !== meeting.id
+                                );
+                        }
+
+                        // Also set specific/current meeting for convenience
+                        state.specificMeeting = meeting;
+                        state.isLoading = false;
                         return;
                     }
+                    state.isLoading = false;
                 }
             )
             .addCase(fetchMeetingDetailsById.rejected, (state, action: any) => {
@@ -515,16 +794,12 @@ export const meetingsSlice = createSlice({
                 if (isHistoric) {
                     const unsortedMeetings =
                         state.historicMeetings.concat(meeting);
-                    unsortedMeetings.sort((a: any, b: any) =>
-                        b.meeting_date.localeCompare(a.meeting_date)
-                    );
+                    unsortedMeetings.sort(safeDateCompareDesc);
                     state.historicMeetings = unsortedMeetings;
                 } else {
                     const unsortedMeetings =
                         state.activeMeetings.concat(meeting);
-                    unsortedMeetings.sort((a: any, b: any) =>
-                        a.meeting_date.localeCompare(b.meeting_date)
-                    );
+                    unsortedMeetings.sort(safeDateCompareAsc);
                     state.activeMeetings = unsortedMeetings;
                 }
                 state.isLoading = false;
@@ -542,6 +817,24 @@ export const meetingsSlice = createSlice({
             .addCase(updateMeeting.fulfilled, (state: any, action: any) => {
                 const meeting = action?.payload?.data;
                 if (!meeting) return;
+
+                // If meeting_date is missing or falsy, avoid calling localeCompare
+                // or parsing routines which assume a YYYY-MM-DD string. In that
+                // case, place the meeting into activeMeetings (best-effort)
+                // and skip sorting by date.
+                if (!meeting.meeting_date) {
+                    // remove any existing instances
+                    state.activeMeetings = state.activeMeetings.filter(
+                        (aMeeting: any) => aMeeting.id !== meeting.id
+                    );
+                    state.historicMeetings = state.historicMeetings.filter(
+                        (hMeeting: any) => hMeeting.id !== meeting.id
+                    );
+                    state.activeMeetings.push(meeting);
+                    state.isLoading = false;
+                    return;
+                }
+
                 function isMeetingDateBeforeToday(meetingDate: string) {
                     const datePart = meetingDate.split('-');
                     const mo = parseInt(datePart[1]) - 1;
@@ -567,17 +860,13 @@ export const meetingsSlice = createSlice({
                         ...historicWithoutMeeting,
                         meeting,
                     ];
-                    updatedHistoric.sort((a: any, b: any) =>
-                        b.meeting_date.localeCompare(a.meeting_date)
-                    );
+                    updatedHistoric.sort(safeDateCompareDesc);
                     state.activeMeetings = activeWithoutMeeting;
                     state.historicMeetings = updatedHistoric;
                     state.isLoading = false;
                 } else {
                     const updatedActive = [...activeWithoutMeeting, meeting];
-                    updatedActive.sort((a: any, b: any) =>
-                        a.meeting_date.localeCompare(b.meeting_date)
-                    );
+                    updatedActive.sort(safeDateCompareAsc);
                     state.activeMeetings = updatedActive;
                     state.historicMeetings = historicWithoutMeeting;
                     state.isLoading = false;
@@ -604,16 +893,12 @@ export const meetingsSlice = createSlice({
                     if (isHistoric) {
                         const unsortedMeetings =
                             state.historicMeetings.concat(meeting);
-                        unsortedMeetings.sort((a: any, b: any) =>
-                            b.meeting_date.localeCompare(a.meeting_date)
-                        );
+                        unsortedMeetings.sort(safeDateCompareDesc);
                         state.historicMeetings = unsortedMeetings;
                     } else {
                         const unsortedMeetings =
                             state.activeMeetings.concat(meeting);
-                        unsortedMeetings.sort((a: any, b: any) =>
-                            a.meeting_date.localeCompare(b.meeting_date)
-                        );
+                        unsortedMeetings.sort(safeDateCompareAsc);
                         state.activeMeetings = unsortedMeetings;
                     }
                 } else {
@@ -636,6 +921,7 @@ export const {
     deleteGroup,
     clearGroups,
     addANewMeeting,
+    upsertMeeting,
     deleteAMeeting,
     deleteCurrentMeetingAndGroups,
     incrementHistoricCurrentPage,

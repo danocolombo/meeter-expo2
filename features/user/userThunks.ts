@@ -485,7 +485,9 @@ export const updateActiveOrgPermissions = createAsyncThunk<
                 aff.organizationId === orgId && aff.status === 'active'
         )
         .map((aff: any) => aff.role)
-        .sort((a: string, b: string) => a.localeCompare(b));
+        .sort((a: string, b: string) =>
+            String(a || '').localeCompare(String(b || ''))
+        );
 
     return permissions;
 });

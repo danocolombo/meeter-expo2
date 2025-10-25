@@ -82,7 +82,7 @@ export const userSlice = createSlice({
             const organizations = action.payload;
             // Sort organizations alphabetically in descending order (Z to A)
             const sortedOrganizations = [...organizations].sort((a, b) =>
-                b.name.localeCompare(a.name)
+                String(b?.name || '').localeCompare(String(a?.name || ''))
             );
 
             state.profile = {

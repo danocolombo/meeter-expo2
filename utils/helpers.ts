@@ -572,7 +572,7 @@ export function getPermissionsForActiveOrg(profile: UserProfile): string[] {
 
     // dedupe and sort for stable output
     const unique = Array.from(new Set(roles)).sort((a, b) =>
-        a.localeCompare(b)
+        String(a || '').localeCompare(String(b || ''))
     );
     return unique;
 }
@@ -597,4 +597,41 @@ export function normalizePermissions(
             .filter((s) => s.length > 0);
     }
     return [];
+}
+
+/**
+ * Normalize a meeting object to a consistent shape before writing to the store.
+ * Ensures `meeting_date` is a string (ISO yyyy-mm-dd or empty string),
+ * `groups` is an array (flattening `.groups.items` when present), and
+ * leaves other fields untouched.
+ */
+export function normalizeMeeting(meeting: any): any {
+    if (!meeting || typeof meeting !== 'object') return meeting;
+    const m = { ...meeting };
+    try {
+        // Normalize meeting_date to yyyy-mm-dd or empty string
+        if (m.meeting_date == null) {
+            m.meeting_date = '';
+        } else {
+            // keep only date portion if ISO-like
+            m.meeting_date = String(m.meeting_date).slice(0, 10);
+        }
+    } catch {
+        m.meeting_date = '';
+    }
+
+    // Normalize groups to an array. Some payloads use { items: [...] }
+    try {
+        if (Array.isArray(m.groups)) {
+            // already array
+        } else if (m.groups && Array.isArray(m.groups.items)) {
+            m.groups = [...m.groups.items];
+        } else {
+            m.groups = [];
+        }
+    } catch {
+        m.groups = [];
+    }
+
+    return m;
 }

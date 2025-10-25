@@ -198,21 +198,11 @@ export async function fetchMeetingDetails(
                     return;
                 }
                 const meeting = response?.data;
+
                 resolve({ status: 200, data: meeting });
             })
             .catch((error) => {
-                console.error('API call failed:', error);
-                const customError: ApiError = {
-                    message: 'Failure getting meeting details.',
-                    details: {
-                        // More specific error details based on the actual error response
-                        ...(error.response && error.response.data),
-                    },
-                    status: 500,
-                };
-                // Resolve with an ApiError-like object by rejecting so callers can
-                // decide, but this typically indicates a network/server failure.
-                reject(customError);
+                // Handle API call failure
             });
     });
 }
@@ -290,18 +280,41 @@ export async function createNewGroup(
             //********************************
             //* POST database call
             //********************************
+            // Derive a usable token string from the provided apiToken which
+            // in some callers is an object that contains `plainTextToken` or
+            // `accessToken.plainTextToken`. Fall back to the build-time
+            // environment token if no explicit token string is available.
+            const tokenToUse =
+                typeof apiToken === 'string'
+                    ? apiToken
+                    : apiToken?.plainTextToken ||
+                      apiToken?.accessToken?.plainTextToken ||
+                      API_TOKEN;
             const config = {
                 headers: {
                     'Content-type': 'application/json; charset=UTF-8',
-                    Authorization: `Bearer ${API_TOKEN}`,
+                    Authorization: `Bearer ${tokenToUse}`,
                 },
             };
             const body = new_group;
             const api2use = API_URL + '/group';
+            // Diagnostic logging for group creation: record endpoint, headers and body
+            try {
+                console.debug('MAPI:createNewGroup -> POST', {
+                    api: api2use,
+                    headers: config.headers,
+                    body,
+                });
+            } catch {}
             axios
                 .post(api2use, body, config)
                 .then((response) => {
-                    //printObject('MAPI:263-->response:\n', response);
+                    try {
+                        console.debug('MAPI:createNewGroup response', {
+                            status: response?.status,
+                            data: response?.data,
+                        });
+                    } catch {}
                     if (response?.data?.status === 200) {
                         const returnMessage = {
                             status: response?.data?.status,
@@ -312,27 +325,34 @@ export async function createNewGroup(
                     } else {
                         const returnMessage = {
                             status: response?.data?.status,
-                            message: response?.data?.message,
+                            message:
+                                response?.data?.message || 'Unexpected error',
                             data: response?.data?.group || null,
                         };
+                        console.error(
+                            'MAPI:createNewGroup unexpected response:',
+                            returnMessage
+                        );
                         reject(returnMessage);
                     }
                 })
                 .catch((error) => {
-                    console.error('MAPI:281 meetings API call failed:', error);
+                    console.error('MAPI:createNewGroup API call failed:', {
+                        message: error.message,
+                        response: error.response?.data,
+                    });
                     const customError: ApiError = {
                         message: 'Failure saving group to meeting.',
                         details: {
-                            // More specific error details based on the actual error response
                             ...(error.response && error.response.data),
                         },
                     };
                     reject(customError);
                 });
         } catch (error) {
-            console.log('🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴');
+            console.log('🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔶🔶🔶🔶🔶🔶🔶🔶');
             console.log('MAPI:293-->error:', error);
-            console.log('🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴');
+            console.log('🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔶🔶🔶🔶🔶🔶🔶🔶');
         }
     });
 }
@@ -342,17 +362,6 @@ export async function createNewMeeting(
 ): Promise<{ status: number; data: FullMeeting } | ApiError> {
     return new Promise((resolve, reject) => {
         // printObject('MAPI:209->meeting:', meeting);
-        function convertKeysToSnakeCase(obj: Record<string, any>) {
-            const newObj: Record<string, any> = {};
-            for (const key in obj) {
-                const newKey = key
-                    .replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
-                    .toLowerCase();
-                newObj[newKey] = obj[key];
-            }
-            return newObj;
-        }
-        const snake_meeting = convertKeysToSnakeCase(meeting);
         try {
             //********************************
             //* POST database call
@@ -363,8 +372,7 @@ export async function createNewMeeting(
                     Authorization: `Bearer ${API_TOKEN}`,
                 },
             };
-            const orgId = meeting.organization_id;
-            const body = JSON.stringify(snake_meeting);
+            const body = JSON.stringify(meeting);
             const api2use = API_URL + '/meeting';
             axios
                 .post(api2use, body, config)
@@ -508,17 +516,6 @@ export async function updateTheMeeting(
     meeting: any
 ): Promise<UpdateMeetingType | ApiError> {
     return new Promise((resolve, reject) => {
-        function convertKeysToSnakeCase(obj: Record<string, any>) {
-            const newObj: Record<string, any> = {};
-            for (const key in obj) {
-                const newKey = key
-                    .replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
-                    .toLowerCase();
-                newObj[newKey] = obj[key];
-            }
-            return newObj;
-        }
-        const snake_meeting = convertKeysToSnakeCase(meeting);
         try {
             const api2use =
                 API_URL + `/meeting/${meeting.organization_id}/${meeting.id}`;
@@ -571,7 +568,6 @@ export async function updateAGroup(
     return new Promise((resolve, reject) => {
         try {
             printObject('MAPI:545->inputs:\n', inputs);
-            const api_token = inputs?.api_token;
             const group_id = inputs?.group_id;
             const group = inputs?.group;
 
