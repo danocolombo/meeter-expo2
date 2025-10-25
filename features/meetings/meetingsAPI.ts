@@ -5,6 +5,7 @@ import { ApiError, FullGroup, FullMeeting } from '../../types/interfaces';
 const API_URL = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
 const API_TOKEN = process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
 
+//todo
 type UpdateMeetingType = {
     status: number;
     message: string;
@@ -12,6 +13,7 @@ type UpdateMeetingType = {
         meeting: FullMeeting;
     };
 };
+
 type UpdateGroupType = {
     status: number;
     message: string;
@@ -299,22 +301,10 @@ export async function createNewGroup(
             const body = new_group;
             const api2use = API_URL + '/group';
             // Diagnostic logging for group creation: record endpoint, headers and body
-            try {
-                console.debug('MAPI:createNewGroup -> POST', {
-                    api: api2use,
-                    headers: config.headers,
-                    body,
-                });
-            } catch {}
+
             axios
                 .post(api2use, body, config)
                 .then((response) => {
-                    try {
-                        console.debug('MAPI:createNewGroup response', {
-                            status: response?.status,
-                            data: response?.data,
-                        });
-                    } catch {}
                     if (response?.data?.status === 200) {
                         const returnMessage = {
                             status: response?.data?.status,
@@ -329,10 +319,7 @@ export async function createNewGroup(
                                 response?.data?.message || 'Unexpected error',
                             data: response?.data?.group || null,
                         };
-                        console.error(
-                            'MAPI:createNewGroup unexpected response:',
-                            returnMessage
-                        );
+
                         reject(returnMessage);
                     }
                 })

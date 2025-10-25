@@ -279,14 +279,7 @@ export const meetingsSlice = createSlice({
                 // Debug: record payload arriving to reducer to help trace why
                 // UI isn't showing the newly created group. Remove after
                 // verification.
-                try {
-                    printObject(
-                        'MS:ADD_GROUP_FULFILLED payload',
-                        action.payload
-                    );
-                } catch {
-                    // ignore logging failures
-                }
+
                 const groupId = action.payload?.group_id;
                 const fullGroup =
                     action.payload?.group ||
@@ -550,22 +543,73 @@ export const meetingsSlice = createSlice({
             .addCase(
                 deleteGroupFromMeeting.fulfilled,
                 (state: any, action: any) => {
+                    const removedGroupId = action?.payload?.group_id;
+                    if (!removedGroupId) {
+                        state.isLoading = false;
+                        return;
+                    }
+
+                    // helper that finds index whether group is stored as object or id
+                    function findGroupIndex(
+                        groups: any[] | undefined,
+                        id: string
+                    ) {
+                        if (!Array.isArray(groups)) return -1;
+                        return groups.findIndex((group: any) => {
+                            if (!group) return false;
+                            if (typeof group === 'object')
+                                return String(group.id) === String(id);
+                            return String(group) === String(id);
+                        });
+                    }
+
+                    // remove from master meetings list
+                    state.meetings.forEach((meeting: any) => {
+                        const idx = findGroupIndex(
+                            meeting?.groups,
+                            removedGroupId
+                        );
+                        if (idx !== -1) meeting.groups.splice(idx, 1);
+                    });
+
+                    // remove from activeMeetings
                     state.activeMeetings.forEach((meeting: any) => {
-                        const groupIndex = meeting?.groups.findIndex(
-                            (group: any) =>
-                                group?.id === action?.payload?.group_id
+                        const idx = findGroupIndex(
+                            meeting?.groups,
+                            removedGroupId
                         );
-                        if (groupIndex !== -1)
-                            meeting?.groups.splice(groupIndex, 1);
+                        if (idx !== -1) meeting.groups.splice(idx, 1);
                     });
+
+                    // remove from historicMeetings
                     state.historicMeetings.forEach((meeting: any) => {
-                        const groupIndex = meeting?.groups.findIndex(
-                            (group: any) =>
-                                group?.id === action?.payload?.group_id
+                        const idx = findGroupIndex(
+                            meeting?.groups,
+                            removedGroupId
                         );
-                        if (groupIndex !== -1)
-                            meeting?.groups?.splice(groupIndex, 1);
+                        if (idx !== -1) meeting.groups.splice(idx, 1);
                     });
+
+                    // remove from specificMeeting if present
+                    try {
+                        const idxSpec = findGroupIndex(
+                            state.specificMeeting?.groups,
+                            removedGroupId
+                        );
+                        if (idxSpec !== -1)
+                            state.specificMeeting.groups.splice(idxSpec, 1);
+                    } catch {}
+
+                    // remove from currentMeeting/currentGroups if present
+                    try {
+                        const idxCur = findGroupIndex(
+                            state.currentMeeting?.groups,
+                            removedGroupId
+                        );
+                        if (idxCur !== -1)
+                            state.currentMeeting.groups.splice(idxCur, 1);
+                    } catch {}
+
                     state.isLoading = false;
                 }
             )

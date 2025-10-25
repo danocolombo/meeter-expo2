@@ -13,5 +13,19 @@
     "uiils",
     "yxxx"
   ],
-  "postman.settings.dotenv-detection-notification-visibility": false
+  "postman.settings.dotenv-detection-notification-visibility": false,
+  "todohighlight.keywords": [
+    {
+    "text": "//DEBUG",
+    "color": "yellow",
+    "backgroundColor": "transparent",
+    "wholeLine": true
+    },
+    {
+      "text": "//TODO",
+      "color": "white",
+      "backgroundColor": "blue",
+      "wholeLine": true
+    }
+  ]
 }

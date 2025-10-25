@@ -47,7 +47,9 @@ const GroupListCard = ({
                     meeting_id,
                 })
             ).unwrap();
-            if (onGroupDeleted) onGroupDeleted();
+            if (onGroupDeleted) {
+                onGroupDeleted();
+            }
         } catch {
             // Optionally show error
         }

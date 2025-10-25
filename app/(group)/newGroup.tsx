@@ -99,14 +99,6 @@ const NewGroup = () => {
             notes: notes.trim() || null,
         };
         try {
-            // Debug: show payload being dispatched so we can trace failures
-            try {
-                console.debug('NewGroup: dispatching addGroup', {
-                    api_token,
-                    group,
-                    meetingId,
-                });
-            } catch {}
             // The addGroup thunk is defined in plain JS/TS without a narrow arg type in our workspace,
             // so silence the type-check here for now. This is a minimal, safe change to unblock compilation.
             // @ts-ignore TS(2345)
@@ -114,9 +106,7 @@ const NewGroup = () => {
                 // @ts-ignore
                 addGroup({ api_token, group, meetingId })
             ).unwrap();
-            try {
-                console.debug('NewGroup: addGroup result', result);
-            } catch {}
+
             handleCancel();
         } catch (err: any) {
             console.log('Failed to add group:', {

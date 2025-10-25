@@ -278,12 +278,6 @@ const MeetingDetails = () => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 setHistoric(meetingDate < today);
-                try {
-                    console.debug(
-                        'MeetingDetails: meetingFromStore groups:',
-                        (fetchedGroups || []).map((g: any) => g.id || g)
-                    );
-                } catch {}
             } catch {
                 // ignore parse errors
             }
