@@ -206,6 +206,9 @@ const GroupEdit = () => {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
             >
                 <Surface style={themedStyles.surface}>
+                    <View style={themedStyles.row}>
+                        <Text style={themedStyles.meetingLabel}>EDIT</Text>
+                    </View>
                     <View style={themedStyles.groupGenderSelectorRow}>
                         <View style={themedStyles.groupGenderSelectorContainer}>
                             <View

@@ -253,7 +253,9 @@ const NewLayoutEdit = () => {
                             {error}
                         </Text>
                     )}
-
+                    <View>
+                        <Text>HERE-HERE</Text>
+                    </View>
                     <View style={themedStyles.firstRow}>
                         <View style={themedStyles.meetingSelectorContainer}>
                             <View style={themedStyles.meetingSelectorWrapper}>

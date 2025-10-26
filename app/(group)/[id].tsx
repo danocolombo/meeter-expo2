@@ -280,6 +280,9 @@ const Group = () => {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
             >
                 <Surface style={themedStyles.surface}>
+                    <View style={themedStyles.row}>
+                        <Text style={themedStyles.meetingLabel}>READ_ONLY</Text>
+                    </View>
                     <View style={themedStyles.groupGenderSelectorRow}>
                         <View style={themedStyles.groupGenderSelectorContainer}>
                             <View
