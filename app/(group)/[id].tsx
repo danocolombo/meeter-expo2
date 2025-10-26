@@ -1,7 +1,6 @@
 import theme from '@assets/Colors';
 import themedStyles from '@assets/Styles';
 import GenderSelectors from '@components/ui/GenderSelectors';
-import NumberInputEditable from '@components/ui/NumberInputEditable';
 import { updateGroup } from '@features/meetings/meetingsThunks';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -10,7 +9,6 @@ import {
     KeyboardAvoidingView,
     Platform,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
@@ -300,67 +298,51 @@ const Group = () => {
                         <Text style={themedStyles.groupFormLabel}>
                             Attendance
                         </Text>
-                        <NumberInputEditable
-                            value={attendance}
-                            onAction={canEdit ? setAttendance : () => {}}
-                            min={0}
-                            max={999}
-                            numberStyle={{}}
-                            graphicStyle={{}}
-                        />
+                        <Text style={themedStyles.groupReadOnlyData}>
+                            {String(attendance)}
+                        </Text>
                     </View>
                     <View style={themedStyles.groupFormRow}>
                         <Text style={themedStyles.groupFormLabel}>Title *</Text>
-                        <TextInput
-                            style={themedStyles.formInput}
-                            value={title}
-                            placeholder='Group Title'
-                            maxLength={25}
-                        />
+                        <Text style={themedStyles.groupReadOnlyData}>
+                            {title?.trim() ? title : ''}
+                        </Text>
                     </View>
                     <View style={themedStyles.groupFormRow}>
                         <Text style={themedStyles.groupFormLabel}>
                             Location *
                         </Text>
-                        <TextInput
-                            style={themedStyles.formInput}
-                            value={location}
-                            placeholder='Location'
-                            maxLength={25}
-                        />
+                        <Text style={themedStyles.groupReadOnlyData}>
+                            {location?.trim() ? location : ''}
+                        </Text>
                     </View>
                     <View style={themedStyles.groupFormRow}>
                         <Text style={themedStyles.groupFormLabel}>
                             Facilitator
                         </Text>
-                        <TextInput
-                            style={themedStyles.formInput}
-                            value={facilitator}
-                            placeholder='Facilitator'
-                            maxLength={25}
-                        />
+                        <Text style={themedStyles.groupReadOnlyData}>
+                            {facilitator?.trim() ? facilitator : ''}
+                        </Text>
                     </View>
                     <View style={themedStyles.groupFormRow}>
                         <Text style={themedStyles.groupFormLabel}>
                             Co-Facilitator
                         </Text>
-                        <TextInput
-                            style={themedStyles.formInput}
-                            value={cofacilitator}
-                            placeholder='Co-Facilitator'
-                            maxLength={25}
-                        />
+                        <Text style={themedStyles.groupReadOnlyData}>
+                            {cofacilitator?.trim() ? cofacilitator : ''}
+                        </Text>
                     </View>
                     <View style={themedStyles.groupFormRow}>
                         <Text style={themedStyles.groupFormLabel}>Notes</Text>
-                        <TextInput
-                            style={[themedStyles.input, { height: 60 }]}
-                            value={notes as string}
-                            placeholder='Notes'
-                            multiline
-                        />
+                        <Text
+                            style={[
+                                themedStyles.groupReadOnlyData,
+                                { height: 60 },
+                            ]}
+                        >
+                            {(notes as string)?.trim() ? (notes as string) : ''}
+                        </Text>
                     </View>
-
                     {error ? (
                         <Text
                             style={{

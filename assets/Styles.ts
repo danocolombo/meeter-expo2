@@ -1,6 +1,7 @@
 import theme from '@assets/Colors';
 import {
     hairlineWidth,
+    rowMargin,
     rowPadding,
     screenMarginHorizontal,
     screenMarginVertical,
@@ -183,6 +184,25 @@ const themedStyles: { [key: string]: any } = {
         borderBottomLeftRadius: 20,
         borderBottomRightRadius: 20,
         backgroundColor: theme.colors.lightGraphic,
+    },
+    groupReadOnlyData: {
+        fontFamily: 'Roboto-regular',
+        fontSize: 24,
+        color: theme.colors.lightText,
+        paddingBottom: rowPadding,
+        marginHorizontal: rowMargin,
+        // Avoid flex here so the Text height/width is determined by content
+        // which prevents layout collapse where values can become invisible.
+        paddingVertical: 8,
+        borderBottomWidth: hairlineWidth,
+        borderBottomColor: theme.colors.lightGraphic,
+    },
+    groupReadOnlyLabel: {
+        fontFamily: 'Roboto-Bold',
+        fontSize: 24,
+        color: theme.colors.lightText,
+        paddingBottom: rowPadding,
+        marginHorizontal: rowMargin,
     },
     input: {
         borderWidth: 1,
