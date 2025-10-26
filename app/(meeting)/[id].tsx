@@ -8,6 +8,10 @@ import BadgeNumber from '@components/ui/BadgeNumber';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { FullMeeting, Group } from '../../types/interfaces';
+import {
+    registerCallback,
+    unregisterCallback,
+} from '../../utils/navigationCallbacks';
 // import { getAMeeting } from '@utils/api';
 import MeetingDate from '@components/meeting/MeetingDate';
 import TypeSelectors from '@components/meeting/TypeSelectors';
@@ -60,6 +64,9 @@ const MeetingDetails = () => {
         origin?: string | string[];
         org_id?: string | string[];
     }>();
+    // callback key reference for when we navigate to the edit screen and want
+    // to register a callback that the edit screen can invoke on success.
+    const editCallbackKeyRef = React.useRef<string | null>(null);
     // Normalize origin which may be a string or array (from query params)
     const originValue: string = React.useMemo(() => {
         if (!origin) return '';
@@ -69,6 +76,7 @@ const MeetingDetails = () => {
     const router = useRouter();
     const [historic, setHistoric] = React.useState(false);
     const [, setIsSavable] = React.useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [groups, setGroups] = React.useState<Group[]>([]);
     const [error, setError] = React.useState<string | null>(null);
     const user = useSelector((state: any) => state.user);
@@ -142,6 +150,7 @@ const MeetingDetails = () => {
         (meetingFromStore as any) || null;
     const [isLoading, setIsLoading] = React.useState(false);
     const navigation = useNavigation();
+    // callback helpers imported at module top
 
     // Top navigation cancel handler — navigate back to the meetings list
     const handleCancel = React.useCallback(() => {
@@ -300,10 +309,20 @@ const MeetingDetails = () => {
     }, [routeMeetingParam, meetingFromStore, dispatch]);
 
     // Always attempt to refresh from backend when the screen focuses so the
-    // latest values are fetched after returning from Edit.
+    // latest values are fetched after returning from Edit. Also clean up any
+    // pending callback key that may remain registered.
     useFocusEffect(
         React.useCallback(() => {
             refreshMeeting();
+
+            if (editCallbackKeyRef.current) {
+                try {
+                    unregisterCallback(editCallbackKeyRef.current);
+                } catch {
+                    // ignore
+                }
+                editCallbackKeyRef.current = null;
+            }
         }, [refreshMeeting])
     );
 
@@ -344,51 +363,114 @@ const MeetingDetails = () => {
             displayedMeeting.meeting_type ||
             '');
 
-    // Set header title dynamically after meeting is loaded
+    // Set header title dynamically after meeting is loaded and add edit
+    // button that registers a callback and navigates to the edit screen.
     React.useLayoutEffect(() => {
         if (
             meetingTypeString &&
             navigation &&
             typeof navigation.setOptions === 'function'
         ) {
-            // Set title and add Edit button to header that passes the meeting object
             navigation.setOptions({
                 title: '',
                 headerRight: () => {
-                    // Only show edit when we have a meeting and user has manage perms
                     if (!displayedMeeting) return null;
                     const canEdit =
                         user?.profile?.permissions?.includes('manage') ||
                         user?.profile?.perms?.includes('meetings');
                     if (!canEdit) return null;
+
                     return (
                         <TouchableOpacity
                             style={{ marginRight: 16 }}
                             onPress={() => {
                                 try {
-                                    const meetingParam =
-                                        JSON.stringify(displayedMeeting);
-                                    router.push({
-                                        pathname: '/(meeting)/(edit)/[id]',
-                                        params: {
-                                            id,
-                                            meeting: meetingParam,
-                                            from: origin || undefined,
-                                        },
-                                    });
-                                } catch (e) {
-                                    console.warn(
-                                        'Failed to serialize meeting for edit navigation',
-                                        e
+                                    const key = `md-${Date.now().toString(
+                                        36
+                                    )}-${Math.random().toString(36).slice(2)}`;
+
+                                    registerCallback(
+                                        key,
+                                        (updatedMeeting: any) => {
+                                            try {
+                                                if (updatedMeeting) {
+                                                    // Preserve or map groups to avoid losing
+                                                    // group objects when the editor returns
+                                                    // a meeting without groups or with id-only
+                                                    // group arrays.
+                                                    const merged: any = {
+                                                        ...updatedMeeting,
+                                                    };
+                                                    if (
+                                                        !Array.isArray(
+                                                            merged.groups
+                                                        ) ||
+                                                        merged.groups.length ===
+                                                            0
+                                                    ) {
+                                                        merged.groups =
+                                                            (
+                                                                meetingFromStore as any
+                                                            )?.groups || [];
+                                                    } else if (
+                                                        merged.groups.length >
+                                                            0 &&
+                                                        typeof merged
+                                                            .groups[0] !==
+                                                            'object'
+                                                    ) {
+                                                        merged.groups =
+                                                            merged.groups.map(
+                                                                (gid: any) =>
+                                                                    globalGroups.find(
+                                                                        (
+                                                                            g: any
+                                                                        ) =>
+                                                                            String(
+                                                                                g.id
+                                                                            ) ===
+                                                                            String(
+                                                                                gid
+                                                                            )
+                                                                    ) || {
+                                                                        id: gid,
+                                                                    }
+                                                            );
+                                                    }
+
+                                                    dispatch(
+                                                        upsertMeeting(merged)
+                                                    );
+                                                }
+                                            } catch {
+                                                // ignore
+                                            }
+                                            setTimeout(
+                                                () => refreshMeeting(),
+                                                60
+                                            );
+                                        }
                                     );
-                                    // fallback: navigate with id only
+
+                                    editCallbackKeyRef.current = key;
+
                                     router.push({
                                         pathname: '/(meeting)/(edit)/[id]',
                                         params: {
-                                            id,
-                                            from: origin || undefined,
+                                            id: String(id),
+                                            meeting:
+                                                JSON.stringify(
+                                                    displayedMeeting
+                                                ),
+                                            callbackKey: key,
+                                            origin: originValue,
                                         },
                                     });
+                                } catch (err) {
+                                    console.error(
+                                        'Failed to open edit screen',
+                                        err
+                                    );
                                 }
                             }}
                         >
@@ -408,7 +490,28 @@ const MeetingDetails = () => {
         id,
         origin,
         user,
+        dispatch,
+        originValue,
+        refreshMeeting,
+        globalGroups,
+        meetingFromStore,
     ]);
+
+    // cleanup any pending callback registration when this component
+    // unmounts (extra safety)
+    React.useEffect(() => {
+        return () => {
+            const key = editCallbackKeyRef.current;
+            if (key) {
+                try {
+                    unregisterCallback(key);
+                } catch {
+                    // ignore
+                }
+                editCallbackKeyRef.current = null;
+            }
+        };
+    }, []);
 
     // Removed unused generateUUID
     if (isLoading) {
@@ -462,7 +565,7 @@ const MeetingDetails = () => {
                             style={{ marginLeft: 16 }}
                         >
                             <Text style={{ color: '#007AFF', fontSize: 18 }}>
-                                Cancel
+                                Back
                             </Text>
                         </TouchableOpacity>
                     ),

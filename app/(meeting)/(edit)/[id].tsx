@@ -20,6 +20,7 @@ import { Calendar } from 'react-native-calendars';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateMeeting } from '../../../features/meetings/meetingsThunks';
 import { FullMeeting } from '../../../types/interfaces';
+import { invokeCallback } from '../../../utils/navigationCallbacks';
 import type { AppDispatch } from '../../../utils/store';
 
 // Infer payload type for updateMeeting thunk to keep typings tight
@@ -157,6 +158,19 @@ const NewLayoutEdit = () => {
             .then(unwrapResult)
             .then(() => {
                 setSaving(false);
+                // If the caller provided a callbackKey param, invoke it with the
+                // cleaned meeting so the details screen can upsert/refresh.
+                try {
+                    const cbKey = (params as any)?.callbackKey;
+                    if (cbKey) {
+                        invokeCallback(
+                            Array.isArray(cbKey) ? cbKey[0] : cbKey,
+                            cleaned
+                        );
+                    }
+                } catch {
+                    // ignore callback failures
+                }
                 // After successful save, navigate back to the meeting details
                 // so that screen's useFocusEffect will re-fetch the latest data.
                 // Use replace to avoid stacking navigation history from edit.
