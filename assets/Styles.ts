@@ -152,14 +152,6 @@ const themedStyles: { [key: string]: any } = {
         justifyContent: 'center',
         alignItems: 'stretch',
     },
-    groupGenderSelectorRow: {
-        flexDirection: 'row' as 'row',
-        alignItems: 'center' as 'center',
-        justifyContent: 'center' as 'center',
-        padding: 0,
-        marginVertical: 0,
-        marginHorizontal: 0,
-    },
     groupFormLabel: {
         fontFamily: 'Roboto-Regular',
         color: theme.colors.lightText,
@@ -173,6 +165,14 @@ const themedStyles: { [key: string]: any } = {
         flex: 1,
         alignItems: 'center' as 'center',
     },
+    groupGenderSelectorRow: {
+        flexDirection: 'row' as 'row',
+        alignItems: 'center' as 'center',
+        justifyContent: 'center' as 'center',
+        padding: 0,
+        marginVertical: 0,
+        marginHorizontal: 0,
+    },
     groupGenderSelectorWrapper: {
         flexDirection: 'row' as 'row',
         borderWidth: 2,
@@ -184,6 +184,7 @@ const themedStyles: { [key: string]: any } = {
         borderBottomLeftRadius: 20,
         borderBottomRightRadius: 20,
         backgroundColor: theme.colors.lightGraphic,
+        marginVertical: screenMarginVertical,
     },
     groupReadOnlyData: {
         fontFamily: 'Roboto-regular',
@@ -273,13 +274,6 @@ const themedStyles: { [key: string]: any } = {
         color: theme.colors.darkText,
         fontSize: 20,
     },
-    // Standard label style used across meeting detail screens
-    meetingLabel: {
-        fontFamily: 'Roboto-Regular',
-        color: theme.colors.lightText,
-        fontSize: 24,
-        fontWeight: '400',
-    },
     mealWrapper: {
         flexDirection: 'row' as 'row',
         borderWidth: 2,
@@ -305,6 +299,12 @@ const themedStyles: { [key: string]: any } = {
     },
     meetingDetailsContainer: {
         marginLeft: 20,
+    },
+    meetingLabel: {
+        fontFamily: 'Roboto-Regular',
+        color: theme.colors.lightText,
+        fontSize: 24,
+        fontWeight: '400',
     },
     meetingListError: {
         color: theme.colors.white,

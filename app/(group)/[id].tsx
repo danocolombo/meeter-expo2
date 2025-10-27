@@ -1,11 +1,8 @@
-import theme from '@assets/Colors';
 import themedStyles from '@assets/Styles';
 import GenderSelectors from '@components/ui/GenderSelectors';
-import { updateGroup } from '@features/meetings/meetingsThunks';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
     Text,
@@ -95,7 +92,6 @@ const Group = () => {
     const [notes, setNotes] = useState('');
     const [gender, setGender] = useState('x');
     const [attendance, setAttendance] = useState(0);
-    const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
 
     // On mount or when params change, sync form state from params if present,
@@ -131,24 +127,6 @@ const Group = () => {
         );
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [JSON.stringify(params), paramGroup, reduxGroup]);
-
-    // Validation
-    const isTitleValid = /^[a-zA-Z0-9 \-_&]{3,25}$/.test(title);
-    const isLocationValid = /^[a-zA-Z0-9 \-_&]{3,25}$/.test(location);
-    const isFacilitatorValid =
-        facilitator.length === 0 || /^[a-zA-Z0-9 ]{0,25}$/.test(facilitator);
-    const isCofacilitatorValid =
-        cofacilitator.length === 0 ||
-        /^[a-zA-Z0-9 ]{0,25}$/.test(cofacilitator);
-    const isNotesValid =
-        notes.length === 0 || /^[a-zA-Z0-9 .,!?\\-]{0,100}$/.test(notes);
-    const canSubmit =
-        isTitleValid &&
-        isLocationValid &&
-        isFacilitatorValid &&
-        isCofacilitatorValid &&
-        isNotesValid &&
-        canEdit;
 
     // Top navigation cancel handler
     // Always ensure the meeting route receives the meeting id and origin so
@@ -195,35 +173,6 @@ const Group = () => {
             }
         }
     }, [meetingId, router, originParam, params]);
-
-    const handleSubmit = async () => {
-        setSubmitting(true);
-        setError('');
-        const group = {
-            title: title.trim(),
-            location: location.trim(),
-            gender,
-            attendance,
-            facilitator: facilitator.trim() || null,
-            cofacilitator: cofacilitator.trim() || null,
-            notes: notes.trim() || null,
-        };
-        try {
-            await (dispatch as any)(
-                updateGroup({
-                    api_token,
-                    group_id: groupId,
-                    group,
-                    meeting_id: meetingId,
-                })
-            ).unwrap();
-            handleCancel();
-        } catch {
-            setError('Failed to update group. Please try again.');
-        } finally {
-            setSubmitting(false);
-        }
-    };
 
     // No navigation.setOptions in expo-router, so skip headerLeft logic
 
@@ -278,9 +227,6 @@ const Group = () => {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
             >
                 <Surface style={themedStyles.surface}>
-                    <View style={themedStyles.row}>
-                        <Text style={themedStyles.meetingLabel}>READ_ONLY</Text>
-                    </View>
                     <View style={themedStyles.groupGenderSelectorRow}>
                         <View style={themedStyles.groupGenderSelectorContainer}>
                             <View
@@ -295,29 +241,28 @@ const Group = () => {
                     </View>
 
                     <View style={themedStyles.groupFormRow}>
-                        <Text style={themedStyles.groupFormLabel}>
-                            Attendance
-                        </Text>
-                        <Text style={themedStyles.groupReadOnlyData}>
-                            {String(attendance)}
+                        <Text style={themedStyles.groupReadOnlyLabel}>
+                            Attendance: {String(attendance)}
                         </Text>
                     </View>
                     <View style={themedStyles.groupFormRow}>
-                        <Text style={themedStyles.groupFormLabel}>Title *</Text>
+                        <Text style={themedStyles.groupReadOnlyLabel}>
+                            Title
+                        </Text>
                         <Text style={themedStyles.groupReadOnlyData}>
                             {title?.trim() ? title : ''}
                         </Text>
                     </View>
                     <View style={themedStyles.groupFormRow}>
-                        <Text style={themedStyles.groupFormLabel}>
-                            Location *
+                        <Text style={themedStyles.groupReadOnlyLabel}>
+                            Location
                         </Text>
                         <Text style={themedStyles.groupReadOnlyData}>
                             {location?.trim() ? location : ''}
                         </Text>
                     </View>
                     <View style={themedStyles.groupFormRow}>
-                        <Text style={themedStyles.groupFormLabel}>
+                        <Text style={themedStyles.groupReadOnlyLabel}>
                             Facilitator
                         </Text>
                         <Text style={themedStyles.groupReadOnlyData}>
@@ -325,7 +270,7 @@ const Group = () => {
                         </Text>
                     </View>
                     <View style={themedStyles.groupFormRow}>
-                        <Text style={themedStyles.groupFormLabel}>
+                        <Text style={themedStyles.groupReadOnlyLabel}>
                             Co-Facilitator
                         </Text>
                         <Text style={themedStyles.groupReadOnlyData}>
@@ -333,7 +278,9 @@ const Group = () => {
                         </Text>
                     </View>
                     <View style={themedStyles.groupFormRow}>
-                        <Text style={themedStyles.groupFormLabel}>Notes</Text>
+                        <Text style={themedStyles.groupReadOnlyLabel}>
+                            Notes
+                        </Text>
                         <Text
                             style={[
                                 themedStyles.groupReadOnlyData,
@@ -354,29 +301,6 @@ const Group = () => {
                             {error}
                         </Text>
                     ) : null}
-
-                    <View style={themedStyles.buttonRow}>
-                        {canEdit && canSubmit && (
-                            <TouchableOpacity
-                                style={themedStyles.saveButton}
-                                onPress={handleSubmit}
-                                disabled={submitting}
-                            >
-                                <Text style={themedStyles.saveText}>
-                                    {submitting ? 'Saving...' : 'Update'}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-
-                        {submitting && (
-                            <View style={themedStyles.activityOverlay}>
-                                <ActivityIndicator
-                                    size='large'
-                                    color={theme.colors.accent}
-                                />
-                            </View>
-                        )}
-                    </View>
                 </Surface>
             </KeyboardAvoidingView>
         </>
