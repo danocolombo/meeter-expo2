@@ -189,12 +189,12 @@ const themedStyles: { [key: string]: any } = {
     groupReadOnlyData: {
         fontFamily: 'Roboto-regular',
         fontSize: 24,
-        color: theme.colors.lightText,
+        color: theme.colors.accent,
         paddingBottom: rowPadding,
         marginHorizontal: rowMargin,
         // Avoid flex here so the Text height/width is determined by content
         // which prevents layout collapse where values can become invisible.
-        paddingVertical: 8,
+        paddingVertical: 4,
         borderBottomWidth: hairlineWidth,
         borderBottomColor: theme.colors.lightGraphic,
     },

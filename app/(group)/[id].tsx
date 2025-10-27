@@ -10,14 +10,12 @@ import {
     View,
 } from 'react-native';
 import { Surface } from 'react-native-paper';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 const Group = () => {
     // ...existing code...
     const router = useRouter();
-    const dispatch = useDispatch();
     const params = useLocalSearchParams();
-    const api_token = useSelector((state: any) => state.user?.apiToken);
     const user = useSelector((state: any) => state.user);
     // Helper to always get string from param
     function getParamString(val: any): string {
@@ -92,7 +90,6 @@ const Group = () => {
     const [notes, setNotes] = useState('');
     const [gender, setGender] = useState('x');
     const [attendance, setAttendance] = useState(0);
-    const [error, setError] = useState('');
 
     // On mount or when params change, sync form state from params if present,
     // otherwise use Redux group data if available.
@@ -290,17 +287,6 @@ const Group = () => {
                             {(notes as string)?.trim() ? (notes as string) : ''}
                         </Text>
                     </View>
-                    {error ? (
-                        <Text
-                            style={{
-                                color: 'red',
-                                textAlign: 'center',
-                                marginVertical: 8,
-                            }}
-                        >
-                            {error}
-                        </Text>
-                    ) : null}
                 </Surface>
             </KeyboardAvoidingView>
         </>
