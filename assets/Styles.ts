@@ -156,10 +156,10 @@ const themedStyles: { [key: string]: any } = {
         fontFamily: 'Roboto-Regular',
         color: theme.colors.lightText,
         fontSize: 24,
-        padding: 10,
+        // padding: 10,
     },
     groupFormRow: {
-        marginBottom: 16,
+        marginBottom: 2,
     },
     groupGenderSelectorContainer: {
         flex: 1,

@@ -36,7 +36,6 @@ type MeetingsState = {
     groups: FullGroup[] | any[];
     tmpMeeting: any;
     currentMeeting: any;
-    currentGroups: any[];
     isLoading: boolean;
 };
 
@@ -88,7 +87,6 @@ const initialState: MeetingsState = {
     groups: [],
     tmpMeeting: {},
     currentMeeting: {},
-    currentGroups: [],
     isLoading: false,
 };
 
@@ -180,7 +178,18 @@ export const meetingsSlice = createSlice({
         },
         deleteCurrentMeetingAndGroups: (state) => {
             state.currentMeeting = {};
-            state.currentGroups = [];
+        },
+        // Set the currentMeeting object (used by meeting details/edit flows)
+        setCurrentMeeting: (state, action: PayloadAction<any>) => {
+            state.currentMeeting = action.payload || {};
+        },
+        // Optional: attach origin info to currentMeeting so navigation can read it
+        setCurrentMeetingOrigin: (
+            state,
+            action: PayloadAction<string | undefined>
+        ) => {
+            if (!state.currentMeeting) state.currentMeeting = {};
+            (state.currentMeeting as any).origin = action.payload;
         },
         deleteGroup: (state, action: PayloadAction<any>) => {
             state.groups = state.groups.filter(
@@ -213,7 +222,6 @@ export const meetingsSlice = createSlice({
             state.groups = [];
             state.tmpMeeting = {};
             state.currentMeeting = {};
-            state.currentGroups = [];
             state.isLoading = false;
         },
     },
@@ -798,7 +806,6 @@ export const meetingsSlice = createSlice({
                 saveCurrentMeetingAndGroups.fulfilled,
                 (state: any, action: any) => {
                     state.currentMeeting = action.payload.currentMeeting;
-                    state.currentGroups = action.payload.currentGroups;
                     return state;
                 }
             )
@@ -968,6 +975,8 @@ export const {
     upsertMeeting,
     deleteAMeeting,
     deleteCurrentMeetingAndGroups,
+    setCurrentMeeting,
+    setCurrentMeetingOrigin,
     incrementHistoricCurrentPage,
     clearMeetingsSlice,
     logout,

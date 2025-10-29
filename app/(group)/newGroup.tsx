@@ -26,7 +26,8 @@ const NewGroup = () => {
     const router = useRouter();
     const navigation = useNavigation();
     const dispatch = useDispatch<AppDispatch>();
-    const { meetingId: meetingIdRaw } = useLocalSearchParams();
+    const params = useLocalSearchParams();
+    const { meetingId: meetingIdRaw } = params as any;
     // Ensure meetingId is always a string
     const meetingId = Array.isArray(meetingIdRaw)
         ? meetingIdRaw[0]
@@ -76,15 +77,27 @@ const NewGroup = () => {
 
     // Top navigation cancel handler
     const handleCancel = useCallback(() => {
-        if (meetingId) {
-            router.push({
-                pathname: '/(meeting)/[id]',
-                params: { id: meetingId },
-            });
-        } else {
-            router.push('/(meeting)/[id]');
+        try {
+            const origin = (params as any)?.origin;
+            const org_id = (params as any)?.org_id;
+            const meetingParam = (params as any)?.meeting;
+            if (meetingId) {
+                router.push({
+                    pathname: '/(meeting)/[id]',
+                    params: {
+                        id: meetingId,
+                        origin: origin || undefined,
+                        org_id: org_id || undefined,
+                        meeting: meetingParam || undefined,
+                    },
+                });
+                return;
+            }
+        } catch {
+            // fall through
         }
-    }, [meetingId, router]);
+        router.push('/(meeting)/[id]');
+    }, [meetingId, router, params]);
 
     const handleSubmit = async () => {
         setSubmitting(true);
@@ -102,7 +115,7 @@ const NewGroup = () => {
             // The addGroup thunk is defined in plain JS/TS without a narrow arg type in our workspace,
             // so silence the type-check here for now. This is a minimal, safe change to unblock compilation.
             // @ts-ignore TS(2345)
-            const result = await dispatch(
+            await dispatch(
                 // @ts-ignore
                 addGroup({ api_token, group, meetingId })
             ).unwrap();

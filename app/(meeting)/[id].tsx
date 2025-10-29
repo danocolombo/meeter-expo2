@@ -28,7 +28,10 @@ import {
 } from 'react-native';
 import { Surface } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
-import { upsertMeeting } from '../../features/meetings/meetingsSlice';
+import {
+    deleteCurrentMeetingAndGroups,
+    upsertMeeting,
+} from '../../features/meetings/meetingsSlice';
 import { fetchMeetingDetailsById } from '../../features/meetings/meetingsThunks';
 import { refreshApiToken } from '../../features/user/userThunks';
 import type { AppDispatch } from '../../utils/store';
@@ -154,6 +157,14 @@ const MeetingDetails = () => {
 
     // Top navigation cancel handler — navigate back to the meetings list
     const handleCancel = React.useCallback(() => {
+        // Clear currentMeeting/currentGroups from Redux so subsequent
+        // navigation does not accidentally reuse stale state.
+        try {
+            dispatch(deleteCurrentMeetingAndGroups());
+        } catch {
+            // ignore if dispatch fails
+        }
+
         // origin expected to be 'active' or 'historic'
         if (originValue === 'historic') {
             router.replace('/(drawer)/(meetings)/historic');
@@ -161,7 +172,36 @@ const MeetingDetails = () => {
         }
         // default to active
         router.replace('/(drawer)/(meetings)/active');
-    }, [originValue, router]);
+    }, [originValue, router, dispatch]);
+
+    // Listen for navigation 'beforeRemove' events and clear currentMeeting
+    // when the user is popping/backing out of this screen. This avoids
+    // accidentally clearing state when navigating forward to an editor.
+    React.useEffect(() => {
+        const handler = (e: any) => {
+            try {
+                const actionType = e?.data?.action?.type;
+                // POP indicates user pressed back / popped the screen
+                if (actionType === 'POP' || actionType === 'GO_BACK') {
+                    try {
+                        dispatch(deleteCurrentMeetingAndGroups());
+                    } catch {
+                        // ignore
+                    }
+                }
+            } catch {
+                // ignore
+            }
+        };
+        const unsub = navigation.addListener('beforeRemove', handler);
+        return () => {
+            try {
+                unsub();
+            } catch {
+                // ignore
+            }
+        };
+    }, [navigation, dispatch]);
 
     // Add Edit button to header (Expo Router v2+ pattern)
     // Use a custom header if needed, or add edit button in the screen for now
@@ -651,11 +691,15 @@ const MeetingDetails = () => {
                                     <TouchableOpacity
                                         key={0}
                                         onPress={() =>
-                                            router.push(
-                                                `/(group)/newGroup?meetingId=${encodeURIComponent(
-                                                    id
-                                                )}`
-                                            )
+                                            router.push({
+                                                pathname: '/(group)/newGroup',
+                                                params: {
+                                                    meetingId: String(id),
+                                                    origin: originValue || undefined,
+                                                    org_id: org_id || undefined,
+                                                    meeting: routeMeetingParam || undefined,
+                                                },
+                                            })
                                         }
                                         style={
                                             themedStyles.openShareButtonContainer
@@ -725,11 +769,15 @@ const MeetingDetails = () => {
                             margin: 16,
                         }}
                         onPress={() =>
-                            router.push(
-                                `/(group)/newGroup?meetingId=${encodeURIComponent(
-                                    id
-                                )}`
-                            )
+                            router.push({
+                                pathname: '/(group)/newGroup',
+                                params: {
+                                    meetingId: String(id),
+                                    origin: originValue || undefined,
+                                    org_id: org_id || undefined,
+                                    meeting: routeMeetingParam || undefined,
+                                },
+                            })
                         }
                     >
                         <Text

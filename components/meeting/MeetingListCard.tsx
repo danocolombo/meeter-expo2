@@ -5,15 +5,13 @@ import Tooltip from '@components/ui/ToolTip';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import {
-    Pressable,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { Badge } from 'react-native-paper';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+    setCurrentMeeting,
+    upsertMeeting,
+} from '../../features/meetings/meetingsSlice';
 import { Meeting } from '../../types/interfaces';
 
 interface MeetingListCardProps {
@@ -27,6 +25,7 @@ const MeetingListCard = ({
     handleDelete,
 }: MeetingListCardProps) => {
     const router = useRouter();
+    const dispatch = useDispatch();
     const user = useSelector((state: any) => state.user);
     const [tooltipVisible, setTooltipVisible] = useState(false);
     const toggleTooltip = () => {
@@ -38,7 +37,20 @@ const MeetingListCard = ({
         <View style={themedStyles.cardRootContainer}>
             <Pressable
                 style={({ pressed }) => pressed && themedStyles.pressed}
-                onPress={() =>
+                onPress={() => {
+                    // Upsert meeting into redux and set as current so the
+                    // meeting details/edit screens can read it from the store
+                    // even if the router drops route params.
+                    try {
+                        dispatch(upsertMeeting(meeting as any));
+                        dispatch(setCurrentMeeting(meeting as any));
+                    } catch (e) {
+                        // non-fatal
+                        console.warn(
+                            'Failed to upsert or set current meeting:',
+                            e
+                        );
+                    }
                     router.push({
                         pathname: '/(meeting)/[id]',
                         params: {
@@ -49,8 +61,8 @@ const MeetingListCard = ({
                             // render immediately without a backend fetch.
                             meeting: JSON.stringify(meeting),
                         },
-                    })
-                }
+                    });
+                }}
             >
                 <View
                     style={[
@@ -151,14 +163,4 @@ const MeetingListCard = ({
 
 export default MeetingListCard;
 
-const styles = StyleSheet.create({
-    meetingCard: {
-        minWidth: '100%',
-        flex: 1,
-        gap: 8,
-        padding: 12,
-        borderRadius: 12,
-        backgroundColor: '#fff',
-        boxShadow: '0 0 10px 0 rgba(0, 0, 0, 0.1)',
-    },
-});
+// (Intentionally no local styles here; component uses themedStyles)

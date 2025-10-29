@@ -18,7 +18,10 @@ import {
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateMeeting } from '../../../features/meetings/meetingsThunks';
+import {
+    fetchMeetingDetailsById,
+    updateMeeting,
+} from '../../../features/meetings/meetingsThunks';
 import { FullMeeting } from '../../../types/interfaces';
 import { invokeCallback } from '../../../utils/navigationCallbacks';
 import type { AppDispatch } from '../../../utils/store';
@@ -41,6 +44,9 @@ const NewLayoutEdit = () => {
     const dispatch = useDispatch<AppDispatch>();
     const navigation = useNavigation();
     const user = useSelector((state: any) => state.user);
+    const currentMeetingFromStore = useSelector(
+        (state: any) => state.meetings?.currentMeeting
+    );
     const api_token = user?.apiToken || user?.token || user?.profile?.apiToken;
 
     const meetingParam = params.meeting as string | undefined;
@@ -55,7 +61,7 @@ const NewLayoutEdit = () => {
     // local meeting state
     const [meeting, setMeeting] = useState<FullMeeting | null>(null);
 
-    // Load meeting from params JSON or bail
+    // Load meeting from params JSON or fetch by id as a fallback
     useEffect(() => {
         // Set the parent navigation header title while this screen is mounted
         try {
@@ -71,6 +77,25 @@ const NewLayoutEdit = () => {
         } catch {
             // ignore
         }
+        // Debug: log whether meetingParam arrived (trim to avoid huge logs)
+        try {
+            if (meetingParam) {
+                console.debug(
+                    'meetingParam present (truncated):',
+                    typeof meetingParam === 'string'
+                        ? meetingParam.slice(0, 500)
+                        : meetingParam
+                );
+            } else {
+                console.debug(
+                    'meetingParam not present; will attempt fetch by id',
+                    meetingId
+                );
+            }
+        } catch {
+            // ignore console failures
+        }
+
         let parsed: FullMeeting | null = null;
         if (meetingParam) {
             try {
@@ -90,8 +115,117 @@ const NewLayoutEdit = () => {
             setIsSavable(
                 !!parsed.title && !!parsed.meeting_type && !!parsed.meeting_date
             );
+        } else if (meetingId) {
+            // If the meetings slice already has a currentMeeting set (from
+            // navigation actions), prefer that over fetching.
+            try {
+                if (
+                    currentMeetingFromStore &&
+                    String((currentMeetingFromStore as any).id) ===
+                        String(meetingId)
+                ) {
+                    const payload = currentMeetingFromStore as any;
+                    payload.meeting_date = normalizeDateToISO(
+                        payload.meeting_date as string
+                    );
+                    setMeeting(payload as FullMeeting);
+                    setIsSavable(
+                        !!payload.title &&
+                            !!payload.meeting_type &&
+                            !!payload.meeting_date
+                    );
+                    return;
+                }
+            } catch {
+                // ignore and fallback to fetch
+            }
+            // No param available — attempt to fetch meeting details by id
+            // Use a best-effort thunk dispatch; unwrap and set local meeting state.
+            setSaving(true);
+            setError(null);
+            (dispatch as any)(
+                fetchMeetingDetailsById({
+                    apiToken: api_token,
+                    meetingId: String(meetingId),
+                    organizationId:
+                        (user &&
+                            (user.profile?.organizationId ||
+                                user.profile?.organization_id)) ||
+                        '',
+                } as any)
+            )
+                .then(unwrapResult)
+                .then((result: any) => {
+                    if (!result) return;
+                    // many thunks return the meeting inside result.meeting or result
+                    const payload: any = result.meeting || result;
+                    if (payload) {
+                        payload.meeting_date = normalizeDateToISO(
+                            payload.meeting_date as string
+                        );
+                        setMeeting(payload as FullMeeting);
+                        setIsSavable(
+                            !!payload.title &&
+                                !!payload.meeting_type &&
+                                !!payload.meeting_date
+                        );
+                    }
+                })
+                .catch((e: any) => {
+                    console.warn(
+                        'Failed to fetch meeting for edit fallback:',
+                        e
+                    );
+                    setError('Failed to load meeting.');
+                })
+                .finally(() => setSaving(false));
         }
-    }, [meetingParam, meetingId, navigation]);
+    }, [
+        meetingParam,
+        meetingId,
+        navigation,
+        api_token,
+        dispatch,
+        user,
+        currentMeetingFromStore,
+    ]);
+
+    // Provide an explicit Cancel handler that navigates to the meeting
+    // details screen. This ensures Cancel always returns to the canonical
+    // meeting view instead of leaving the app on an unexpected screen.
+    const handleCancel = () => {
+        try {
+            const idToUse = meeting?.id || meetingId;
+            if (idToUse) {
+                const paramsToSend: any = { id: String(idToUse) };
+                if ((params as any)?.origin)
+                    paramsToSend.origin = params.origin;
+                if ((params as any)?.org_id)
+                    paramsToSend.org_id = params.org_id;
+                if ((params as any)?.meeting)
+                    paramsToSend.meeting = params.meeting;
+                if ((router as any).replace) {
+                    (router as any).replace({
+                        pathname: '/(meeting)/[id]',
+                        params: paramsToSend,
+                    } as any);
+                    return;
+                }
+                (router as any).push({
+                    pathname: '/(meeting)/[id]',
+                    params: paramsToSend,
+                } as any);
+                return;
+            }
+        } catch {
+            // fallback to native back behavior
+        }
+        try {
+            (router as any).back?.();
+        } catch {
+            // ignore
+        }
+    };
 
     // restore parent title on unmount
     useEffect(() => {
@@ -111,6 +245,33 @@ const NewLayoutEdit = () => {
             }
         };
     }, [navigation]);
+
+    // Inject a headerLeft Cancel button so we can override the back
+    // action and reliably route to the meeting details screen.
+    useEffect(() => {
+        try {
+            const parent =
+                (navigation as any).getParent &&
+                (navigation as any).getParent();
+            if (parent && typeof parent.setOptions === 'function') {
+                parent.setOptions({
+                    headerLeft: () => (
+                        <TouchableOpacity
+                            onPress={handleCancel}
+                            style={{ marginLeft: 16 }}
+                        >
+                            <Text style={{ color: '#007AFF', fontSize: 18 }}>
+                                Cancel
+                            </Text>
+                        </TouchableOpacity>
+                    ),
+                });
+            }
+        } catch {
+            // ignore
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [navigation, meeting, meetingId, params]);
 
     const handleChange = (field: keyof FullMeeting, value: any) => {
         setMeeting((prev) => {

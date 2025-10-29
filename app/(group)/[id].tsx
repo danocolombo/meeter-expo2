@@ -137,37 +137,36 @@ const Group = () => {
                 : params.origin)) ||
         undefined;
     const handleCancel = useCallback(() => {
-        // Prefer popping the previous route to preserve any serialized
-        // meeting object or in-memory state. This keeps the UX stable when
-        // navigating back from a group to its parent meeting screen.
+        // Always navigate to the meeting details screen for consistency.
         try {
-            if ((router as any).back) {
-                (router as any).back();
-                return;
+            if (meetingId) {
+                const meetingParam = getParamString((params as any).meeting);
+                const navParams: any = { id: meetingId, origin: originParam };
+                if (meetingParam) navParams.meeting = meetingParam;
+                if ((params as any)?.org_id) navParams.org_id = params.org_id;
+                if ((router as any).replace) {
+                    (router as any).replace({
+                        pathname: '/(meeting)/[id]',
+                        params: navParams,
+                    } as any);
+                    return;
+                }
+                if ((router as any).push) {
+                    (router as any).push({
+                        pathname: '/(meeting)/[id]',
+                        params: navParams,
+                    } as any);
+                    return;
+                }
             }
         } catch {
-            // fall through to fallback navigation
+            // fall through to router.back
         }
 
-        // If we can't pop, ensure we navigate to the meeting route with id
-        if (meetingId) {
-            const meetingParam = getParamString((params as any).meeting);
-            const navParams: any = { id: meetingId, origin: originParam };
-            if (meetingParam) navParams.meeting = meetingParam;
-            if ((router as any).replace) {
-                (router as any).replace({
-                    pathname: '/(meeting)/[id]',
-                    params: navParams,
-                } as any);
-                return;
-            }
-            if ((router as any).push) {
-                (router as any).push({
-                    pathname: '/(meeting)/[id]',
-                    params: navParams,
-                } as any);
-                return;
-            }
+        try {
+            (router as any).back?.();
+        } catch {
+            // ignore
         }
     }, [meetingId, router, originParam, params]);
 
@@ -191,6 +190,10 @@ const Group = () => {
                         canEdit ? (
                             <TouchableOpacity
                                 onPress={() =>
+                                    // Forward origin/org_id/meeting when present so
+                                    // the group edit screen (and subsequent save)
+                                    // can preserve caller context and route back
+                                    // correctly to the meeting screen.
                                     router.push({
                                         pathname: '/(group)/(edit)/[id]',
                                         params: {
@@ -203,6 +206,11 @@ const Group = () => {
                                             notes,
                                             gender,
                                             attendance: String(attendance),
+                                            origin: originParam,
+                                            meeting: (params as any)?.meeting,
+                                            org_id:
+                                                (params as any)?.org_id ||
+                                                user?.profile?.activeOrg?.id,
                                         },
                                     } as any)
                                 }
