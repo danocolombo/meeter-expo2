@@ -2,7 +2,7 @@ import theme from '@assets/Colors';
 import themedStyles from '@assets/Styles';
 import GenderSelectors from '@components/ui/GenderSelectors';
 import NumberInputEditable from '@components/ui/NumberInputEditable';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -332,10 +332,18 @@ const GroupEdit = () => {
                 );
                 // Navigate directly to the meeting details screen and include the
                 // serialized meeting so the details screen can render immediately.
-                router.push({
-                    pathname: '/(meeting)/[id]',
-                    params: paramsToSend,
-                });
+                // Prefer replace to avoid stacking the meeting edit route in history
+                if ((router as any).replace) {
+                    (router as any).replace({
+                        pathname: '/(meeting)/[id]',
+                        params: paramsToSend,
+                    } as any);
+                } else {
+                    router.push({
+                        pathname: '/(meeting)/[id]',
+                        params: paramsToSend,
+                    });
+                }
             } else {
                 handleCancel();
             }
@@ -353,21 +361,6 @@ const GroupEdit = () => {
 
     return (
         <>
-            <Stack.Screen
-                options={{
-                    headerLeft: () => (
-                        <TouchableOpacity
-                            onPress={handleCancel}
-                            style={{ marginLeft: 16 }}
-                        >
-                            <Text style={{ color: '#007AFF', fontSize: 18 }}>
-                                Back
-                            </Text>
-                        </TouchableOpacity>
-                    ),
-                }}
-            />
-
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -481,15 +474,19 @@ const GroupEdit = () => {
 
                     <View style={themedStyles.buttonRow}>
                         {canEdit && canSubmit && (
-                            <TouchableOpacity
-                                style={themedStyles.saveButton}
-                                onPress={handleSave}
-                                disabled={submitting}
+                            <View
+                                style={{ width: '100%', alignItems: 'center' }}
                             >
-                                <Text style={themedStyles.saveText}>
-                                    {submitting ? 'Saving...' : 'Save'}
-                                </Text>
-                            </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={themedStyles.saveButton}
+                                    onPress={handleSave}
+                                    disabled={submitting}
+                                >
+                                    <Text style={themedStyles.saveText}>
+                                        {submitting ? 'Saving...' : 'Save'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
                         )}
 
                         {submitting && (

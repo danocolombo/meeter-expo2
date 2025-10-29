@@ -82,7 +82,7 @@ const NewGroup = () => {
             const org_id = (params as any)?.org_id;
             const meetingParam = (params as any)?.meeting;
             if (meetingId) {
-                router.push({
+                const nav = {
                     pathname: '/(meeting)/[id]',
                     params: {
                         id: meetingId,
@@ -90,13 +90,23 @@ const NewGroup = () => {
                         org_id: org_id || undefined,
                         meeting: meetingParam || undefined,
                     },
-                });
+                } as any;
+                // Prefer replace to avoid stacking duplicate meeting routes
+                if ((router as any).replace) {
+                    (router as any).replace(nav);
+                } else {
+                    (router as any).push(nav);
+                }
                 return;
             }
         } catch {
             // fall through
         }
-        router.push('/(meeting)/[id]');
+        if ((router as any).replace) {
+            (router as any).replace('/(meeting)/[id]');
+        } else {
+            router.push('/(meeting)/[id]');
+        }
     }, [meetingId, router, params]);
 
     const handleSubmit = async () => {

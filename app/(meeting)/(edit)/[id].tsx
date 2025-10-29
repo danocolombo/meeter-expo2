@@ -77,24 +77,6 @@ const NewLayoutEdit = () => {
         } catch {
             // ignore
         }
-        // Debug: log whether meetingParam arrived (trim to avoid huge logs)
-        try {
-            if (meetingParam) {
-                console.debug(
-                    'meetingParam present (truncated):',
-                    typeof meetingParam === 'string'
-                        ? meetingParam.slice(0, 500)
-                        : meetingParam
-                );
-            } else {
-                console.debug(
-                    'meetingParam not present; will attempt fetch by id',
-                    meetingId
-                );
-            }
-        } catch {
-            // ignore console failures
-        }
 
         let parsed: FullMeeting | null = null;
         if (meetingParam) {
@@ -204,17 +186,35 @@ const NewLayoutEdit = () => {
                     paramsToSend.org_id = params.org_id;
                 if ((params as any)?.meeting)
                     paramsToSend.meeting = params.meeting;
-                if ((router as any).replace) {
-                    (router as any).replace({
-                        pathname: '/(meeting)/[id]',
-                        params: paramsToSend,
-                    } as any);
-                    return;
+                // Try replace/push then ensure we pop the edit route from the
+                // history stack — some router implementations may leave the
+                // nested edit route active when only updating params, so also
+                // attempt a back() to ensure the details screen gains focus.
+                try {
+                    if ((router as any).replace) {
+                        (router as any).replace({
+                            pathname: '/(meeting)/[id]',
+                            params: paramsToSend,
+                        } as any);
+                    } else {
+                        (router as any).push({
+                            pathname: '/(meeting)/[id]',
+                            params: paramsToSend,
+                        } as any);
+                    }
+                } catch {
+                    // ignore navigation errors, we'll try back fallback below
                 }
-                (router as any).push({
-                    pathname: '/(meeting)/[id]',
-                    params: paramsToSend,
-                } as any);
+
+                // Short delay then attempt to pop the current route so the
+                // meeting details screen becomes active if replace didn't.
+                setTimeout(() => {
+                    try {
+                        (router as any).back?.();
+                    } catch {
+                        // ignore
+                    }
+                }, 50);
                 return;
             }
         } catch {

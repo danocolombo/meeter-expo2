@@ -695,9 +695,13 @@ const MeetingDetails = () => {
                                                 pathname: '/(group)/newGroup',
                                                 params: {
                                                     meetingId: String(id),
-                                                    origin: originValue || undefined,
+                                                    origin:
+                                                        originValue ||
+                                                        undefined,
                                                     org_id: org_id || undefined,
-                                                    meeting: routeMeetingParam || undefined,
+                                                    meeting:
+                                                        routeMeetingParam ||
+                                                        undefined,
                                                 },
                                             })
                                         }

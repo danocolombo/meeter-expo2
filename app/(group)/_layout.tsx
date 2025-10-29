@@ -10,7 +10,10 @@ const Layout = () => {
             : theme.colors.navigateTextDark;
 
     return (
-        <Stack>
+        <Stack
+            // Hide parent-level header by default so nested layouts can control their own header
+            screenOptions={{ headerShown: false }}
+        >
             <Stack.Screen
                 name='newGroup'
                 options={({ route }) => {
@@ -20,6 +23,8 @@ const Layout = () => {
                     const fromMeetingId = params?.fromMeetingId;
                     const from = params?.from;
                     return {
+                        // this screen should still show a header
+                        headerShown: true,
                         title: 'Create New Group',
                         headerLeft: () => (
                             <TouchableOpacity
@@ -48,7 +53,7 @@ const Layout = () => {
                     };
                 }}
             />
-            <Stack.Screen
+            {/* <Stack.Screen
                 name='editGroup'
                 options={({ route }) => {
                     const params = route?.params as
@@ -56,6 +61,8 @@ const Layout = () => {
                         | undefined;
                     const fromMeetingId = params?.fromMeetingId;
                     return {
+                        // this screen should still show a header
+                        headerShown: true,
                         title: 'Edit Group',
                         headerLeft: () => (
                             <TouchableOpacity
@@ -83,7 +90,7 @@ const Layout = () => {
                         ),
                     };
                 }}
-            />
+            /> */}
             <Stack.Screen
                 name='[id]'
                 options={({ route }) => {
@@ -98,6 +105,8 @@ const Layout = () => {
                     const fromMeetingId = params?.fromMeetingId;
                     const org_id = params?.org_id;
                     return {
+                        // this screen should still show a header
+                        headerShown: true,
                         title: 'Group',
                         headerLeft: () => (
                             <TouchableOpacity
@@ -135,9 +144,13 @@ const Layout = () => {
                             <TouchableOpacity
                                 style={{ marginRight: 16 }}
                                 onPress={() => {
+                                    const navParams: any = {};
+                                    if (id) navParams.id = id;
+                                    if (fromMeetingId)
+                                        navParams.fromMeetingId = fromMeetingId;
                                     router.push({
-                                        pathname: '/(group)/editGroup',
-                                        params: { id, fromMeetingId },
+                                        pathname: '/(group)/(edit)/[id]',
+                                        params: navParams,
                                     });
                                 }}
                             >
