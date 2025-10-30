@@ -266,10 +266,10 @@ const NewMeeting = () => {
                     <Text style={themedStyles.formLabel}>Contact</Text>
                     <TextInput
                         style={themedStyles.formInput}
-                        value={meeting.facilitator_contact}
-                        onChangeText={(v) =>
-                            handleChange('facilitator_contact', v)
-                        }
+                        // Use support_contact so new meeting Contact matches
+                        // the field used elsewhere (meeting edit uses support_contact)
+                        value={meeting.support_contact}
+                        onChangeText={(v) => handleChange('support_contact', v)}
                         placeholder='Meeting Cont'
                     />
                     <Text style={themedStyles.formLabel}>Music/Worship</Text>

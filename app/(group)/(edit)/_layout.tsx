@@ -27,44 +27,48 @@ export default function EditLayout() {
                             <TouchableOpacity
                                 style={{ marginLeft: 16 }}
                                 onPress={() => {
+                                    try {
+                                        const navParams: any = {};
+                                        if (meetingId) navParams.id = meetingId;
+                                        if (origin) navParams.origin = origin;
+                                        if (org_id) navParams.org_id = org_id;
+                                        if ((route as any)?.params?.meeting)
+                                            navParams.meeting = (
+                                                route as any
+                                            ).params.meeting;
+
+                                        const nav: any = {
+                                            pathname: '/(meeting)/[id]',
+                                            params: navParams,
+                                        };
+
                                         try {
-                                            const navParams: any = {};
-                                            if (meetingId) navParams.id = meetingId;
-                                            if (origin) navParams.origin = origin;
-                                            if (org_id) navParams.org_id = org_id;
-                                            if ((route as any)?.params?.meeting)
-                                                navParams.meeting = (
-                                                    route as any
-                                                ).params.meeting;
-
-                                            const nav: any = {
-                                                pathname: '/(meeting)/[id]',
-                                                params: navParams,
-                                            };
-
-                                            try {
-                                                if ((router as any).replace) {
-                                                    (router as any).replace(nav as any);
-                                                } else {
-                                                    (router as any).push(nav as any);
-                                                }
-                                            } catch {
-                                                // ignore and try back fallback
+                                            if ((router as any).replace) {
+                                                (router as any).replace(
+                                                    nav as any
+                                                );
+                                            } else {
+                                                (router as any).push(
+                                                    nav as any
+                                                );
                                             }
-
-                                            // After navigation attempt, ensure any lingering
-                                            // edit route is popped so the details screen is active.
-                                            setTimeout(() => {
-                                                try {
-                                                    (router as any).back?.();
-                                                } catch {
-                                                    // ignore
-                                                }
-                                            }, 50);
                                         } catch {
-                                            router.back?.();
+                                            // ignore and try back fallback
                                         }
-                                    }}
+
+                                        // After navigation attempt, ensure any lingering
+                                        // edit route is popped so the details screen is active.
+                                        setTimeout(() => {
+                                            try {
+                                                (router as any).back?.();
+                                            } catch {
+                                                // ignore
+                                            }
+                                        }, 50);
+                                    } catch {
+                                        router.back?.();
+                                    }
+                                }}
                             >
                                 <Text
                                     style={{

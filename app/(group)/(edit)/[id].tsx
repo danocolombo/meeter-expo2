@@ -332,18 +332,37 @@ const GroupEdit = () => {
                 );
                 // Navigate directly to the meeting details screen and include the
                 // serialized meeting so the details screen can render immediately.
-                // Prefer replace to avoid stacking the meeting edit route in history
-                if ((router as any).replace) {
-                    (router as any).replace({
-                        pathname: '/(meeting)/[id]',
-                        params: paramsToSend,
-                    } as any);
-                } else {
-                    router.push({
-                        pathname: '/(meeting)/[id]',
-                        params: paramsToSend,
-                    });
+                // Prefer replace to avoid stacking the meeting edit route in history.
+                // Some router implementations may update params but leave the
+                // previous nested edit route active, so also attempt a short
+                // delayed back() to pop any lingering edit route and ensure the
+                // details screen gains focus.
+                try {
+                    if ((router as any).replace) {
+                        (router as any).replace({
+                            pathname: '/(meeting)/[id]',
+                            params: paramsToSend,
+                        } as any);
+                    } else {
+                        (router as any).push({
+                            pathname: '/(meeting)/[id]',
+                            params: paramsToSend,
+                        });
+                    }
+                } catch (navErr) {
+                    // ignore and try back fallback below
+                    console.warn('Navigation replace/push failed:', navErr);
                 }
+
+                // Short delay then attempt to pop the current route so the
+                // meeting details screen becomes active if replace didn't.
+                setTimeout(() => {
+                    try {
+                        (router as any).back?.();
+                    } catch {
+                        // ignore
+                    }
+                }, 50);
             } else {
                 handleCancel();
             }
