@@ -4,7 +4,13 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import BadgeNumber from '../ui/BadgeNumber';
 
-const MealDetails = ({ meal, mealContact, historic, mealCount }) => {
+const MealDetails = ({
+    meal,
+    mealContact,
+    historic,
+    mealCount,
+    showMealCountBadge = true,
+}) => {
     return (
         <>
             <View style={localStyles.row}>
@@ -19,7 +25,7 @@ const MealDetails = ({ meal, mealContact, historic, mealCount }) => {
                         {meal === '' || meal === null ? 'TBD' : meal}
                     </Text>
                 </View>
-                {historic && (
+                {showMealCountBadge && (
                     <View style={localStyles.detailsBadgeContainer}>
                         <BadgeNumber value={mealCount} />
                     </View>

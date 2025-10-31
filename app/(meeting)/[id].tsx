@@ -151,6 +151,34 @@ const MeetingDetails = () => {
     // falls back to the locally parsed route param (fast initial render).
     const displayedMeeting: FullMeeting | null =
         (meetingFromStore as any) || null;
+    // Show meal count badge when meeting date is today or in the past
+    const showMealCountBadge = React.useMemo(() => {
+        try {
+            const ds: any = (displayedMeeting as any)?.meeting_date;
+            if (!ds) return false;
+            const toLocalMidnight = (input: any) => {
+                if (typeof input === 'string') {
+                    const simple = input.match(/^\d{4}-\d{2}-\d{2}$/);
+                    if (simple) {
+                        const [y, m, d] = input.split('-').map(Number);
+                        return new Date(y, m - 1, d);
+                    }
+                }
+                const d = new Date(input);
+                return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            };
+            const meetingDay = toLocalMidnight(ds);
+            const now = new Date();
+            const today = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate()
+            );
+            return meetingDay.getTime() <= today.getTime();
+        } catch {
+            return false;
+        }
+    }, [displayedMeeting]);
     const [isLoading, setIsLoading] = React.useState(false);
     const navigation = useNavigation();
     // callback helpers imported at module top
@@ -647,6 +675,7 @@ const MeetingDetails = () => {
                         mealContact={displayedMeeting.meal_contact}
                         historic={historic}
                         mealCount={displayedMeeting.meal_count}
+                        showMealCountBadge={showMealCountBadge}
                     />
                     {Number(displayedMeeting.newcomers_count) > 0 && (
                         <View style={themedStyles.row}>
