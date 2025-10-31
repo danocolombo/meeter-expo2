@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 
 export const RoundedButton = ({
     style = {},
@@ -8,25 +8,28 @@ export const RoundedButton = ({
     onPress,
     ...props
 }) => {
+    // Defensive: ensure size is a finite number to avoid NaN in styles
+    const s = Number(size) || 125;
     return (
-        <TouchableOpacity
-            style={[styles(size).radius, style]}
-            onPress={onPress}
-        >
-            <Text style={[styles(size).text, textStyle]}>{props.title}</Text>
+        <TouchableOpacity style={[styles(s).radius, style]} onPress={onPress}>
+            <Text style={[styles(s).text, textStyle]}>{props.title}</Text>
         </TouchableOpacity>
     );
 };
 
-const styles = (size) => ({
-    radius: {
-        borderRadius: size / 2,
-        width: size,
-        height: size,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderColor: 'black',
-        borderWidth: 2,
-    },
-    text: { color: 'black', fontSize: size / 3 },
-});
+const styles = (size) => {
+    const s = Number(size) || 125;
+    const textSize = Number(s / 3) || 16;
+    return {
+        radius: {
+            borderRadius: s / 2,
+            width: s,
+            height: s,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderColor: 'black',
+            borderWidth: 2,
+        },
+        text: { color: 'black', fontSize: textSize },
+    };
+};

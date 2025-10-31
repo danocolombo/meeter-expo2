@@ -225,14 +225,6 @@ const GroupEdit = () => {
                     (api_token && api_token.plainTextToken) ||
                     undefined;
                 const orgId = user?.profile?.activeOrg?.id;
-                console.debug(
-                    'Prefetch attempt: token present?',
-                    !!tokenStr,
-                    'orgId:',
-                    orgId,
-                    'meetingId:',
-                    meetingId
-                );
 
                 // Relax requirement on orgId: try best-effort fetch when we at least
                 // have a token and meetingId. Some environments may infer org
@@ -251,11 +243,6 @@ const GroupEdit = () => {
                             result?.data?.currentMeeting ||
                             result?.data ||
                             result;
-                        console.debug(
-                            'Prefetch succeeded, payload keys:',
-                            prefetchedMeeting &&
-                                Object.keys(prefetchedMeeting).slice(0, 10)
-                        );
                     } catch (innerErr) {
                         console.warn('Prefetch failed (inner):', innerErr);
                     }
