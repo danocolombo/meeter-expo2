@@ -6,8 +6,6 @@ import { Text } from 'react-native';
 import { useDispatch } from 'react-redux';
 import useAuth from './(hooks)/useAuth';
 
-const sub = process.env.EXPO_PUBLIC_USER_COGNITO_SUB;
-
 export default function Index() {
     const router = useRouter();
     const dispatch = useDispatch();
