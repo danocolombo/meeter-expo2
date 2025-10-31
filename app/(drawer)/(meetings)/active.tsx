@@ -1,7 +1,5 @@
-import theme from '@assets/Colors';
 import themedStyles from '@assets/Styles';
 import MeetingListCard from '@components/meeting/MeetingListCard';
-import CustomButton from '@components/ui/CustomButton';
 import {
     deleteMeeting,
     fetchAllMeetings,
@@ -9,10 +7,8 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '@utils/hooks';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useState } from 'react';
-import { FlatList, Modal, Text, View } from 'react-native';
-import { Surface } from 'react-native-paper';
-import { useSelector } from 'react-redux';
+import React, { useState } from 'react';
+import { Alert, FlatList, Platform, Text, View } from 'react-native';
 import type { Meeting } from '../../../types/interfaces';
 
 interface DeleteInputType {
@@ -20,12 +16,12 @@ interface DeleteInputType {
     organization_id: string;
     meeting_id: string;
 }
-interface DeleteAMeetingResponse {
-    status: number;
-    message: string;
-    // Consider refining the data type if known
-    data: any; // could be object, array, etc.
-}
+// (optional) server response shape if you need it later
+// interface DeleteAMeetingResponse {
+//     status: number;
+//     message: string;
+//     data: any;
+// }
 const ActiveMeetings = () => {
     // const renderMeeting = useCallback(({ item }: { item: any }) => {
     //     return <MeetingListCard meeting={item} />;
@@ -36,21 +32,19 @@ const ActiveMeetings = () => {
     // }, []);`
     const user = useAppSelector((state) => state.user);
     const dispatch = useAppDispatch();
-    const activeMeetings = useSelector(
-        (state: any) => state.meetings.activeMeetings
-    );
-    const [meeting, setMeeting] = useState<Meeting | null>(null);
+    // local state no longer needed for modal
     const [timeoutReached, setTimeoutReached] = useState(false);
     //todo: replace with actual org id from system redux slice
     const organization_id = process.env.EXPO_PUBLIC_TEST_ORGANIZATION_ID;
-    const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
-    const renderMeeting = useCallback(({ item }: { item: Meeting }) => {
-        return (
-            <View style={themedStyles.meetingsItemContainer}>
-                <MeetingListCard meeting={item} origin='active' />
-            </View>
-        );
-    }, []);
+    // Using native Alert for confirmation avoids focus changes that can
+    // retrigger screen effects and cause heavy rerenders.
+    // const renderMeeting = useCallback(({ item }: { item: Meeting }) => {
+    //     return (
+    //         <View style={themedStyles.meetingsItemContainer}>
+    //             <MeetingListCard meeting={item} origin='active' />
+    //         </View>
+    //     );
+    // }, []);
 
     // Always refresh active meetings on focus
     useFocusEffect(
@@ -68,7 +62,7 @@ const ActiveMeetings = () => {
     );
     const isLoading = useAppSelector((state: any) => state.meetings.isLoading);
     const [error, setError] = React.useState<string | null>(null);
-    const [refreshKey, setRefreshKey] = React.useState(Date.now());
+    // No refreshKey; let Redux state drive the list.
 
     const refreshActiveMeetingsFromApi = () => {
         console.log('Refreshing active meetings from API...');
@@ -91,30 +85,46 @@ const ActiveMeetings = () => {
             if (timeout) clearTimeout(timeout);
         };
     }, [isLoading]);
-    const handleDeleteResponse = (id: string, organizationId?: string) => {
-        const meetingToDelete = activeMeetings.find((m: any) => m.id === id);
-        if (meetingToDelete) {
-            // Use optional chaining for safety
-            setMeeting(meetingToDelete);
-            setShowDeleteConfirmModal(true);
-        }
-    };
-    const handleDeleteConfirm = () => {
-        if (meeting?.id) {
-            //* the database will delete any groups associated with
-            //* the meeting so no need to handle more than the
-            //* meeting table.
+    const handleDeleteResponse = (id: string) => {
+        const meetingToDelete: Meeting | undefined = meetings?.find(
+            (m: any) => m.id === id
+        );
+        if (!meetingToDelete) return;
+        const date = meetingToDelete.meeting_date?.slice(0, 10) ?? '';
+        const title = `${meetingToDelete.meeting_type}: ${meetingToDelete.title}`;
 
-            const requestValues: DeleteInputType = {
-                api_token: user.apiToken,
-                organization_id: meeting.organization_id || '',
-                meeting_id: meeting.id,
-            };
-            const appDispatch = useAppDispatch();
-            (appDispatch as any)(deleteMeeting(requestValues));
-            setMeeting(null);
-            setShowDeleteConfirmModal(false);
-        }
+        Alert.alert(
+            'Please confirm',
+            `You are about to delete this meeting.\n\n${date}\n${title}\n\nNOTE: All groups for the meeting will be deleted as well.`,
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                    onPress: () => {},
+                },
+                {
+                    text: 'Delete',
+                    style: Platform.OS === 'ios' ? 'destructive' : 'default',
+                    onPress: async () => {
+                        const requestValues: DeleteInputType = {
+                            api_token: user.apiToken,
+                            organization_id:
+                                meetingToDelete.organization_id || '',
+                            meeting_id: meetingToDelete.id,
+                        };
+                        try {
+                            (await dispatch<any>(
+                                deleteMeeting(requestValues)
+                            ).unwrap?.()) ??
+                                dispatch<any>(deleteMeeting(requestValues));
+                        } catch (err) {
+                            console.log('Failed to delete meeting', err);
+                        } finally {
+                        }
+                    },
+                },
+            ]
+        );
     };
     // Optionally, handle error state from Redux if you add it to your slice
     // const reduxError = useAppSelector((state) => state.meetings.error);
@@ -163,72 +173,8 @@ const ActiveMeetings = () => {
 
     return (
         <View style={themedStyles.surface}>
-            <Modal visible={showDeleteConfirmModal} animationType='slide'>
-                <View style={themedStyles.modal}>
-                    <View style={themedStyles.modalHeaderContainer}>
-                        <Text style={themedStyles.modalHeaderText}>
-                            PLEASE CONFIRM
-                        </Text>
-                    </View>
-                    <View style={themedStyles.modalSurfaceContainer}>
-                        <Surface style={themedStyles.modalSurface}>
-                            <View style={themedStyles.modalWarningContainer}>
-                                <Text style={themedStyles.modalWarningText}>
-                                    Your are about to delete the following
-                                    meeting.
-                                </Text>
-                            </View>
-                            <View style={themedStyles.modalDateContainer}>
-                                <Text style={themedStyles.modalDateText}>
-                                    {meeting?.meeting_date?.slice(0, 10)}
-                                </Text>
-                            </View>
-                            <View>
-                                <Text style={themedStyles.modalMeetingInfoText}>
-                                    {meeting?.meeting_type}: {meeting?.title}
-                                </Text>
-                            </View>
-                            <View style={themedStyles.modalNoteContainer}>
-                                <Text style={themedStyles.modalNoteText}>
-                                    NOTE: All groups for the meeting will be
-                                    deleted as well.
-                                </Text>
-                            </View>
-                            <View style={themedStyles.buttonContainer}>
-                                <View style={themedStyles.buttonWrapper}>
-                                    <CustomButton
-                                        text='No, CANCEL'
-                                        bgColor={theme.colors.mediumGreen}
-                                        fgColor={theme.colors.lightText}
-                                        onPress={() =>
-                                            setShowDeleteConfirmModal(false)
-                                        }
-                                    />
-                                </View>
-
-                                <View style={themedStyles.buttonWrapper}>
-                                    <CustomButton
-                                        text='Yes, DELETE'
-                                        bgColor={theme.colors.critical}
-                                        fgColor={theme.colors.lightText}
-                                        onPress={() => handleDeleteConfirm()}
-                                    />
-                                </View>
-                            </View>
-                        </Surface>
-                    </View>
-                    <StatusBar style='auto' />
-                </View>
-            </Modal>
             <Text style={themedStyles.screenTitleText}>Active Meetings</Text>
-            {/* <FlatList
-                data={meetings || []}
-                renderItem={renderMeeting}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ alignItems: 'center' }}
-            /> */}
             <FlatList
-                key={`active-meetings-${refreshKey}`}
                 data={meetings || []}
                 refreshing={isLoading}
                 onRefresh={refreshActiveMeetingsFromApi}
@@ -241,16 +187,13 @@ const ActiveMeetings = () => {
                         handleDelete={handleDeleteResponse}
                     />
                 )}
-                extraData={{
-                    refreshKey,
-                    meetingsCount: activeMeetings.length,
-                }}
                 initialNumToRender={10}
                 maxToRenderPerBatch={10}
                 windowSize={10}
-                removeClippedSubviews={true}
+                removeClippedSubviews={Platform.OS === 'android'}
                 updateCellsBatchingPeriod={50}
             />
+            <StatusBar style='auto' />
         </View>
     );
 };

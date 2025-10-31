@@ -1,7 +1,5 @@
-import theme from '@assets/Colors';
 import themedStyles from '@assets/Styles';
 import MeetingListCard from '@components/meeting/MeetingListCard';
-import CustomButton from '@components/ui/CustomButton';
 import {
     deleteMeeting,
     fetchAllMeetings,
@@ -9,10 +7,9 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '@utils/hooks';
 import React, { useState } from 'react';
-import { FlatList, Modal, StatusBar, Text, View } from 'react-native';
-import { Surface } from 'react-native-paper';
-import { useSelector } from 'react-redux';
+import { Alert, FlatList, Platform, Text, View } from 'react-native';
 import type { Meeting } from '../../../types/interfaces';
+
 interface DeleteInputType {
     api_token: any;
     organization_id: string;
@@ -21,52 +18,80 @@ interface DeleteInputType {
 
 const HistoricMeetings = () => {
     const appDispatch = useAppDispatch();
-    // Removed unused refreshKey and renderMeeting
     const user = useAppSelector((state) => state.user);
-    const historicMeetings = useSelector(
-        (state: any) => state.meetings.historicMeetings
-    );
-    const [meeting, setMeeting] = useState<Meeting | null>(null);
-    const [timeoutReached] = useState(false); // Removed unused setTimeoutReached
-    const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
-    const refreshHistoricMeetingsFromApi = () => {
-        console.log('Refreshing historic meetings from API...');
-    };
+    // local modal state removed; use native Alert instead
+    const [timeoutReached, setTimeoutReached] = useState(false);
 
-    // Refresh historic meetings on focus (same pattern as ActiveMeetings)
+    const refreshHistoricMeetingsFromApi = React.useCallback(() => {
+        const apiToken = process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
+        const org_id = process.env.EXPO_PUBLIC_TEST_ORGANIZATION_ID;
+        if (apiToken && org_id) {
+            appDispatch<any>(fetchAllMeetings({ apiToken, org_id }));
+        }
+    }, [appDispatch]);
+
     useFocusEffect(
         React.useCallback(() => {
-            const apiToken = process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
-            const org_id = process.env.EXPO_PUBLIC_TEST_ORGANIZATION_ID;
-            if (apiToken && org_id) {
-                appDispatch<any>(fetchAllMeetings({ apiToken, org_id }));
-            }
-        }, [appDispatch])
+            refreshHistoricMeetingsFromApi();
+        }, [refreshHistoricMeetingsFromApi])
     );
-    const handleDeleteResponse = (id: string, organizationId?: string) => {
-        const meetingToDelete = historicMeetings.find((m: any) => m.id === id);
-        if (meetingToDelete) {
-            setMeeting(meetingToDelete);
-            setShowDeleteConfirmModal(true);
-        }
-    };
-    const handleDeleteConfirm = () => {
-        if (meeting?.id) {
-            const requestValues: DeleteInputType = {
-                api_token: user.apiToken,
-                organization_id: meeting.organization_id || '',
-                meeting_id: meeting.id,
-            };
-            appDispatch(deleteMeeting(requestValues) as any);
-            setMeeting(null);
-            setShowDeleteConfirmModal(false);
-        }
-    };
 
     const meetings = useAppSelector(
         (state: any) => state.meetings.historicMeetings
     );
+
+    const handleDeleteResponse = (id: string) => {
+        const meetingToDelete: Meeting | undefined = meetings?.find(
+            (m: any) => m.id === id
+        );
+        if (!meetingToDelete) return;
+        const date = meetingToDelete.meeting_date?.slice(0, 10) ?? '';
+        const title = `${meetingToDelete.meeting_type}: ${meetingToDelete.title}`;
+
+        Alert.alert(
+            'Please confirm',
+            `You are about to delete this meeting.\n\n${date}\n${title}\n\nNOTE: All groups for the meeting will be deleted as well.`,
+            [
+                { text: 'Cancel', style: 'cancel', onPress: () => {} },
+                {
+                    text: 'Delete',
+                    style: Platform.OS === 'ios' ? 'destructive' : 'default',
+                    onPress: async () => {
+                        const requestValues: DeleteInputType = {
+                            api_token: user.apiToken,
+                            organization_id:
+                                meetingToDelete.organization_id || '',
+                            meeting_id: meetingToDelete.id,
+                        };
+                        try {
+                            (await appDispatch<any>(
+                                deleteMeeting(requestValues)
+                            ).unwrap?.()) ??
+                                appDispatch<any>(deleteMeeting(requestValues));
+                        } catch (err) {
+                            console.log('Failed to delete meeting', err);
+                        }
+                    },
+                },
+            ]
+        );
+    };
     const isLoading = useAppSelector((state: any) => state.meetings.isLoading);
+
+    React.useEffect(() => {
+        let timeout: ReturnType<typeof setTimeout> | null = null;
+        if (isLoading) {
+            setTimeoutReached(false);
+            timeout = setTimeout(() => {
+                setTimeoutReached(true);
+            }, 8000);
+        } else {
+            setTimeoutReached(false);
+        }
+        return () => {
+            if (timeout) clearTimeout(timeout);
+        };
+    }, [isLoading]);
 
     if (isLoading && !timeoutReached)
         return (
@@ -77,70 +102,14 @@ const HistoricMeetings = () => {
 
     return (
         <View style={themedStyles.surface}>
-            <Modal visible={showDeleteConfirmModal} animationType='slide'>
-                <View style={themedStyles.modal}>
-                    <View style={themedStyles.modalHeaderContainer}>
-                        <Text style={themedStyles.modalHeaderText}>
-                            PLEASE CONFIRM
-                        </Text>
-                    </View>
-                    <View style={themedStyles.modalSurfaceContainer}>
-                        <Surface style={themedStyles.modalSurface}>
-                            <View style={themedStyles.modalWarningContainer}>
-                                <Text style={themedStyles.modalWarningText}>
-                                    Your are about to delete the following
-                                    meeting.
-                                </Text>
-                            </View>
-                            <View style={themedStyles.modalDateContainer}>
-                                <Text style={themedStyles.modalDateText}>
-                                    {meeting?.meeting_date?.slice(0, 10)}
-                                </Text>
-                            </View>
-                            <View>
-                                <Text style={themedStyles.modalMeetingInfoText}>
-                                    {meeting?.meeting_type}: {meeting?.title}
-                                </Text>
-                            </View>
-                            <View style={themedStyles.modalNoteContainer}>
-                                <Text style={themedStyles.modalNoteText}>
-                                    NOTE: All groups for the meeting will be
-                                    deleted as well.
-                                </Text>
-                            </View>
-                            <View style={themedStyles.buttonContainer}>
-                                <View style={themedStyles.buttonWrapper}>
-                                    <CustomButton
-                                        text='No, CANCEL'
-                                        bgColor={theme.colors.mediumGreen}
-                                        fgColor={theme.colors.lightText}
-                                        onPress={() =>
-                                            setShowDeleteConfirmModal(false)
-                                        }
-                                    />
-                                </View>
-
-                                <View style={themedStyles.buttonWrapper}>
-                                    <CustomButton
-                                        text='Yes, DELETE'
-                                        bgColor={theme.colors.critical}
-                                        fgColor={theme.colors.lightText}
-                                        onPress={() => handleDeleteConfirm()}
-                                    />
-                                </View>
-                            </View>
-                        </Surface>
-                    </View>
-                    <StatusBar />
-                </View>
-            </Modal>
             <Text style={themedStyles.screenTitleText}>Historic Meetings</Text>
+
             <FlatList
                 data={meetings || []}
                 refreshing={isLoading}
                 onRefresh={refreshHistoricMeetingsFromApi}
-                keyExtractor={(item) => `historic-meeting-${item.id}`}
-                contentContainerStyle={{ gap: 5 }}
+                keyExtractor={(item: any) => `historic-meeting-${item.id}`}
+                contentContainerStyle={themedStyles.meetingsListContainer}
                 renderItem={({ item }) => (
                     <MeetingListCard
                         meeting={item}
@@ -148,13 +117,10 @@ const HistoricMeetings = () => {
                         handleDelete={handleDeleteResponse}
                     />
                 )}
-                extraData={{
-                    meetingsCount: historicMeetings.length,
-                }}
                 initialNumToRender={10}
                 maxToRenderPerBatch={10}
                 windowSize={10}
-                removeClippedSubviews={true}
+                removeClippedSubviews={Platform.OS === 'android'}
                 updateCellsBatchingPeriod={50}
             />
         </View>
