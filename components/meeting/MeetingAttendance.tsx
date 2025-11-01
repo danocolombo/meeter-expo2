@@ -1,10 +1,14 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-// import { Badge, useTheme } from 'react-native-paper';
 import theme from '@assets/Colors';
 import themedStyles from '@assets/Styles';
 import BadgeNumber from '../ui/BadgeNumber';
-const MeetingAttendance = ({ attendanceCount }) => {
+
+interface MeetingAttendanceProps {
+    attendanceCount?: number;
+}
+
+const MeetingAttendance: React.FC<MeetingAttendanceProps> = ({ attendanceCount = 0 }) => {
     return (
         <View style={localStyles.row}>
             <View style={localStyles.detailsContainer}>
@@ -19,6 +23,7 @@ const MeetingAttendance = ({ attendanceCount }) => {
 };
 
 export default MeetingAttendance;
+
 const localStyles = StyleSheet.create({
     row: {
         flexDirection: 'row',
@@ -34,12 +39,11 @@ const localStyles = StyleSheet.create({
         paddingHorizontal: 10,
     },
     detailsBadge: {
-        backgroundColor: theme.colors.lightColor,
-        textColor: theme.colors.darkText,
+        backgroundColor: theme.colors.lightGraphic,
     },
     detailsTitle: {
         fontSize: 24,
         fontFamily: 'Roboto-Bold',
-        color: theme.colors.accentColor,
+        color: theme.colors.landingAppName,
     },
 });
