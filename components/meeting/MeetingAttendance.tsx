@@ -1,14 +1,16 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
 import theme from '@assets/Colors';
 import themedStyles from '@assets/Styles';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import BadgeNumber from '../ui/BadgeNumber';
 
 interface MeetingAttendanceProps {
     attendanceCount?: number;
 }
 
-const MeetingAttendance: React.FC<MeetingAttendanceProps> = ({ attendanceCount = 0 }) => {
+const MeetingAttendance: React.FC<MeetingAttendanceProps> = ({
+    attendanceCount = 0,
+}) => {
     return (
         <View style={localStyles.row}>
             <View style={localStyles.detailsContainer}>
