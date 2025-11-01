@@ -399,7 +399,75 @@ export async function updateHeroMessage(
             }
         } catch (error) {
             reject({
-                message: 'Operation failed',
+                message: 'Failed to update hero message',
+                details: String(error),
+            });
+        }
+    });
+}
+
+export async function fetchUserProfilePicture(
+    userId: string,
+    pictureId: string,
+    token: any
+): Promise<{ status: number; imageUri: string } | ApiError> {
+    return new Promise((resolve, reject) => {
+        try {
+            const endPoint = process.env.EXPO_PUBLIC_JERICHO_ENDPOINT;
+            const config = {
+                headers: {
+                    Authorization: `Bearer ${token.plainTextToken}`,
+                },
+                responseType: 'arraybuffer' as const, // For React Native image handling
+            };
+
+            const api2use = `${endPoint}/person/${userId}/image/${pictureId}`;
+
+            printObject('🖼️ => Fetching profile picture from:', api2use);
+
+            axios
+                .get(api2use, config)
+                .then((response) => {
+                    if (response.status === 200) {
+                        // Convert arraybuffer to base64 for React Native Image component
+                        const base64 = btoa(
+                            new Uint8Array(response.data).reduce(
+                                (data, byte) =>
+                                    data + String.fromCharCode(byte),
+                                ''
+                            )
+                        );
+
+                        // Create data URI for React Native Image component
+                        const imageUri = `data:image/jpeg;base64,${base64}`;
+
+                        const returnMessage = {
+                            status: response.status,
+                            imageUri: imageUri,
+                        };
+                        resolve(returnMessage);
+                    } else {
+                        const customError: ApiError = {
+                            message: 'Failed to fetch profile picture',
+                            details: `Unexpected status code: ${response.status}`,
+                        };
+                        reject(customError);
+                    }
+                })
+                .catch((error) => {
+                    console.error('Failed to fetch profile picture:', error);
+                    const customError: ApiError = {
+                        message: 'Failed to fetch profile picture',
+                        details: {
+                            ...(error.response && error.response.data),
+                            status: error.response?.status || 'Network Error',
+                        },
+                    };
+                    reject(customError);
+                });
+        } catch (error) {
+            reject({
+                message: 'Failed to execute profile picture fetch request',
                 details: String(error),
             });
         }

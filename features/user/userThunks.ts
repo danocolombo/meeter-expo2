@@ -3,7 +3,12 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { getPermissionsForActiveOrg, printObject } from '@utils/helpers';
 import { ApiError, Person, UserProfile } from '../../types/interfaces';
 import type { RootState } from '../../utils/store';
-import { fetchPerson, getAPIToken, updateHeroMessage } from './userAPI';
+import {
+    fetchPerson,
+    fetchUserProfilePicture,
+    getAPIToken,
+    updateHeroMessage,
+} from './userAPI';
 
 // Lightweight ThunkAPI typing used across these thunks
 // Proper RTK ThunkApi config so createAsyncThunk infers getState correctly
@@ -52,7 +57,7 @@ export const loginUser = createAsyncThunk<
             const username = userData.username;
             const sub = userData.sub; // Sub is already available in accessToken.payload
 
-            // console.log('🟨  ➡️  userThunks.ts:19  ➡️  sub:\n', sub);
+            // console.log('🟨  ➡️  userThunks.ts:60  ➡️  sub:\n', sub);
 
             const email = inputs.signInUserSession.idToken.payload.email;
 
@@ -132,7 +137,7 @@ export const loginUser = createAsyncThunk<
             }
 
             // console.log(
-            //     '🟨  ➡️  userThunks.ts:98  ➡️  fetchResponse:\n',
+            //     '🟨  ➡️  userThunks.ts:140  ➡️  fetchResponse:\n',
             //     fetchResponse
             // );
 
@@ -767,3 +772,48 @@ export const getUserProfilePic = (profile: {
     const returnValue = `${PUBLIC_PATH}/${profile.id}/image/${profile.picture}`;
     return returnValue;
 };
+
+//*************************************************
+//* FETCH USER PROFILE PICTURE FROM API
+//*************************************************
+export const fetchProfilePicture = createAsyncThunk<
+    string,
+    { userId: string; pictureId: string },
+    ThunkApiConfig
+>(
+    'user/fetchProfilePicture',
+    async (args: { userId: string; pictureId: string }, thunkAPI) => {
+        try {
+            const state = thunkAPI.getState();
+            const token = (state.user as any)?.apiToken;
+
+            if (!token) {
+                throw new Error('No authentication token available');
+            }
+
+            const response = await fetchUserProfilePicture(
+                args.userId,
+                args.pictureId,
+                token
+            );
+
+            // Check if response has imageUri property (success case)
+            if (
+                response &&
+                typeof response === 'object' &&
+                'imageUri' in response
+            ) {
+                return (response as { imageUri: string }).imageUri;
+            } else if (isApiError(response)) {
+                throw new Error(
+                    response.message || 'Failed to fetch profile picture'
+                );
+            } else {
+                throw new Error('Unexpected response format');
+            }
+        } catch (error) {
+            printObject('🔴 fetchProfilePicture error:', error);
+            throw error;
+        }
+    }
+);

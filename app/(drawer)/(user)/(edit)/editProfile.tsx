@@ -1,7 +1,8 @@
 import theme from '@assets/Colors';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { fetchProfilePicture } from '@features/user/userThunks';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     ActionSheetIOS,
     Alert,
@@ -14,14 +15,17 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { useSelector } from 'react-redux';
-// import { useDispatch } from 'react-redux'; // TODO: Uncomment when implementing save functionality
+import { useDispatch, useSelector } from 'react-redux';
 
 const EditProfile = () => {
     const router = useRouter();
-    // const dispatch = useDispatch(); // TODO: Uncomment when implementing save functionality
+    const dispatch = useDispatch();
     const user = useSelector((state: any) => state.user);
     const profile = user?.profile || {};
+
+    // State for profile image
+    const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
+    const [imageLoading, setImageLoading] = useState(false);
 
     // State for editable fields
     const [phone, setPhone] = useState(profile.phone || '');
@@ -35,6 +39,29 @@ const EditProfile = () => {
     const [postalCode, setPostalCode] = useState(
         profile.location?.postalCode || ''
     );
+
+    // Fetch profile picture if user has one
+    useEffect(() => {
+        if (profile.picture && profile.id && user.apiToken) {
+            setImageLoading(true);
+            (dispatch as any)(
+                fetchProfilePicture({
+                    userId: profile.id,
+                    pictureId: profile.picture,
+                })
+            )
+                .unwrap()
+                .then((imageUri: string) => {
+                    setProfileImageUri(imageUri);
+                })
+                .catch((error: any) => {
+                    console.error('Failed to load profile picture:', error);
+                })
+                .finally(() => {
+                    setImageLoading(false);
+                });
+        }
+    }, [profile.picture, profile.id, user.apiToken, dispatch]);
 
     const shirtSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
@@ -116,11 +143,22 @@ const EditProfile = () => {
                 {/* Profile Picture Section */}
                 <View style={styles.profileImageContainer}>
                     <View style={styles.profileImageWrapper}>
-                        {profile.picture ? (
+                        {profileImageUri ? (
                             <Image
-                                source={{ uri: profile.picture }}
+                                source={{ uri: profileImageUri }}
                                 style={styles.profileImage}
                             />
+                        ) : imageLoading ? (
+                            <View
+                                style={[
+                                    styles.profileImage,
+                                    styles.loadingContainer,
+                                ]}
+                            >
+                                <Text style={styles.loadingText}>
+                                    Loading...
+                                </Text>
+                            </View>
                         ) : (
                             <Image
                                 source={require('@assets/images/mock-profile-sample.png')}
@@ -331,6 +369,15 @@ const styles = StyleSheet.create({
         borderRadius: 60,
         borderWidth: 3,
         borderColor: '#fff',
+    },
+    loadingContainer: {
+        backgroundColor: '#f0f0f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        color: '#666',
+        fontSize: 12,
     },
     cameraIconContainer: {
         position: 'absolute',
