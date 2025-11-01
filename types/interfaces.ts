@@ -112,6 +112,7 @@ export interface UserProfile {
     shirt: string;
     birthday: string;
     picture: string | null;
+    pictureObject?: string | null; // Optional cached picture URI - not from database
     affiliations: UserAffiliation[];
     location: UserLocation;
     organizationDefaultUsersId: string;

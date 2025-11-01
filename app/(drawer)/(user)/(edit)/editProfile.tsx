@@ -24,7 +24,6 @@ const EditProfile = () => {
     const profile = user?.profile || {};
 
     // State for profile image
-    const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
     const [imageLoading, setImageLoading] = useState(false);
 
     // State for editable fields
@@ -40,9 +39,15 @@ const EditProfile = () => {
         profile.location?.postalCode || ''
     );
 
-    // Fetch profile picture if user has one
+    // Fetch profile picture if user has one and it's not already cached
     useEffect(() => {
-        if (profile.picture && profile.id && user.apiToken) {
+        if (
+            profile.picture &&
+            profile.id &&
+            user.apiToken &&
+            (!profile.pictureObject ||
+                typeof profile.pictureObject !== 'string')
+        ) {
             setImageLoading(true);
             (dispatch as any)(
                 fetchProfilePicture({
@@ -51,8 +56,8 @@ const EditProfile = () => {
                 })
             )
                 .unwrap()
-                .then((imageUri: string) => {
-                    setProfileImageUri(imageUri);
+                .then(() => {
+                    // The picture is now stored in Redux state via the fetchProfilePicture.fulfilled reducer
                 })
                 .catch((error: any) => {
                     console.error('Failed to load profile picture:', error);
@@ -61,7 +66,13 @@ const EditProfile = () => {
                     setImageLoading(false);
                 });
         }
-    }, [profile.picture, profile.id, user.apiToken, dispatch]);
+    }, [
+        profile.picture,
+        profile.id,
+        user.apiToken,
+        profile.pictureObject,
+        dispatch,
+    ]);
 
     const shirtSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
@@ -143,12 +154,7 @@ const EditProfile = () => {
                 {/* Profile Picture Section */}
                 <View style={styles.profileImageContainer}>
                     <View style={styles.profileImageWrapper}>
-                        {profileImageUri ? (
-                            <Image
-                                source={{ uri: profileImageUri }}
-                                style={styles.profileImage}
-                            />
-                        ) : imageLoading ? (
+                        {imageLoading ? (
                             <View
                                 style={[
                                     styles.profileImage,
@@ -159,9 +165,18 @@ const EditProfile = () => {
                                     Loading...
                                 </Text>
                             </View>
+                        ) : profile.pictureObject &&
+                          typeof profile.pictureObject === 'string' ? (
+                            <Image
+                                source={{ uri: profile.pictureObject }}
+                                style={styles.profileImage}
+                            />
                         ) : (
                             <Image
-                                source={require('@assets/images/mock-profile-sample.png')}
+                                source={
+                                    profile.pictureObject ||
+                                    require('@assets/images/genericProiflePicture.png')
+                                }
                                 style={styles.profileImage}
                             />
                         )}

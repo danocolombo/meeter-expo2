@@ -18,12 +18,27 @@ const Profile = () => {
     const dispatch = useDispatch();
     const user = useSelector((state: any) => state.user);
     const profile = user?.profile || {};
-    const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
     const [imageLoading, setImageLoading] = useState(false);
 
-    // Fetch profile picture if user has one
+    // Fetch profile picture if user has one and it's not already cached
     useEffect(() => {
-        if (profile.picture && profile.id && user.apiToken) {
+        console.log('🖼️ Profile picture check:', {
+            hasPicture: !!profile.picture,
+            hasId: !!profile.id,
+            hasToken: !!user.apiToken,
+            hasCachedObject: !!profile.pictureObject,
+            pictureId: profile.picture,
+            userId: profile.id,
+        });
+
+        if (
+            profile.picture &&
+            profile.id &&
+            user.apiToken &&
+            (!profile.pictureObject ||
+                typeof profile.pictureObject !== 'string')
+        ) {
+            console.log('🚀 Fetching profile picture from API...');
             setImageLoading(true);
             (dispatch as any)(
                 fetchProfilePicture({
@@ -32,17 +47,24 @@ const Profile = () => {
                 })
             )
                 .unwrap()
-                .then((imageUri: string) => {
-                    setProfileImageUri(imageUri);
+                .then(() => {
+                    console.log('✅ Profile picture fetched successfully');
+                    // The picture is now stored in Redux state via the fetchProfilePicture.fulfilled reducer
                 })
                 .catch((error: any) => {
-                    console.error('Failed to load profile picture:', error);
+                    console.error('❌ Failed to load profile picture:', error);
                 })
                 .finally(() => {
                     setImageLoading(false);
                 });
         }
-    }, [profile.picture, profile.id, user.apiToken, dispatch]);
+    }, [
+        profile.picture,
+        profile.id,
+        user.apiToken,
+        profile.pictureObject,
+        dispatch,
+    ]);
 
     const formatPhoneNumber = (phone: string) => {
         if (!phone) return 'Not provided';
@@ -85,20 +107,24 @@ const Profile = () => {
 
             {/* Profile Image Section */}
             <View style={styles.profileImageContainer}>
-                {profileImageUri ? (
-                    <Image
-                        source={{ uri: profileImageUri }}
-                        style={styles.profileImage}
-                    />
-                ) : imageLoading ? (
+                {imageLoading ? (
                     <View
                         style={[styles.profileImage, styles.loadingContainer]}
                     >
                         <Text style={styles.loadingText}>Loading...</Text>
                     </View>
+                ) : profile.pictureObject &&
+                  typeof profile.pictureObject === 'string' ? (
+                    <Image
+                        source={{ uri: profile.pictureObject }}
+                        style={styles.profileImage}
+                    />
                 ) : (
                     <Image
-                        source={require('@assets/images/mock-profile-sample.png')}
+                        source={
+                            profile.pictureObject ||
+                            require('@assets/images/genericProiflePicture.png')
+                        }
                         style={styles.profileImage}
                     />
                 )}

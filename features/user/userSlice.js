@@ -4,6 +4,7 @@ import {
     changeActiveOrg,
     changeOrg,
     errorTest,
+    fetchProfilePicture,
     loginUser,
     saveHeroMessage,
     saveUserProfile,
@@ -12,7 +13,9 @@ import {
 } from './userThunks';
 
 const initialState = {
-    profile: {},
+    profile: {
+        pictureObject: require('@assets/images/genericProiflePicture.png'),
+    },
     apiToken: '',
     isAuthenticated: false,
     isLoading: false,
@@ -42,7 +45,9 @@ export const userSlice = createSlice({
             console.log('US:39-->action.payload:\n', action?.payload);
         },
         clearUser: (state) => {
-            state.profile = {};
+            state.profile = {
+                pictureObject: require('@assets/images/genericProiflePicture.png'),
+            };
             return state;
         },
         setAPIToken: (state, action) => {
@@ -54,7 +59,9 @@ export const userSlice = createSlice({
             };
         },
         logout: (state) => {
-            state.profile = {};
+            state.profile = {
+                pictureObject: require('@assets/images/genericProiflePicture.png'),
+            };
             state.isLimitedUser = false;
             state.isAuthenticated = false;
             state.apiToken = '';
@@ -73,8 +80,16 @@ export const userSlice = createSlice({
                 };
                 state.isAuthenticated = true;
             } else if (action.payload.profile) {
-                // Standard profile update
-                state.profile = action.payload.profile;
+                // Standard profile update - preserve pictureObject if not provided
+                const currentPictureObject =
+                    state.profile.pictureObject ||
+                    require('@assets/images/genericProiflePicture.png');
+                state.profile = {
+                    ...action.payload.profile,
+                    pictureObject:
+                        action.payload.profile.pictureObject ||
+                        currentPictureObject,
+                };
             }
         },
         setUserOrganizations: (state, action) => {
@@ -88,6 +103,13 @@ export const userSlice = createSlice({
             state.profile = {
                 ...state.profile,
                 organizations: sortedOrganizations,
+            };
+        },
+        setPictureObject: (state, action) => {
+            // Store the cached picture object in user profile
+            state.profile = {
+                ...state.profile,
+                pictureObject: action.payload,
             };
         },
     },
@@ -122,9 +144,16 @@ export const userSlice = createSlice({
             })
             .addCase(loginUser.fulfilled, (state, action) => {
                 if (action?.payload?.profile) {
+                    const currentPictureObject =
+                        state.profile.pictureObject ||
+                        require('@assets/images/genericProiflePicture.png');
                     return {
                         ...state,
-                        ...action.payload, // This will set profile, apiToken, isAuthenticated, isLoading, isLimitedUser
+                        ...action.payload, // This will set apiToken, isAuthenticated, isLoading, isLimitedUser
+                        profile: {
+                            ...action.payload.profile,
+                            pictureObject: currentPictureObject, // Preserve the pictureObject
+                        },
                     };
                 }
             })
@@ -151,7 +180,13 @@ export const userSlice = createSlice({
                 state.isLoading = true;
             })
             .addCase(changeOrg.fulfilled, (state, action) => {
-                state.profile = action.payload.profile;
+                const currentPictureObject =
+                    state.profile.pictureObject ||
+                    require('@assets/images/genericProiflePicture.png');
+                state.profile = {
+                    ...action.payload.profile,
+                    pictureObject: currentPictureObject,
+                };
                 state.isLoading = false;
                 return state;
             })
@@ -190,9 +225,15 @@ export const userSlice = createSlice({
                     profile.activeOrg?.name
                 );
 
+                const currentPictureObject =
+                    state.profile.pictureObject ||
+                    require('@assets/images/genericProiflePicture.png');
                 return {
                     ...state,
-                    profile: profile,
+                    profile: {
+                        ...profile,
+                        pictureObject: currentPictureObject,
+                    },
                     isLoading: false,
                 };
             })
@@ -228,6 +269,22 @@ export const userSlice = createSlice({
                 if (state.profile) {
                     state.profile.permissions = action.payload;
                 }
+            })
+            .addCase(fetchProfilePicture.fulfilled, (state, action) => {
+                // Store the fetched profile picture in the Redux state
+                console.log(
+                    '🖼️ Redux: fetchProfilePicture.fulfilled - storing image in state'
+                );
+                console.log(
+                    '🖼️ Image data length:',
+                    action.payload?.length || 'undefined'
+                );
+                if (state.profile) {
+                    state.profile.pictureObject = action.payload;
+                    console.log(
+                        '✅ Profile pictureObject updated in Redux state'
+                    );
+                }
             });
     },
 });
@@ -242,6 +299,7 @@ export const {
     clearUser,
     updateProfile,
     setUserOrganizations,
+    setPictureObject,
 } = userSlice.actions;
 
 // The function below is called a selector and allows us to select a value from
