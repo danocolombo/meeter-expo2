@@ -1,11 +1,12 @@
 import theme from '@assets/Colors';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    ActionSheetIOS,
     Alert,
+    Image,
     KeyboardAvoidingView,
-    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -36,6 +37,24 @@ const EditProfile = () => {
     );
 
     const shirtSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+
+    const handlePictureEdit = () => {
+        console.log('PIC EDIT PRESSED');
+    };
+
+    const handleShirtSizePress = () => {
+        ActionSheetIOS.showActionSheetWithOptions(
+            {
+                options: ['Cancel', ...shirtSizes],
+                cancelButtonIndex: 0,
+            },
+            (buttonIndex) => {
+                if (buttonIndex > 0) {
+                    setShirt(shirtSizes[buttonIndex - 1]);
+                }
+            }
+        );
+    };
 
     const handleSave = () => {
         // TODO: Implement save logic with your API
@@ -80,10 +99,7 @@ const EditProfile = () => {
     };
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
+        <KeyboardAvoidingView style={styles.container} behavior='padding'>
             <ScrollView style={styles.scrollView}>
                 {/* Header Section */}
                 <View style={styles.header}>
@@ -95,6 +111,33 @@ const EditProfile = () => {
                         <Text style={styles.backText}>Cancel</Text>
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Edit Profile</Text>
+                </View>
+
+                {/* Profile Picture Section */}
+                <View style={styles.profileImageContainer}>
+                    <View style={styles.profileImageWrapper}>
+                        {profile.picture ? (
+                            <Image
+                                source={{ uri: profile.picture }}
+                                style={styles.profileImage}
+                            />
+                        ) : (
+                            <Image
+                                source={require('@assets/images/mock-profile-sample.png')}
+                                style={styles.profileImage}
+                            />
+                        )}
+                        <TouchableOpacity
+                            style={styles.cameraIconContainer}
+                            onPress={handlePictureEdit}
+                        >
+                            <MaterialIcons
+                                name='camera-alt'
+                                size={24}
+                                color='#fff'
+                            />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Form Section */}
@@ -128,29 +171,24 @@ const EditProfile = () => {
                     {/* Shirt Size */}
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Shirt Size</Text>
-                        <View style={styles.shirtSizeContainer}>
-                            {shirtSizes.map((size) => (
-                                <TouchableOpacity
-                                    key={size}
-                                    style={[
-                                        styles.shirtSizeButton,
-                                        shirt === size &&
-                                            styles.shirtSizeButtonSelected,
-                                    ]}
-                                    onPress={() => setShirt(size)}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.shirtSizeText,
-                                            shirt === size &&
-                                                styles.shirtSizeTextSelected,
-                                        ]}
-                                    >
-                                        {size}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                        <TouchableOpacity
+                            style={styles.dropdownButton}
+                            onPress={handleShirtSizePress}
+                        >
+                            <Text
+                                style={[
+                                    styles.dropdownButtonText,
+                                    !shirt && styles.dropdownPlaceholderText,
+                                ]}
+                            >
+                                {shirt || 'Select shirt size'}
+                            </Text>
+                            <Ionicons
+                                name='chevron-down'
+                                size={20}
+                                color='#666'
+                            />
+                        </TouchableOpacity>
                     </View>
 
                     {/* Address Section */}
@@ -279,6 +317,34 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#000',
     },
+    profileImageContainer: {
+        alignItems: 'center',
+        marginTop: 30,
+        marginBottom: 20,
+    },
+    profileImageWrapper: {
+        position: 'relative',
+    },
+    profileImage: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        borderWidth: 3,
+        borderColor: '#fff',
+    },
+    cameraIconContainer: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: theme.colors.primaryBackground,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 3,
+        borderColor: '#fff',
+    },
     formContainer: {
         padding: 20,
     },
@@ -313,32 +379,23 @@ const styles = StyleSheet.create({
         color: '#666',
         marginTop: 5,
     },
-    shirtSizeContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 10,
-    },
-    shirtSizeButton: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 8,
+    dropdownButton: {
+        backgroundColor: '#fff',
         borderWidth: 1,
         borderColor: '#ddd',
-        backgroundColor: '#fff',
-        minWidth: 60,
+        borderRadius: 8,
+        paddingHorizontal: 15,
+        paddingVertical: 12,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
     },
-    shirtSizeButtonSelected: {
-        backgroundColor: theme.colors.primaryBackground,
-        borderColor: theme.colors.primaryBackground,
+    dropdownButtonText: {
+        fontSize: 16,
+        color: '#000',
     },
-    shirtSizeText: {
-        fontSize: 14,
-        color: '#333',
-        fontWeight: '600',
-    },
-    shirtSizeTextSelected: {
-        color: '#fff',
+    dropdownPlaceholderText: {
+        color: '#999',
     },
     sectionHeader: {
         marginTop: 20,
