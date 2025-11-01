@@ -1,5 +1,6 @@
 import { fetchAllMeetings } from '@features/meetings/meetingsThunks';
 import { loginUser } from '@features/user/userThunks';
+import { printObject } from '@utils/helpers';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Text } from 'react-native';
@@ -10,6 +11,8 @@ export default function Index() {
     const router = useRouter();
     const dispatch = useDispatch();
     const { user, isAuthenticated, isLoading, userError } = useAuth();
+    const apiToken = process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
+    const org_id = process.env.EXPO_PUBLIC_TEST_ORGANIZATION_ID ?? '';
 
     useEffect(() => {
         if (isLoading) return; // Wait for auth to resolve
@@ -21,9 +24,7 @@ export default function Index() {
                 return;
             }
 
-            // Only fetch meetings and login if authenticated
-            const apiToken = process.env.EXPO_PUBLIC_JERICHO_API_TOKEN;
-            const org_id = process.env.EXPO_PUBLIC_TEST_ORGANIZATION_ID ?? '';
+            printObject('user:', user);
             if (apiToken && user) {
                 dispatch<any>(fetchAllMeetings({ apiToken, org_id }));
                 dispatch<any>(loginUser({ inputs: user, apiToken }));
