@@ -77,7 +77,7 @@ const EditProfile = () => {
     const shirtSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
     const handlePictureEdit = () => {
-        console.log('PIC EDIT PRESSED');
+        router.push('/(drawer)/(user)/(edit)/photoPreview');
     };
 
     const handleShirtSizePress = () => {
