@@ -16,11 +16,51 @@ const initialState = {
     profile: {
         pictureObject: require('@assets/images/genericProiflePicture.png'),
     },
+    affiliations: [],
     apiToken: '',
     isAuthenticated: false,
     isLoading: false,
     isLimitedUser: false,
 };
+
+// Helper: summarize affiliations into [{ organization_id, roles: [] }, ...]
+function summarizeAffiliations(rawAffiliations) {
+    if (!Array.isArray(rawAffiliations)) return [];
+
+    const map = new Map();
+
+    rawAffiliations.forEach((aff) => {
+        if (!aff || typeof aff !== 'object') return;
+
+        // Support both snake_case and camelCase keys
+        const orgId =
+            aff.organization_id ||
+            aff.organizationId ||
+            aff.organization?.id ||
+            aff.organization?.Id;
+        const role = aff.role || aff.roles || null;
+        const status = aff.status || aff.state || null;
+
+        if (!orgId) return; // skip malformed
+        if (status !== 'active') return; // only active
+        if (!role) return;
+
+        const entry = map.get(orgId) || new Set();
+        entry.add(role);
+        map.set(orgId, entry);
+    });
+
+    // Convert to desired array shape
+    const result = [];
+    for (const [organization_id, rolesSet] of map.entries()) {
+        result.push({
+            organization_id,
+            roles: Array.from(rolesSet),
+        });
+    }
+
+    return result;
+}
 
 export const userSlice = createSlice({
     name: 'user',
@@ -128,10 +168,22 @@ export const userSlice = createSlice({
                 // state.perms = action.payload.perms;
                 // apiToken = action.payload.apiToken;
                 // Merge the updated profile with existing profile to preserve all fields
+                const incomingProfile =
+                    action.payload.userProfile || action.payload;
                 state.profile = {
                     ...state.profile, // Keep existing profile data
-                    ...action.payload.userProfile, // Overlay with updated data
+                    ...incomingProfile, // Overlay with updated data
                 };
+                // derive simplified affiliations for quick lookup in state
+                try {
+                    state.affiliations = summarizeAffiliations(
+                        incomingProfile?.affiliations ||
+                            incomingProfile?.affiliations?.items ||
+                            []
+                    );
+                } catch (_) {
+                    // keep previous affiliations on error
+                }
                 state.isAuthenticated = true; // Assume user is authenticated after profile save
                 state.apiToken = action.payload.apiToken || state.apiToken; // Preserve existing token if none provided
                 state.isLoading = false;
@@ -147,13 +199,27 @@ export const userSlice = createSlice({
                     const currentPictureObject =
                         state.profile.pictureObject ||
                         require('@assets/images/genericProiflePicture.png');
+                    const incomingProfile = action.payload.profile;
+                    // derive summarized affiliations
+                    let derivedAffiliations = [];
+                    try {
+                        derivedAffiliations = summarizeAffiliations(
+                            incomingProfile?.affiliations ||
+                                incomingProfile?.affiliations?.items ||
+                                []
+                        );
+                    } catch (_) {
+                        derivedAffiliations = [];
+                    }
+
                     return {
                         ...state,
                         ...action.payload, // This will set apiToken, isAuthenticated, isLoading, isLimitedUser
                         profile: {
-                            ...action.payload.profile,
+                            ...incomingProfile,
                             pictureObject: currentPictureObject, // Preserve the pictureObject
                         },
+                        affiliations: derivedAffiliations,
                     };
                 }
             })
@@ -228,12 +294,25 @@ export const userSlice = createSlice({
                 const currentPictureObject =
                     state.profile.pictureObject ||
                     require('@assets/images/genericProiflePicture.png');
+                // derive affiliations from returned profile as well
+                let derivedAffiliations = [];
+                try {
+                    derivedAffiliations = summarizeAffiliations(
+                        profile?.affiliations ||
+                            profile?.affiliations?.items ||
+                            []
+                    );
+                } catch (_) {
+                    derivedAffiliations = [];
+                }
+
                 return {
                     ...state,
                     profile: {
                         ...profile,
                         pictureObject: currentPictureObject,
                     },
+                    affiliations: derivedAffiliations,
                     isLoading: false,
                 };
             })

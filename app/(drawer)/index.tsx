@@ -1,3 +1,6 @@
+import themedStyles from '@assets/Styles';
+import HeroMessage from '@components/ui/heroMessage';
+import { updateProfile } from '@features/user/userSlice';
 import { useQuery } from '@tanstack/react-query';
 import { getAffiliations } from '@utils/api';
 import { printObject } from '@utils/helpers';
@@ -10,12 +13,11 @@ import {
     View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import HeroMessage from '../../components/ui/heroMessage';
-import { updateProfile } from '../../features/user/userSlice';
 
 const Landing = () => {
     const dispatch = useDispatch();
-    const { data: affiliations } = useQuery({
+    // trigger caching/fetch of affiliations but we don't need the data here
+    useQuery({
         queryKey: ['affiliations'],
         queryFn: getAffiliations,
     });
@@ -32,8 +34,9 @@ const Landing = () => {
 
     // Show loading indicator if userData is not loaded yet
     if (!userData || !userData.profile) {
+        // Use themedStyles.activityOverlay for a consistent themed loading overlay
         return (
-            <View style={styles.loadingContainer}>
+            <View style={themedStyles.activityOverlay}>
                 <ActivityIndicator size='large' />
             </View>
         );
@@ -58,6 +61,12 @@ const Landing = () => {
                 title='Log User Info'
                 onPress={() => {
                     printObject('User Data:\n', userData);
+                }}
+            />
+            <Button
+                title='Affiliations'
+                onPress={() => {
+                    printObject('Affiliations:\n', userData?.affiliations);
                 }}
             />
             <Button

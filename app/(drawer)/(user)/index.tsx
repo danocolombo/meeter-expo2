@@ -2,7 +2,7 @@ import theme from '@assets/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchProfilePicture } from '@features/user/userThunks';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Image,
     ScrollView,
@@ -194,9 +194,9 @@ const Profile = () => {
                 <View style={styles.divider} />
 
                 <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Default Organization</Text>
+                    <Text style={styles.detailLabel}>Current Organization</Text>
                     <Text style={styles.detailValue}>
-                        {profile.defaultOrg?.name || 'Not provided'}
+                        {profile.activeOrg?.name || 'Not provided'}
                     </Text>
                 </View>
             </View>
