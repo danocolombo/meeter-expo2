@@ -3,7 +3,12 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { getPermissionsForActiveOrg, printObject } from '@utils/helpers';
 import { ApiError, Person, UserProfile } from '../../types/interfaces';
 import type { RootState } from '../../utils/store';
-import { fetchPerson, getAPIToken, updateHeroMessage } from './userAPI';
+import {
+    fetchPerson,
+    fetchUserProfilePicture,
+    getAPIToken,
+    updateHeroMessage,
+} from './userAPI';
 
 // Lightweight ThunkAPI typing used across these thunks
 // Proper RTK ThunkApi config so createAsyncThunk infers getState correctly
@@ -52,7 +57,7 @@ export const loginUser = createAsyncThunk<
             const username = userData.username;
             const sub = userData.sub; // Sub is already available in accessToken.payload
 
-            // console.log('🟨  ➡️  userThunks.ts:19  ➡️  sub:\n', sub);
+            // console.log('🟨  ➡️  userThunks.ts:60  ➡️  sub:\n', sub);
 
             const email = inputs.signInUserSession.idToken.payload.email;
 
@@ -132,7 +137,7 @@ export const loginUser = createAsyncThunk<
             }
 
             // console.log(
-            //     '🟨  ➡️  userThunks.ts:98  ➡️  fetchResponse:\n',
+            //     '🟨  ➡️  userThunks.ts:140  ➡️  fetchResponse:\n',
             //     fetchResponse
             // );
 
@@ -476,9 +481,10 @@ export const updateActiveOrgPermissions = createAsyncThunk<
 >('user/updateActiveOrgPermissions', async (_, { getState }) => {
     const state = getState();
     const { profile } = state.user as any;
-    if (!profile?.affiliations || !profile?.activeOrg?.id) return [];
+    const activeOrg = (state as any).system?.activeOrg || {};
+    if (!profile?.affiliations || !activeOrg?.id) return [];
 
-    const orgId = profile.activeOrg.id;
+    const orgId = activeOrg.id;
     const permissions = (profile.affiliations as any[])
         .filter(
             (aff: any) =>
@@ -570,7 +576,16 @@ export const changeOrg = createAsyncThunk<any, any, ThunkApiConfig>(
                 role: client.role,
                 status: client.status,
             };
-            const newProfile = { ...theProfile, activeOrg: activeOrg };
+            // Do NOT store activeOrg on the user.profile. Instead, persist it to system state.
+            const newProfile = { ...theProfile };
+            try {
+                thunkAPI.dispatch({
+                    type: 'system/setActiveOrg',
+                    payload: activeOrg,
+                });
+            } catch {
+                // ignore dispatch errors
+            }
             const results = { profile: newProfile, perms: perms };
             // printObject('UT:64-->profile&perms:', results);
 
@@ -602,7 +617,7 @@ export const changeActiveOrg = createAsyncThunk<
 
             printObject('UT:changeActiveOrg-->inputs:\n', inputs);
 
-            // Create updated profile with new activeOrg (no database update)
+            // Create a temporary updatedProfile with activeOrg so helpers can compute perms
             const updatedProfile = {
                 ...theProfile,
                 activeOrg: newActiveOrg,
@@ -610,8 +625,6 @@ export const changeActiveOrg = createAsyncThunk<
 
             // Extract permissions for the new active org using helper
             try {
-                // ensure updatedProfile.activeOrg is set so helper can read it
-                updatedProfile.activeOrg = newActiveOrg;
                 const perms = getPermissionsForActiveOrg(updatedProfile as any);
                 updatedProfile.permissions = perms;
             } catch (err) {
@@ -622,8 +635,21 @@ export const changeActiveOrg = createAsyncThunk<
                 updatedProfile.permissions = [];
             }
 
+            // Persist activeOrg on system state and return a userProfile WITHOUT activeOrg
+            try {
+                thunkAPI.dispatch({
+                    type: 'system/setActiveOrg',
+                    payload: newActiveOrg,
+                });
+            } catch {
+                // ignore
+            }
+
             const inputValues = {
-                userProfile: updatedProfile,
+                userProfile: {
+                    ...theProfile,
+                    permissions: updatedProfile.permissions || [],
+                },
                 perms: updatedProfile.permissions || [],
             };
 
@@ -636,7 +662,7 @@ export const changeActiveOrg = createAsyncThunk<
                 updatedProfile.permissions || []
             );
 
-            // Return the result
+            // Return the result (userProfile does not contain activeOrg)
             return inputValues;
         } catch (error) {
             console.error('UT:changeActiveOrg ERROR', inputs);
@@ -767,3 +793,48 @@ export const getUserProfilePic = (profile: {
     const returnValue = `${PUBLIC_PATH}/${profile.id}/image/${profile.picture}`;
     return returnValue;
 };
+
+//*************************************************
+//* FETCH USER PROFILE PICTURE FROM API
+//*************************************************
+export const fetchProfilePicture = createAsyncThunk<
+    string,
+    { userId: string; pictureId: string },
+    ThunkApiConfig
+>(
+    'user/fetchProfilePicture',
+    async (args: { userId: string; pictureId: string }, thunkAPI) => {
+        try {
+            const state = thunkAPI.getState();
+            const token = (state.user as any)?.apiToken;
+
+            if (!token) {
+                throw new Error('No authentication token available');
+            }
+
+            const response = await fetchUserProfilePicture(
+                args.userId,
+                args.pictureId,
+                token
+            );
+
+            // Check if response has imageUri property (success case)
+            if (
+                response &&
+                typeof response === 'object' &&
+                'imageUri' in response
+            ) {
+                return (response as { imageUri: string }).imageUri;
+            } else if (isApiError(response)) {
+                throw new Error(
+                    response.message || 'Failed to fetch profile picture'
+                );
+            } else {
+                throw new Error('Unexpected response format');
+            }
+        } catch (error) {
+            printObject('🔴 fetchProfilePicture error:', error);
+            throw error;
+        }
+    }
+);

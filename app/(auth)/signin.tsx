@@ -28,6 +28,35 @@ export default function Signin() {
     }, [user, router]);
 
     const handleLoginPress = async () => {
+        // If mock login is enabled via env, inject the mock values
+        const mockEnabled =
+            typeof process !== 'undefined' &&
+            (process.env?.EXPO_PUBLIC_MOCK_LOGIN === 'true' ||
+                process.env?.EXPO_PUBLIC_MOCK_LOGIN === '1');
+
+        if (mockEnabled) {
+            const mockUsername =
+                process.env?.EXPO_PUBLIC_MOCK_USERNAME || login;
+            const mockEmail = process.env?.EXPO_PUBLIC_MOCK_EMAIL || '';
+            const mockSub = process.env?.EXPO_PUBLIC_MOCK_SUB || '';
+
+            // expose what we're injecting (keeps variables used to avoid lint errors)
+            // These values are also consumed by the auth hook which reads the same env vars.
+            console.debug('Mock login injection:', {
+                mockUsername,
+                mockEmail,
+                mockSub,
+            });
+
+            // update the local input so the UI reflects the injected mock username
+            setLogin(mockUsername);
+
+            // call the auth handler with the mock username. The auth hook
+            // will pick up other mock values (email, sub, etc.) from env as needed.
+            await handleLoginUser(mockUsername, password);
+            return;
+        }
+
         await handleLoginUser(login, password);
     };
 

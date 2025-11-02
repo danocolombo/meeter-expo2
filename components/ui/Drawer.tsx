@@ -182,6 +182,49 @@ export const NavigationDrawerContent = (props: any) => {
                             </Text>
                         </TouchableOpacity>
                     </View>
+                    <View style={styles.menuSectionHeader}>
+                        <Text
+                            style={{
+                                color: '#fff',
+                                fontWeight: 'bold',
+                                fontSize: 16,
+                            }}
+                        >
+                            Account
+                        </Text>
+                    </View>
+                    <View style={styles.menuIndentedItem}>
+                        <TouchableOpacity
+                            key={'profile'}
+                            onPress={() => router.navigate(`/(drawer)/(user)`)}
+                            style={{
+                                paddingVertical: 0,
+                                marginVertical: 0,
+                                minHeight: 0,
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    fontSize: 16,
+                                    padding: 0,
+                                    margin: 0,
+                                    color:
+                                        pathName === `/(drawer)/(user)` ||
+                                        pathName.startsWith('/(drawer)/(user)/')
+                                            ? '#F2A310'
+                                            : '#fff',
+                                    fontWeight:
+                                        pathName === `/(drawer)/(user)` ||
+                                        pathName.startsWith('/(drawer)/(user)/')
+                                            ? 'bold'
+                                            : 'normal',
+                                }}
+                            >
+                                Profile
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </DrawerContentScrollView>
                 <View
                     style={{

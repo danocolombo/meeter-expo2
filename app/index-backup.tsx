@@ -36,7 +36,7 @@ export default function Index() {
 
             router.replace('/(drawer)');
         }, 0);
-    }, [dispatch, userError, user, isAuthenticated, isLoading, router, apiToken, org_id]);
+    }, [dispatch, userError, user, isAuthenticated, isLoading, router]);
 
     // Show loading while deciding where to go
     return <Text>Loading...</Text>;

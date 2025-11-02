@@ -1,6 +1,8 @@
 # ENVIRONMENT
 
-NODE: 18.18.2
+NODE: 24.11.0
+Expo SDK: 54.0.21
+React Native: 0.81.5
 
 # Welcome to your Expo app 👋
 

@@ -65,7 +65,16 @@ export default function Layout() {
                     options={{
                         title: 'PROfile',
                         headerShown: false,
-                        // Profile is now visible in drawer
+                        drawerItemStyle: {
+                            display: 'none',
+                        },
+                    }}
+                />
+                <Drawer.Screen
+                    name='(user)'
+                    options={{
+                        title: 'Profile',
+                        headerShown: false,
                     }}
                 />
             </Drawer>

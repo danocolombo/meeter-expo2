@@ -8,6 +8,7 @@ import { useCallback } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Provider } from 'react-redux';
 import { AuthProvider } from './(hooks)/AuthProvider';
+
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
@@ -15,6 +16,7 @@ const queryClient = new QueryClient({
         },
     },
 });
+
 export default function RootLayout() {
     useReactQueryDevTools(queryClient);
     const [fontsLoaded] = useFonts({
@@ -35,15 +37,18 @@ export default function RootLayout() {
         'NanumGothic-Bold': require('@assets/fonts/NanumGothic-Bold.ttf'),
         'NanumGothic-ExtraBold': require('@assets/fonts/NanumGothic-ExtraBold.ttf'),
     });
+
     const onLayoutRootView = useCallback(async () => {
         if (fontsLoaded) {
             await SplashScreen.preventAutoHideAsync();
             // await SplashScreen.hideAsync();
         }
     }, [fontsLoaded]);
+
     if (!fontsLoaded) {
         return null;
     }
+
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <Provider store={store}>

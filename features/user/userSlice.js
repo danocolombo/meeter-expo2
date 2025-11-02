@@ -4,6 +4,7 @@ import {
     changeActiveOrg,
     changeOrg,
     errorTest,
+    fetchProfilePicture,
     loginUser,
     saveHeroMessage,
     saveUserProfile,
@@ -12,12 +13,85 @@ import {
 } from './userThunks';
 
 const initialState = {
-    profile: {},
+    profile: {
+        pictureObject: require('@assets/images/genericProiflePicture.png'),
+    },
+    affiliations: [],
     apiToken: '',
     isAuthenticated: false,
     isLoading: false,
     isLimitedUser: false,
 };
+
+// Helper: summarize affiliations into
+// [{ organization_id, name?, code?, hero_message?, roles: [] }, ...]
+function summarizeAffiliations(rawAffiliations) {
+    if (!Array.isArray(rawAffiliations)) return [];
+
+    // Map organization_id -> { roles: Set, name, code, hero_message }
+    const map = new Map();
+
+    rawAffiliations.forEach((aff) => {
+        if (!aff || typeof aff !== 'object') return;
+
+        // Support both snake_case and camelCase keys
+        const orgId =
+            aff.organization_id ||
+            aff.organizationId ||
+            aff.organization?.id ||
+            aff.organization?.Id;
+        const role = aff.role || aff.roles || null;
+        const status = aff.status || aff.state || null;
+
+        if (!orgId) return; // skip malformed
+        if (status !== 'active') return; // only active
+        if (!role) return;
+
+        // Pull organization metadata if available
+        const orgObj = aff.organization || {};
+        const name = orgObj.name || orgObj.orgName || aff.org_name || null;
+        const code = orgObj.code || aff.org_code || aff.code || null;
+        // hero_message may be snake_case or camelCase
+        const hero_message =
+            orgObj.hero_message ||
+            orgObj.heroMessage ||
+            aff.hero_message ||
+            null;
+
+        let entry = map.get(orgId);
+        if (!entry) {
+            entry = {
+                roles: new Set(),
+                name: name || null,
+                code: code || null,
+                hero_message: hero_message || null,
+            };
+        }
+
+        // prefer filling in missing metadata if current entry lacks it
+        if (!entry.name && name) entry.name = name;
+        if (!entry.code && code) entry.code = code;
+        if (!entry.hero_message && hero_message)
+            entry.hero_message = hero_message;
+
+        entry.roles.add(role);
+        map.set(orgId, entry);
+    });
+
+    // Convert to desired array shape
+    const result = [];
+    for (const [organization_id, entry] of map.entries()) {
+        result.push({
+            organization_id,
+            name: entry.name,
+            code: entry.code,
+            hero_message: entry.hero_message,
+            roles: Array.from(entry.roles),
+        });
+    }
+
+    return result;
+}
 
 export const userSlice = createSlice({
     name: 'user',
@@ -42,7 +116,9 @@ export const userSlice = createSlice({
             console.log('US:39-->action.payload:\n', action?.payload);
         },
         clearUser: (state) => {
-            state.profile = {};
+            state.profile = {
+                pictureObject: require('@assets/images/genericProiflePicture.png'),
+            };
             return state;
         },
         setAPIToken: (state, action) => {
@@ -54,7 +130,9 @@ export const userSlice = createSlice({
             };
         },
         logout: (state) => {
-            state.profile = {};
+            state.profile = {
+                pictureObject: require('@assets/images/genericProiflePicture.png'),
+            };
             state.isLimitedUser = false;
             state.isAuthenticated = false;
             state.apiToken = '';
@@ -73,8 +151,16 @@ export const userSlice = createSlice({
                 };
                 state.isAuthenticated = true;
             } else if (action.payload.profile) {
-                // Standard profile update
-                state.profile = action.payload.profile;
+                // Standard profile update - preserve pictureObject if not provided
+                const currentPictureObject =
+                    state.profile.pictureObject ||
+                    require('@assets/images/genericProiflePicture.png');
+                state.profile = {
+                    ...action.payload.profile,
+                    pictureObject:
+                        action.payload.profile.pictureObject ||
+                        currentPictureObject,
+                };
             }
         },
         setUserOrganizations: (state, action) => {
@@ -88,6 +174,13 @@ export const userSlice = createSlice({
             state.profile = {
                 ...state.profile,
                 organizations: sortedOrganizations,
+            };
+        },
+        setPictureObject: (state, action) => {
+            // Store the cached picture object in user profile
+            state.profile = {
+                ...state.profile,
+                pictureObject: action.payload,
             };
         },
     },
@@ -106,10 +199,25 @@ export const userSlice = createSlice({
                 // state.perms = action.payload.perms;
                 // apiToken = action.payload.apiToken;
                 // Merge the updated profile with existing profile to preserve all fields
+                const incomingProfile =
+                    action.payload.userProfile || action.payload;
+                // Strip activeOrg from the user.profile — activeOrg is now stored in system.activeOrg
+                const { activeOrg, ...profileWithoutActiveOrg } =
+                    incomingProfile || {};
                 state.profile = {
                     ...state.profile, // Keep existing profile data
-                    ...action.payload.userProfile, // Overlay with updated data
+                    ...profileWithoutActiveOrg, // Overlay with updated data (no activeOrg)
                 };
+                // derive simplified affiliations for quick lookup in state
+                try {
+                    state.affiliations = summarizeAffiliations(
+                        incomingProfile?.affiliations ||
+                            incomingProfile?.affiliations?.items ||
+                            []
+                    );
+                } catch (_) {
+                    // keep previous affiliations on error
+                }
                 state.isAuthenticated = true; // Assume user is authenticated after profile save
                 state.apiToken = action.payload.apiToken || state.apiToken; // Preserve existing token if none provided
                 state.isLoading = false;
@@ -122,9 +230,33 @@ export const userSlice = createSlice({
             })
             .addCase(loginUser.fulfilled, (state, action) => {
                 if (action?.payload?.profile) {
+                    const currentPictureObject =
+                        state.profile.pictureObject ||
+                        require('@assets/images/genericProiflePicture.png');
+                    const incomingProfile = action.payload.profile;
+                    // derive summarized affiliations
+                    let derivedAffiliations = [];
+                    try {
+                        derivedAffiliations = summarizeAffiliations(
+                            incomingProfile?.affiliations ||
+                                incomingProfile?.affiliations?.items ||
+                                []
+                        );
+                    } catch (_) {
+                        derivedAffiliations = [];
+                    }
+
+                    // Strip activeOrg from the incoming profile before storing in user state
+                    const { activeOrg, ...incomingProfileWithoutActiveOrg } =
+                        incomingProfile || {};
                     return {
                         ...state,
-                        ...action.payload, // This will set profile, apiToken, isAuthenticated, isLoading, isLimitedUser
+                        ...action.payload, // This will set apiToken, isAuthenticated, isLoading, isLimitedUser
+                        profile: {
+                            ...incomingProfileWithoutActiveOrg,
+                            pictureObject: currentPictureObject, // Preserve the pictureObject
+                        },
+                        affiliations: derivedAffiliations,
                     };
                 }
             })
@@ -151,7 +283,13 @@ export const userSlice = createSlice({
                 state.isLoading = true;
             })
             .addCase(changeOrg.fulfilled, (state, action) => {
-                state.profile = action.payload.profile;
+                const currentPictureObject =
+                    state.profile.pictureObject ||
+                    require('@assets/images/genericProiflePicture.png');
+                state.profile = {
+                    ...action.payload.profile,
+                    pictureObject: currentPictureObject,
+                };
                 state.isLoading = false;
                 return state;
             })
@@ -185,14 +323,31 @@ export const userSlice = createSlice({
                     '🔄 US:changeActiveOrg-->New permissions in profile:',
                     profile.permissions
                 );
-                console.log(
-                    '🔄 US:changeActiveOrg-->New activeOrg:',
-                    profile.activeOrg?.name
-                );
 
+                const currentPictureObject =
+                    state.profile.pictureObject ||
+                    require('@assets/images/genericProiflePicture.png');
+                // derive affiliations from returned profile as well
+                let derivedAffiliations = [];
+                try {
+                    derivedAffiliations = summarizeAffiliations(
+                        profile?.affiliations ||
+                            profile?.affiliations?.items ||
+                            []
+                    );
+                } catch (_) {
+                    derivedAffiliations = [];
+                }
+
+                // Ensure we do not write activeOrg into user.profile; strip it first.
+                const { activeOrg, ...profileWithoutActiveOrg } = profile || {};
                 return {
                     ...state,
-                    profile: profile,
+                    profile: {
+                        ...profileWithoutActiveOrg,
+                        pictureObject: currentPictureObject,
+                    },
+                    affiliations: derivedAffiliations,
                     isLoading: false,
                 };
             })
@@ -204,22 +359,10 @@ export const userSlice = createSlice({
                 state.isLoading = true;
             })
             .addCase(saveHeroMessage.fulfilled, (state, action) => {
-                const orgActiveOrg = state.profile.activeOrg;
-
-                const newActiveOrg = {
-                    ...orgActiveOrg,
-                    heroMessage: action.payload.data.hero_message,
-                };
-                const updatedProfile = {
-                    ...state.profile,
-                    activeOrg: newActiveOrg,
-                };
-
-                return {
-                    ...state,
-                    profile: updatedProfile,
-                    isLoading: false,
-                };
+                // Hero message is part of the active organization which is stored
+                // on system.activeOrg. Do not store activeOrg on user.profile.
+                state.isLoading = false;
+                return state;
             })
             .addCase(saveHeroMessage.rejected, (state, action) => {
                 state.isLoading = false;
@@ -227,6 +370,22 @@ export const userSlice = createSlice({
             .addCase(updateActiveOrgPermissions.fulfilled, (state, action) => {
                 if (state.profile) {
                     state.profile.permissions = action.payload;
+                }
+            })
+            .addCase(fetchProfilePicture.fulfilled, (state, action) => {
+                // Store the fetched profile picture in the Redux state
+                console.log(
+                    '🖼️ Redux: fetchProfilePicture.fulfilled - storing image in state'
+                );
+                console.log(
+                    '🖼️ Image data length:',
+                    action.payload?.length || 'undefined'
+                );
+                if (state.profile) {
+                    state.profile.pictureObject = action.payload;
+                    console.log(
+                        '✅ Profile pictureObject updated in Redux state'
+                    );
                 }
             });
     },
@@ -242,6 +401,7 @@ export const {
     clearUser,
     updateProfile,
     setUserOrganizations,
+    setPictureObject,
 } = userSlice.actions;
 
 // The function below is called a selector and allows us to select a value from
