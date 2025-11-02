@@ -44,11 +44,9 @@ const Landing = () => {
 
     return (
         <View style={styles.container}>
-            {/* prefer system.activeOrg.heroMessage when available */}
+            {/* prefer system.activeOrg.heroMessage when available; do not read activeOrg from user.profile */}
             {system?.activeOrg?.heroMessage ? (
                 <HeroMessage message={system.activeOrg.heroMessage} />
-            ) : userData.profile.activeOrg?.heroMessage ? (
-                <HeroMessage message={userData.profile.activeOrg.heroMessage} />
             ) : null}
             <Text>Landing</Text>
             <Button

@@ -18,6 +18,7 @@ const Profile = () => {
     const dispatch = useDispatch();
     const user = useSelector((state: any) => state.user);
     const profile = user?.profile || {};
+    const system = useSelector((state: any) => state.system);
     const [imageLoading, setImageLoading] = useState(false);
 
     // Fetch profile picture if user has one and it's not already cached
@@ -196,7 +197,7 @@ const Profile = () => {
                 <View style={styles.detailItem}>
                     <Text style={styles.detailLabel}>Current Organization</Text>
                     <Text style={styles.detailValue}>
-                        {profile.activeOrg?.name || 'Not provided'}
+                        {system?.activeOrg?.name || 'Not provided'}
                     </Text>
                 </View>
             </View>

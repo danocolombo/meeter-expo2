@@ -23,10 +23,12 @@ const initialState = {
     isLimitedUser: false,
 };
 
-// Helper: summarize affiliations into [{ organization_id, roles: [] }, ...]
+// Helper: summarize affiliations into
+// [{ organization_id, name?, code?, hero_message?, roles: [] }, ...]
 function summarizeAffiliations(rawAffiliations) {
     if (!Array.isArray(rawAffiliations)) return [];
 
+    // Map organization_id -> { roles: Set, name, code, hero_message }
     const map = new Map();
 
     rawAffiliations.forEach((aff) => {
@@ -45,17 +47,46 @@ function summarizeAffiliations(rawAffiliations) {
         if (status !== 'active') return; // only active
         if (!role) return;
 
-        const entry = map.get(orgId) || new Set();
-        entry.add(role);
+        // Pull organization metadata if available
+        const orgObj = aff.organization || {};
+        const name = orgObj.name || orgObj.orgName || aff.org_name || null;
+        const code = orgObj.code || aff.org_code || aff.code || null;
+        // hero_message may be snake_case or camelCase
+        const hero_message =
+            orgObj.hero_message ||
+            orgObj.heroMessage ||
+            aff.hero_message ||
+            null;
+
+        let entry = map.get(orgId);
+        if (!entry) {
+            entry = {
+                roles: new Set(),
+                name: name || null,
+                code: code || null,
+                hero_message: hero_message || null,
+            };
+        }
+
+        // prefer filling in missing metadata if current entry lacks it
+        if (!entry.name && name) entry.name = name;
+        if (!entry.code && code) entry.code = code;
+        if (!entry.hero_message && hero_message)
+            entry.hero_message = hero_message;
+
+        entry.roles.add(role);
         map.set(orgId, entry);
     });
 
     // Convert to desired array shape
     const result = [];
-    for (const [organization_id, rolesSet] of map.entries()) {
+    for (const [organization_id, entry] of map.entries()) {
         result.push({
             organization_id,
-            roles: Array.from(rolesSet),
+            name: entry.name,
+            code: entry.code,
+            hero_message: entry.hero_message,
+            roles: Array.from(entry.roles),
         });
     }
 
@@ -170,9 +201,12 @@ export const userSlice = createSlice({
                 // Merge the updated profile with existing profile to preserve all fields
                 const incomingProfile =
                     action.payload.userProfile || action.payload;
+                // Strip activeOrg from the user.profile — activeOrg is now stored in system.activeOrg
+                const { activeOrg, ...profileWithoutActiveOrg } =
+                    incomingProfile || {};
                 state.profile = {
                     ...state.profile, // Keep existing profile data
-                    ...incomingProfile, // Overlay with updated data
+                    ...profileWithoutActiveOrg, // Overlay with updated data (no activeOrg)
                 };
                 // derive simplified affiliations for quick lookup in state
                 try {
@@ -212,11 +246,14 @@ export const userSlice = createSlice({
                         derivedAffiliations = [];
                     }
 
+                    // Strip activeOrg from the incoming profile before storing in user state
+                    const { activeOrg, ...incomingProfileWithoutActiveOrg } =
+                        incomingProfile || {};
                     return {
                         ...state,
                         ...action.payload, // This will set apiToken, isAuthenticated, isLoading, isLimitedUser
                         profile: {
-                            ...incomingProfile,
+                            ...incomingProfileWithoutActiveOrg,
                             pictureObject: currentPictureObject, // Preserve the pictureObject
                         },
                         affiliations: derivedAffiliations,
@@ -286,10 +323,6 @@ export const userSlice = createSlice({
                     '🔄 US:changeActiveOrg-->New permissions in profile:',
                     profile.permissions
                 );
-                console.log(
-                    '🔄 US:changeActiveOrg-->New activeOrg:',
-                    profile.activeOrg?.name
-                );
 
                 const currentPictureObject =
                     state.profile.pictureObject ||
@@ -306,10 +339,12 @@ export const userSlice = createSlice({
                     derivedAffiliations = [];
                 }
 
+                // Ensure we do not write activeOrg into user.profile; strip it first.
+                const { activeOrg, ...profileWithoutActiveOrg } = profile || {};
                 return {
                     ...state,
                     profile: {
-                        ...profile,
+                        ...profileWithoutActiveOrg,
                         pictureObject: currentPictureObject,
                     },
                     affiliations: derivedAffiliations,
@@ -324,22 +359,10 @@ export const userSlice = createSlice({
                 state.isLoading = true;
             })
             .addCase(saveHeroMessage.fulfilled, (state, action) => {
-                const orgActiveOrg = state.profile.activeOrg;
-
-                const newActiveOrg = {
-                    ...orgActiveOrg,
-                    heroMessage: action.payload.data.hero_message,
-                };
-                const updatedProfile = {
-                    ...state.profile,
-                    activeOrg: newActiveOrg,
-                };
-
-                return {
-                    ...state,
-                    profile: updatedProfile,
-                    isLoading: false,
-                };
+                // Hero message is part of the active organization which is stored
+                // on system.activeOrg. Do not store activeOrg on user.profile.
+                state.isLoading = false;
+                return state;
             })
             .addCase(saveHeroMessage.rejected, (state, action) => {
                 state.isLoading = false;

@@ -481,9 +481,10 @@ export const updateActiveOrgPermissions = createAsyncThunk<
 >('user/updateActiveOrgPermissions', async (_, { getState }) => {
     const state = getState();
     const { profile } = state.user as any;
-    if (!profile?.affiliations || !profile?.activeOrg?.id) return [];
+    const activeOrg = (state as any).system?.activeOrg || {};
+    if (!profile?.affiliations || !activeOrg?.id) return [];
 
-    const orgId = profile.activeOrg.id;
+    const orgId = activeOrg.id;
     const permissions = (profile.affiliations as any[])
         .filter(
             (aff: any) =>
@@ -575,7 +576,16 @@ export const changeOrg = createAsyncThunk<any, any, ThunkApiConfig>(
                 role: client.role,
                 status: client.status,
             };
-            const newProfile = { ...theProfile, activeOrg: activeOrg };
+            // Do NOT store activeOrg on the user.profile. Instead, persist it to system state.
+            const newProfile = { ...theProfile };
+            try {
+                thunkAPI.dispatch({
+                    type: 'system/setActiveOrg',
+                    payload: activeOrg,
+                });
+            } catch {
+                // ignore dispatch errors
+            }
             const results = { profile: newProfile, perms: perms };
             // printObject('UT:64-->profile&perms:', results);
 
@@ -607,7 +617,7 @@ export const changeActiveOrg = createAsyncThunk<
 
             printObject('UT:changeActiveOrg-->inputs:\n', inputs);
 
-            // Create updated profile with new activeOrg (no database update)
+            // Create a temporary updatedProfile with activeOrg so helpers can compute perms
             const updatedProfile = {
                 ...theProfile,
                 activeOrg: newActiveOrg,
@@ -615,8 +625,6 @@ export const changeActiveOrg = createAsyncThunk<
 
             // Extract permissions for the new active org using helper
             try {
-                // ensure updatedProfile.activeOrg is set so helper can read it
-                updatedProfile.activeOrg = newActiveOrg;
                 const perms = getPermissionsForActiveOrg(updatedProfile as any);
                 updatedProfile.permissions = perms;
             } catch (err) {
@@ -627,8 +635,21 @@ export const changeActiveOrg = createAsyncThunk<
                 updatedProfile.permissions = [];
             }
 
+            // Persist activeOrg on system state and return a userProfile WITHOUT activeOrg
+            try {
+                thunkAPI.dispatch({
+                    type: 'system/setActiveOrg',
+                    payload: newActiveOrg,
+                });
+            } catch {
+                // ignore
+            }
+
             const inputValues = {
-                userProfile: updatedProfile,
+                userProfile: {
+                    ...theProfile,
+                    permissions: updatedProfile.permissions || [],
+                },
                 perms: updatedProfile.permissions || [],
             };
 
@@ -641,7 +662,7 @@ export const changeActiveOrg = createAsyncThunk<
                 updatedProfile.permissions || []
             );
 
-            // Return the result
+            // Return the result (userProfile does not contain activeOrg)
             return inputValues;
         } catch (error) {
             console.error('UT:changeActiveOrg ERROR', inputs);
