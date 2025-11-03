@@ -577,5 +577,98 @@ const themedStyles: { [key: string]: any } = {
     tooltipContainer: {
         position: 'relative' as 'relative',
     },
+    userContainer: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
+    },
+    userHeader: {
+        paddingTop: 10,
+        paddingHorizontal: 20,
+        paddingBottom: 10,
+        backgroundColor: '#fff',
+    },
+    userBackButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    userBackText: {
+        fontSize: 18,
+        marginLeft: 8,
+        color: '#000',
+    },
+    userProfileImageContainer: {
+        alignItems: 'center',
+        marginTop: 30,
+        marginBottom: 20,
+    },
+    userProfileImage: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        borderWidth: 3,
+        borderColor: '#fff',
+    },
+    userLoadingContainer: {
+        backgroundColor: '#f0f0f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    userLoadingText: {
+        color: '#666',
+        fontSize: 12,
+    },
+    userNameContainer: {
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    userName: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#000',
+        marginBottom: 5,
+    },
+    userUsername: {
+        fontSize: 16,
+        color: '#666',
+    },
+    userEditButton: {
+        backgroundColor: theme.colors.primaryBackground,
+        marginHorizontal: 40,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    userEditButtonText: {
+        color: '#fff',
+        fontFamily: 'Roboto-Regular',
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    userDetailsContainer: {
+        backgroundColor: '#fff',
+        marginHorizontal: 20,
+        borderRadius: 12,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        marginBottom: 0,
+    },
+    userDetailItem: {
+        paddingVertical: 10,
+    },
+    userDetailLabel: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 5,
+    },
+    userDetailValue: {
+        fontSize: 16,
+        color: '#000',
+        fontWeight: '500',
+    },
+    userDivider: {
+        height: 1,
+        backgroundColor: '#e0e0e0',
+    },
 };
 export default themedStyles;

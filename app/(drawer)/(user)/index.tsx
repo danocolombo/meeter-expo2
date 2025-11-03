@@ -1,16 +1,9 @@
-import theme from '@assets/Colors';
+import themedStyles from '@assets/Styles';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchProfilePicture } from '@features/user/userThunks';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 
 const Profile = () => {
@@ -94,31 +87,36 @@ const Profile = () => {
     };
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView style={themedStyles.userContainer}>
             {/* Header Section */}
-            <View style={styles.header}>
+            <View style={themedStyles.userHeader}>
                 <TouchableOpacity
-                    style={styles.backButton}
+                    style={themedStyles.userBackButton}
                     onPress={() => router.back()}
                 >
                     <Ionicons name='arrow-back' size={24} color='#000' />
-                    <Text style={styles.backText}>Back</Text>
+                    <Text style={themedStyles.userBackText}>Back</Text>
                 </TouchableOpacity>
             </View>
 
             {/* Profile Image Section */}
-            <View style={styles.profileImageContainer}>
+            <View style={themedStyles.userProfileImageContainer}>
                 {imageLoading ? (
                     <View
-                        style={[styles.profileImage, styles.loadingContainer]}
+                        style={[
+                            themedStyles.userProfileImage,
+                            themedStyles.userLoadingContainer,
+                        ]}
                     >
-                        <Text style={styles.loadingText}>Loading...</Text>
+                        <Text style={themedStyles.userLoadingText}>
+                            Loading...
+                        </Text>
                     </View>
                 ) : profile.pictureObject &&
                   typeof profile.pictureObject === 'string' ? (
                     <Image
                         source={{ uri: profile.pictureObject }}
-                        style={styles.profileImage}
+                        style={themedStyles.userProfileImage}
                     />
                 ) : (
                     <Image
@@ -126,178 +124,90 @@ const Profile = () => {
                             profile.pictureObject ||
                             require('@assets/images/genericProiflePicture.png')
                         }
-                        style={styles.profileImage}
+                        style={themedStyles.userProfileImage}
                     />
                 )}
             </View>
 
             {/* Name Section */}
-            <View style={styles.nameContainer}>
-                <Text style={styles.name}>
+            <View style={themedStyles.userNameContainer}>
+                <Text style={themedStyles.userName}>
                     {profile.firstName || ''} {profile.lastName || ''}
                 </Text>
-                <Text style={styles.username}>@{profile.username || ''}</Text>
+                <Text style={themedStyles.userUsername}>
+                    {profile.username || ''}
+                </Text>
             </View>
 
-            {/* Edit Button */}
-            <TouchableOpacity
-                style={styles.editButton}
-                onPress={() =>
-                    router.push('/(drawer)/(user)/(edit)/editProfile')
-                }
-            >
-                <Text style={styles.editButtonText}>Edit</Text>
-            </TouchableOpacity>
-
             {/* Profile Details */}
-            <View style={styles.detailsContainer}>
-                <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Phone number</Text>
-                    <Text style={styles.detailValue}>
+            <View style={themedStyles.userDetailsContainer}>
+                <View style={themedStyles.userDetailItem}>
+                    <Text style={themedStyles.userDetailLabel}>
+                        Phone number
+                    </Text>
+                    <Text style={themedStyles.userDetailValue}>
                         {formatPhoneNumber(profile.phone)}
                     </Text>
                 </View>
 
-                <View style={styles.divider} />
+                <View style={themedStyles.userDivider} />
 
-                <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Email</Text>
-                    <Text style={styles.detailValue}>
+                <View style={themedStyles.userDetailItem}>
+                    <Text style={themedStyles.userDetailLabel}>Email</Text>
+                    <Text style={themedStyles.userDetailValue}>
                         {profile.email || 'Not provided'}
                     </Text>
                 </View>
 
-                <View style={styles.divider} />
+                <View style={themedStyles.userDivider} />
 
-                <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Birthday</Text>
-                    <Text style={styles.detailValue}>
+                <View style={themedStyles.userDetailItem}>
+                    <Text style={themedStyles.userDetailLabel}>Birthday</Text>
+                    <Text style={themedStyles.userDetailValue}>
                         {formatDate(profile.birthday)}
                     </Text>
                 </View>
 
-                <View style={styles.divider} />
+                <View style={themedStyles.userDivider} />
 
-                <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Shirt Size</Text>
-                    <Text style={styles.detailValue}>
+                <View style={themedStyles.userDetailItem}>
+                    <Text style={themedStyles.userDetailLabel}>Shirt Size</Text>
+                    <Text style={themedStyles.userDetailValue}>
                         {profile.shirt || 'Not provided'}
                     </Text>
                 </View>
 
-                <View style={styles.divider} />
+                <View style={themedStyles.userDivider} />
 
-                <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Address</Text>
-                    <Text style={styles.detailValue}>{formatAddress()}</Text>
+                <View style={themedStyles.userDetailItem}>
+                    <Text style={themedStyles.userDetailLabel}>Address</Text>
+                    <Text style={themedStyles.userDetailValue}>
+                        {formatAddress()}
+                    </Text>
                 </View>
 
-                <View style={styles.divider} />
+                <View style={themedStyles.userDivider} />
 
-                <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Current Organization</Text>
-                    <Text style={styles.detailValue}>
+                <View style={themedStyles.userDetailItem}>
+                    <Text style={themedStyles.userDetailLabel}>
+                        Current Organization
+                    </Text>
+                    <Text style={themedStyles.userDetailValue}>
                         {system?.activeOrg?.name || 'Not provided'}
                     </Text>
                 </View>
+                {/* Edit Button */}
+                <TouchableOpacity
+                    style={themedStyles.userEditButton}
+                    onPress={() =>
+                        router.push('/(drawer)/(user)/(edit)/editProfile')
+                    }
+                >
+                    <Text style={themedStyles.userEditButtonText}>Edit</Text>
+                </TouchableOpacity>
             </View>
         </ScrollView>
     );
 };
 
 export default Profile;
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f5f5f5',
-    },
-    header: {
-        paddingTop: 50,
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-        backgroundColor: '#fff',
-    },
-    backButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    backText: {
-        fontSize: 18,
-        marginLeft: 8,
-        color: '#000',
-    },
-    profileImageContainer: {
-        alignItems: 'center',
-        marginTop: 30,
-        marginBottom: 20,
-    },
-    profileImage: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        borderWidth: 3,
-        borderColor: '#fff',
-    },
-    loadingContainer: {
-        backgroundColor: '#f0f0f0',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    loadingText: {
-        color: '#666',
-        fontSize: 12,
-    },
-    nameContainer: {
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    name: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#000',
-        marginBottom: 5,
-    },
-    username: {
-        fontSize: 16,
-        color: '#666',
-    },
-    editButton: {
-        backgroundColor: theme.colors.primaryBackground,
-        marginHorizontal: 40,
-        paddingVertical: 12,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginBottom: 30,
-    },
-    editButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    detailsContainer: {
-        backgroundColor: '#fff',
-        marginHorizontal: 20,
-        borderRadius: 12,
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        marginBottom: 30,
-    },
-    detailItem: {
-        paddingVertical: 15,
-    },
-    detailLabel: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 5,
-    },
-    detailValue: {
-        fontSize: 16,
-        color: '#000',
-        fontWeight: '500',
-    },
-    divider: {
-        height: 1,
-        backgroundColor: '#e0e0e0',
-    },
-});
